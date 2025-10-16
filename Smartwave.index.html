@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Smartwave Mobile</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        /* Настройка шрифта Inter */
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@100..900&display=swap');
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #0d1226; /* Темный фон для контраста */
+        }
+
+        /* Пользовательский градиент фона для имитации глубины */
+        .app-gradient-bg {
+            background: linear-gradient(180deg, #101538 0%, #171b4a 100%);
+        }
+        
+        /* Стилизация кругового прогресс-бара */
+        .circle-progress-container {
+            width: 200px;
+            height: 200px;
+            position: relative;
+            /* Имитация свечения/тени из изображения */
+            box-shadow: 0 0 40px rgba(0, 200, 255, 0.3);
+            border-radius: 50%;
+        }
+
+        /* Круг для индикации 20GB */
+        .circle-background {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            border-radius: 50%;
+            border: 12px solid rgba(0, 150, 255, 0.2); /* Светло-голубая рамка с прозрачностью */
+        }
+
+        /* Круг для индикации 14.5GB (прогресс) */
+        .circle-progress {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            border-radius: 50%;
+            border: 12px solid transparent;
+            /* Используем конический градиент для имитации прогресса (72.5% = 261deg) */
+            background: conic-gradient(
+                #00c8ff 0deg, 
+                #00c8ff 261deg, /* 72.5% of 360 degrees */
+                transparent 261deg, 
+                transparent 360deg
+            );
+            /* Вращение для начала градиента сверху */
+            transform: rotate(-90deg);
+        }
+        
+        /* Свечение для кнопок/блоков */
+        .data-block {
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.4);
+        }
+        .data-block:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(0, 200, 255, 0.2);
+        }
+
+        /* Пузырьки на фоне для декора */
+        .bubble {
+            position: absolute;
+            border-radius: 50%;
+            opacity: 0.5;
+            filter: blur(5px);
+            animation: moveBubbles 10s infinite alternate;
+        }
+
+        .bubble-1 { top: 10%; left: 5%; width: 50px; height: 50px; background-color: #00c8ff; animation-delay: 0s; }
+        .bubble-2 { top: 60%; right: 15%; width: 80px; height: 80px; background-color: #7b68ee; animation-delay: 2s; }
+        .bubble-3 { bottom: 20%; left: 30%; width: 30px; height: 30px; background-color: #00ffaa; animation-delay: 4s; }
+
+        @keyframes moveBubbles {
+            0% { transform: translate(0, 0) scale(1); opacity: 0.3; }
+            100% { transform: translate(50px, 50px) scale(1.1); opacity: 0.6; }
+        }
+    </style>
+</head>
+<body class="app-gradient-bg min-h-screen text-white flex justify-center items-start pt-8 pb-8 sm:items-center">
+
+    <!-- Пузырьки на фоне -->
+    <div class="bubble bubble-1"></div>
+    <div class="bubble bubble-2"></div>
+    <div class="bubble bubble-3"></div>
+
+    <!-- Контейнер экрана мобильного приложения -->
+    <!-- overflow-x-scroll добавляет возможность горизонтальной прокрутки/свайпа -->
+    <div class="w-full max-w-sm h-[800px] overflow-x-scroll rounded-3xl app-gradient-bg shadow-2xl relative">
+        
+        <!-- Внутренний контейнер, который немного шире, чтобы разрешить прокрутку и имитировать "страницу" -->
+        <div class="w-[100%] min-w-[375px] p-6 flex flex-col items-center space-y-8">
+            
+            <!-- Мобильная строка состояния (StatusBar) -->
+            <div class="w-full flex justify-between text-sm font-semibold opacity-80">
+                <span>9:41</span>
+                <div class="flex items-center space-x-1">
+                    <!-- Иконка Wi-Fi -->
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.288 15.118a1.53 1.53 0 011.096-2.02l4.81-1.603a1.53 1.53 0 012.02 1.096l-4.81 1.603zM2.02 12a10 10 0 1120 0 10 10 0 01-20 0z"></path></svg>
+                    <!-- Иконка Батареи -->
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 3h-2a2 2 0 00-2 2v10a2 2 0 002 2h2a2 2 0 002-2V5a2 2 0 00-2-2zM4 18h16"></path></svg>
+                </div>
+            </div>
+
+            <!-- Логотип и Название -->
+            <div class="w-full flex flex-col items-center">
+                <div class="flex items-center space-x-2">
+                    <!-- Имитация логотипа 'S' -->
+                    <svg class="w-6 h-6 text-cyan-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8l4 4 4-4m0 0V8a4 4 0 00-8 0v3m8 0h4m-4 0v4m-4-4H8m0 0v4m4-4V7m0 0v4"></path>
+                    </svg>
+                    <span class="text-xl font-bold text-cyan-400">Smartwave</span>
+                </div>
+                <span class="text-sm opacity-60 mt-1">mobile</span>
+                <h1 class="text-xl font-light mt-6">Главная</h1>
+            </div>
+
+            <!-- Круговой индикатор прогресса -->
+            <div class="flex flex-col items-center mt-10">
+                <div class="circle-progress-container">
+                    <div class="circle-background"></div>
+                    <div class="circle-progress"></div>
+                    <div class="absolute inset-0 flex flex-col justify-center items-center">
+                        <span class="text-5xl font-extralight text-white">14.5</span>
+                        <span class="text-sm font-light text-cyan-300 opacity-80 mt-1">GB / 20 GB</span>
+                    </div>
+                </div>
+                <h2 class="text-lg font-light mt-4 text-cyan-300">Мобильный интернет</h2>
+            </div>
+
+            <!-- Блоки данных (сетка 2x2) -->
+            <div class="grid grid-cols-2 gap-4 w-full pt-4">
+                
+                <!-- Блок 1: Credit -->
+                <div class="data-block bg-blue-900/50 p-4 rounded-xl text-center cursor-pointer">
+                    <p class="text-sm opacity-80">Credit</p>
+                    <p class="text-2xl font-semibold mt-1 text-cyan-300">$45.80</p>
+                </div>
+
+                <!-- Блок 2: Calls (Unlimited) -->
+                <div class="data-block bg-blue-900/50 p-4 rounded-xl text-center cursor-pointer">
+                    <p class="text-sm opacity-80">Calls</p>
+                    <p class="text-2xl font-semibold mt-1 text-cyan-300">Unlimited</p>
+                </div>
+
+                <!-- Блок 3: Calls (350 Mins) -->
+                <div class="data-block bg-blue-900/50 p-4 rounded-xl text-center cursor-pointer">
+                    <p class="text-sm opacity-80">Calls</p>
+                    <p class="text-2xl font-semibold mt-1 text-cyan-300">350 Mins</p>
+                </div>
+
+                <!-- Блок 4: SMS -->
+                <div class="data-block bg-blue-900/50 p-4 rounded-xl text-center cursor-pointer">
+                    <p class="text-sm opacity-80">SMS</p>
+                    <p class="text-2xl font-semibold mt-1 text-cyan-300">Unlimited</p>
+                </div>
+            </div>
+
+            <!-- Кнопка "Пополнить" -->
+            <button class="w-full mt-4 py-3 rounded-full text-lg font-medium text-white 
+                           bg-blue-600 hover:bg-blue-700 transition-colors 
+                           shadow-lg shadow-blue-500/50">
+                Пополнить
+            </button>
+            
+        </div>
+    </div>
+
+</body>
+</html>
