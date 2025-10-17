@@ -3,32 +3,73 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Smartwave Mobile</title>
+    <title>Smartwave Full App</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
-        /* Настройка шрифта Inter */
-        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@100..900&display=swap');
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap');
+        
         body {
             font-family: 'Inter', sans-serif;
-            background-color: #0d1226; /* Темный фон для контраста */
+            background-color: #080c1d;
+            height: 100vh;
+            overflow: hidden; 
         }
 
-        /* Пользовательский градиент фона для имитации глубины */
+        /* Пользовательский градиент фона для всей ленты */
         .app-gradient-bg {
             background: linear-gradient(180deg, #101538 0%, #171b4a 100%);
         }
         
-        /* Стилизация кругового прогресс-бара */
-        .circle-progress-container {
-            width: 200px;
-            height: 200px;
-            position: relative;
-            /* Имитация свечения/тени из изображения */
-            box-shadow: 0 0 40px rgba(0, 200, 255, 0.3);
-            border-radius: 50%;
+        /* Стили для горизонтальной прокрутки */
+        .horizontal-scroll-container {
+            -ms-overflow-style: none; /* IE and Edge */
+            scrollbar-width: none; /* Firefox */
+            overflow-x: scroll;
+        }
+        .horizontal-scroll-container::-webkit-scrollbar {
+            display: none; /* Chrome, Safari and Opera */
+        }
+        
+        /* Стили элементов данных */
+        .data-card {
+            background-color: #1e254e;
+            transition: transform 0.2s;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+        }
+        .data-card:hover {
+            transform: translateY(-2px);
+            background-color: #242c5a;
         }
 
-        /* Круг для индикации 20GB */
+        /* Свечение для главной кнопки */
+        .main-button-glow {
+            box-shadow: 0 5px 20px rgba(0, 200, 255, 0.4);
+            transition: all 0.2s;
+        }
+        .main-button-glow:hover {
+            box-shadow: 0 5px 30px rgba(0, 200, 255, 0.7);
+        }
+
+        /* Основной контейнер, имитирующий экран телефона */
+        .phone-frame {
+            height: 100%;
+            width: 100%;
+            max-width: 480px;
+            margin: 0 auto;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            color: #e0e7ff;
+        }
+
+        /* Стиль для кругового индикатора */
+        .circle-progress-container {
+            width: 140px;
+            height: 140px;
+            position: relative;
+            box-shadow: 0 0 40px rgba(0, 200, 255, 0.2);
+            border-radius: 50%;
+        }
         .circle-background {
             position: absolute;
             top: 0;
@@ -36,10 +77,8 @@
             width: 100%;
             height: 100%;
             border-radius: 50%;
-            border: 12px solid rgba(0, 150, 255, 0.2); /* Светло-голубая рамка с прозрачностью */
+            border: 8px solid rgba(0, 150, 255, 0.15); 
         }
-
-        /* Круг для индикации 14.5GB (прогресс) */
         .circle-progress {
             position: absolute;
             top: 0;
@@ -47,135 +86,388 @@
             width: 100%;
             height: 100%;
             border-radius: 50%;
-            border: 12px solid transparent;
-            /* Используем конический градиент для имитации прогресса (72.5% = 261deg) */
+            border: 8px solid transparent;
+            /* 72.5% = 261deg */
             background: conic-gradient(
                 #00c8ff 0deg, 
-                #00c8ff 261deg, /* 72.5% of 360 degrees */
+                #00c8ff 261deg, 
                 transparent 261deg, 
                 transparent 360deg
             );
-            /* Вращение для начала градиента сверху */
             transform: rotate(-90deg);
         }
-        
-        /* Свечение для кнопок/блоков */
-        .data-block {
-            transition: all 0.3s ease;
-            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.4);
-        }
-        .data-block:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 8px 20px rgba(0, 200, 255, 0.2);
-        }
 
-        /* Пузырьки на фоне для декора */
-        .bubble {
-            position: absolute;
-            border-radius: 50%;
-            opacity: 0.5;
-            filter: blur(5px);
-            animation: moveBubbles 10s infinite alternate;
-        }
-
-        .bubble-1 { top: 10%; left: 5%; width: 50px; height: 50px; background-color: #00c8ff; animation-delay: 0s; }
-        .bubble-2 { top: 60%; right: 15%; width: 80px; height: 80px; background-color: #7b68ee; animation-delay: 2s; }
-        .bubble-3 { bottom: 20%; left: 30%; width: 30px; height: 30px; background-color: #00ffaa; animation-delay: 4s; }
-
-        @keyframes moveBubbles {
-            0% { transform: translate(0, 0) scale(1); opacity: 0.3; }
-            100% { transform: translate(50px, 50px) scale(1.1); opacity: 0.6; }
-        }
     </style>
 </head>
-<body class="app-gradient-bg min-h-screen text-white flex justify-center items-start pt-8 pb-8 sm:items-center">
+<body class="bg-gray-900">
 
-    <!-- Пузырьки на фоне -->
-    <div class="bubble bubble-1"></div>
-    <div class="bubble bubble-2"></div>
-    <div class="bubble bubble-3"></div>
-
-    <!-- Контейнер экрана мобильного приложения -->
-    <!-- overflow-x-scroll добавляет возможность горизонтальной прокрутки/свайпа -->
-    <div class="w-full max-w-sm h-[800px] overflow-x-scroll rounded-3xl app-gradient-bg shadow-2xl relative">
+    <div class="phone-frame app-gradient-bg">
         
-        <!-- Внутренний контейнер, который немного шире, чтобы разрешить прокрутку и имитировать "страницу" -->
-        <div class="w-[100%] min-w-[375px] p-6 flex flex-col items-center space-y-8">
-            
-            <!-- Мобильная строка состояния (StatusBar) -->
-            <div class="w-full flex justify-between text-sm font-semibold opacity-80">
-                <span>9:41</span>
+        <!-- Верхняя фиксированная панель (Header) -->
+        <header class="sticky top-0 z-10 w-full p-4 bg-[#101538] shadow-lg">
+            <!-- Строка состояния (Время/Батарея) -->
+            <div class="flex justify-between items-center text-sm font-semibold opacity-80 mb-4">
+                <span>10:47</span>
                 <div class="flex items-center space-x-1">
-                    <!-- Иконка Wi-Fi -->
                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.288 15.118a1.53 1.53 0 011.096-2.02l4.81-1.603a1.53 1.53 0 012.02 1.096l-4.81 1.603zM2.02 12a10 10 0 1120 0 10 10 0 01-20 0z"></path></svg>
-                    <!-- Иконка Батареи -->
                     <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 3h-2a2 2 0 00-2 2v10a2 2 0 002 2h2a2 2 0 002-2V5a2 2 0 00-2-2zM4 18h16"></path></svg>
                 </div>
             </div>
 
-            <!-- Логотип и Название -->
-            <div class="w-full flex flex-col items-center">
-                <div class="flex items-center space-x-2">
-                    <!-- Имитация логотипа 'S' -->
-                    <svg class="w-6 h-6 text-cyan-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8l4 4 4-4m0 0V8a4 4 0 00-8 0v3m8 0h4m-4 0v4m-4-4H8m0 0v4m4-4V7m0 0v4"></path>
-                    </svg>
-                    <span class="text-xl font-bold text-cyan-400">Smartwave</span>
-                </div>
-                <span class="text-sm opacity-60 mt-1">mobile</span>
-                <h1 class="text-xl font-light mt-6">Главная</h1>
-            </div>
+            <div class="flex items-center justify-between">
+                
+                <!-- БЛОК ЛОГОТИПА И НОМЕРА ТЕЛЕФОНА -->
+                <div class="flex items-center space-x-3 text-sm">
+                    <!-- Логотип Smartwave (простая иконка волны) -->
+                    <div class="flex items-center space-x-1">
+                        <svg class="w-6 h-6 text-cyan-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                            <!-- Иконка волны (для Smartwave) -->
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.5 10.5l-2.775 5.55A1 1 0 019.832 17H5M4.5 9.5l.5-1.5M19.5 9.5l-.5-1.5M15 15l-3.5 5 3.5 5M20 10.5h-5.5a1 1 0 00-.866.5l-2.775 5.55"></path>
+                        </svg>
+                        <span class="text-xl font-bold text-cyan-400">Smartwave</span>
+                    </div>
 
-            <!-- Круговой индикатор прогресса -->
-            <div class="flex flex-col items-center mt-10">
-                <div class="circle-progress-container">
-                    <div class="circle-background"></div>
-                    <div class="circle-progress"></div>
-                    <div class="absolute inset-0 flex flex-col justify-center items-center">
-                        <span class="text-5xl font-extralight text-white">14.5</span>
-                        <span class="text-sm font-light text-cyan-300 opacity-80 mt-1">GB / 20 GB</span>
+                    <span class="font-medium">+7 905 581 07 05</span>
+                    <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
+                </div>
+                <!-- КОНЕЦ БЛОКА ЛОГОТИПА -->
+
+                <div class="flex items-center space-x-3">
+                    <button class="text-sm font-semibold px-4 py-2 rounded-full bg-cyan-600/30 text-cyan-300 main-button-glow hover:bg-cyan-600/50">
+                        ПОПОЛНИТЬ
+                    </button>
+                    <svg class="w-6 h-6 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
+                </div>
+            </div>
+        </header>
+
+        <!-- Основной контейнер для переключения страниц -->
+        <div class="flex-grow overflow-y-auto">
+
+            <!-- -------------------------------------------------------------------------------------- -->
+            <!-- СТРАНИЦА: ГЛАВНАЯ (Home) -->
+            <!-- -------------------------------------------------------------------------------------- -->
+            <main id="page-home" class="page-content p-4 space-y-6">
+
+                <!-- Блок 1: Основной баланс и автоплатеж -->
+                <div class="flex justify-between items-center pb-2 border-b border-gray-700/50">
+                    <div class="flex items-center space-x-2">
+                        <span class="text-lg font-light opacity-80">ЛИЧНЫЙ</span>
+                        <span class="text-3xl font-semibold text-white">36.81 ₽</span>
+                    </div>
+                    <button class="flex items-center text-cyan-300 text-sm opacity-90">
+                        подключить автоплатёж 
+                        <svg class="w-5 h-5 ml-1" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 0h-4M7.8 17.2a6 6 0 01-1.428-2.68l-1.5-3.5a.5.5 0 01.95-.407l1.5 3.5a7 7 0 001.428 2.68zM12 12V3"></path></svg>
+                    </button>
+                </div>
+                
+                <!-- БЛОК 1.5: ПРОМО АКЦИЯ (ВЫСОКАЯ СКОРОСТЬ...) -->
+                <div class="p-4 rounded-xl bg-cyan-600/50 main-button-glow cursor-pointer text-center border border-cyan-400">
+                    <p class="text-lg md:text-xl font-extrabold text-white leading-snug tracking-wider">
+                        ВЫСОКАЯ СКОРОСТЬ, НЕДОРОГО, БЕЗЛИМИТНО, <span class="text-yellow-300">да, это smartwave</span>
+                    </p>
+                </div>
+                <!-- КОНЕЦ БЛОКА 1.5 -->
+
+
+                <!-- Блок 2: Индикатор данных (Круговой прогресс) -->
+                <div class="flex justify-center py-4">
+                    <div class="circle-progress-container">
+                        <div class="circle-background"></div>
+                        <div class="circle-progress"></div>
+                        <div class="absolute inset-0 flex flex-col justify-center items-center">
+                            <span class="text-3xl font-light text-white">1022.6</span>
+                            <span class="text-xs font-light text-cyan-300 opacity-80 mt-1">ГБ / 1024 ГБ</span>
+                        </div>
                     </div>
                 </div>
-                <h2 class="text-lg font-light mt-4 text-cyan-300">Мобильный интернет</h2>
-            </div>
+                <p class="text-center text-sm text-gray-400">мобильная связь</p>
+                <p class="text-center text-xs text-gray-500">14 ноября спишем 990 ₽</p>
 
-            <!-- Блоки данных (сетка 2x2) -->
-            <div class="grid grid-cols-2 gap-4 w-full pt-4">
+                <!-- Блок 3: Использование (Data/Mins/SMS Grid) -->
+                <div class="grid grid-cols-3 gap-3 pt-2">
+                    <!-- Data -->
+                    <div class="data-card p-3 rounded-xl text-center cursor-pointer">
+                        <p class="text-xl font-semibold text-cyan-300">1022.6 ГБ</p>
+                        <p class="text-xs opacity-60 mt-1">из 1024</p>
+                    </div>
+                    <!-- Mins -->
+                    <div class="data-card p-3 rounded-xl text-center cursor-pointer">
+                        <p class="text-xl font-semibold text-cyan-300">1000 мин</p>
+                        <p class="text-xs opacity-60 mt-1">из 1000</p>
+                    </div>
+                    <!-- SMS -->
+                    <div class="data-card p-3 rounded-xl text-center cursor-pointer">
+                        <p class="text-xl font-semibold text-cyan-300">1 млн</p>
+                        <p class="text-xs opacity-60 mt-1">смс</p>
+                    </div>
+                </div>
+                <p class="text-xs text-center text-gray-400">Безлимитные звонки на Билайн</p>
+
+                <!-- Блок 4: Предложения (Горизонтальная прокрутка) -->
+                <div class="pt-4">
+                    <h2 class="text-base font-semibold text-white mb-3">Делитесь и управляйте</h2>
+                    <div class="horizontal-scroll-container flex space-x-3 pb-2">
+                        <div class="data-card flex flex-col items-center justify-center p-4 rounded-xl min-w-[100px] cursor-pointer">
+                            <span class="text-2xl">🌍</span>
+                            <span class="text-xs text-gray-300 mt-1">Все равны</span>
+                        </div>
+                        <div class="data-card flex flex-col items-center justify-center p-4 rounded-xl min-w-[100px] cursor-pointer">
+                            <span class="text-2xl">💰</span>
+                            <span class="text-xs text-gray-300 mt-1">Платите меньше</span>
+                        </div>
+                        <div class="data-card flex flex-col items-center justify-center p-4 rounded-xl min-w-[100px] cursor-pointer">
+                            <span class="text-2xl">🎁</span>
+                            <span class="text-xs text-gray-300 mt-1">Осенние скидки</span>
+                        </div>
+                        <div class="data-card flex flex-col items-center justify-center p-4 rounded-xl min-w-[100px] cursor-pointer">
+                            <span class="text-2xl">🚨</span>
+                            <span class="text-xs text-gray-300 mt-1">Алло, это мошенники!</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Блок 5: Покупка игр (Горизонтальная прокрутка) -->
+                <div class="pt-4">
+                    <h2 class="text-base font-semibold text-white mb-3">Покупайте в любимых играх</h2>
+                    <div class="horizontal-scroll-container flex space-x-3 pb-2">
+                        <div class="data-card flex flex-col items-center p-3 rounded-xl min-w-[100px] cursor-pointer">
+                            <img src="https://placehold.co/70x70/00c8ff/ffffff?text=ML" onerror="this.onerror=null; this.src='https://placehold.co/70x70/00c8ff/ffffff?text=ML';" alt="Mobile Legends icon" class="w-14 h-14 rounded-lg">
+                            <span class="text-xs text-gray-300 mt-1">Mobile Legends</span>
+                        </div>
+                        <div class="data-card flex flex-col items-center p-3 rounded-xl min-w-[100px] cursor-pointer">
+                            <img src="https://placehold.co/70x70/ff8c00/ffffff?text=P" onerror="this.onerror=null; this.src='https://placehold.co/70x70/ff8c00/ffffff?text=P';" alt="PUBG icon" class="w-14 h-14 rounded-lg">
+                            <span class="text-xs text-gray-300 mt-1">PUBG</span>
+                        </div>
+                        <div class="data-card flex flex-col items-center p-3 rounded-xl min-w-[100px] cursor-pointer">
+                            <img src="https://placehold.co/70x70/00ffaa/000000?text=R" onerror="this.onerror=null; this.src='https://placehold.co/70x70/00ffaa/000000?text=R';" alt="Roblox icon" class="w-14 h-14 rounded-lg">
+                            <span class="text-xs text-gray-300 mt-1">ROBLOX</span>
+                        </div>
+                        <div class="data-card flex flex-col items-center p-3 rounded-xl min-w-[100px] cursor-pointer">
+                            <img src="https://placehold.co/70x70/9400d3/ffffff?text=SF" onerror="this.onerror=null; this.src='https://placehold.co/70x70/9400d3/ffffff?text=SF';" alt="Street Fighter icon" class="w-14 h-14 rounded-lg">
+                            <span class="text-xs text-gray-300 mt-1">Street Fighter</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Блок 6: Акция (Карта с акцентом) -->
+                <div class="pt-4 p-4 rounded-xl bg-orange-600/60 main-button-glow cursor-pointer">
+                    <p class="text-lg font-light">
+                        Получай баллы <span class="font-bold">«Х5 Клуба»</span> и кэшбэк
+                    </p>
+                    <div class="flex justify-between items-end mt-2">
+                        <p class="text-sm opacity-80">
+                            обменивай на рубли
+                        </p>
+                        <button class="bg-white text-orange-600 text-xs font-bold px-3 py-1 rounded-full">
+                            +5 000 X
+                        </button>
+                    </div>
+                </div>
                 
-                <!-- Блок 1: Credit -->
-                <div class="data-block bg-blue-900/50 p-4 rounded-xl text-center cursor-pointer">
-                    <p class="text-sm opacity-80">Credit</p>
-                    <p class="text-2xl font-semibold mt-1 text-cyan-300">$45.80</p>
+                <!-- Блок 7: Книги (Горизонтальная прокрутка) -->
+                <div class="pt-4 pb-20">
+                    <h2 class="text-base font-semibold text-white mb-3">Больше 40 000 книг</h2>
+                    <div class="horizontal-scroll-container flex space-x-3 pb-2">
+                        <div class="flex flex-col items-center min-w-[100px] cursor-pointer">
+                            <img src="https://placehold.co/70x100/9400d3/ffffff?text=Book+1" onerror="this.onerror=null; this.src='https://placehold.co/70x100/9400d3/ffffff?text=Book+1';" alt="Обложка книги 1" class="w-14 h-24 rounded-lg shadow-lg">
+                            <span class="text-xs text-gray-300 mt-1 text-center">ЕБС-я...</span>
+                        </div>
+                        <div class="flex flex-col items-center min-w-[100px] cursor-pointer">
+                            <img src="https://placehold.co/70x100/00c8ff/ffffff?text=Book+2" onerror="this.onerror=null; this.src='https://placehold.co/70x100/00c8ff/ffffff?text=Book+2';" alt="Обложка книги 2" class="w-14 h-24 rounded-lg shadow-lg">
+                            <span class="text-xs text-gray-300 mt-1 text-center">Думай быстро</span>
+                        </div>
+                        <div class="flex flex-col items-center min-w-[100px] cursor-pointer">
+                            <img src="https://placehold.co/70x100/ff8c00/ffffff?text=Book+3" onerror="this.onerror=null; this.src='https://placehold.co/70x100/ff8c00/ffffff?text=Book+3';" alt="Обложка книги 3" class="w-14 h-24 rounded-lg shadow-lg">
+                            <span class="text-xs text-gray-300 mt-1 text-center">Психотрики</span>
+                        </div>
+                        <div class="flex flex-col items-center min-w-[100px] cursor-pointer">
+                            <img src="https://placehold.co/70x100/00ffaa/000000?text=Book+4" onerror="this.onerror=null; this.src='https://placehold.co/70x100/00ffaa/000000?text=Book+4';" alt="Обложка книги 4" class="w-14 h-24 rounded-lg shadow-lg">
+                            <span class="text-xs text-gray-300 mt-1 text-center">Крутой</span>
+                        </div>
+                    </div>
+                    <button class="w-full mt-4 py-3 rounded-full text-lg font-medium text-white bg-blue-600 hover:bg-blue-700 transition-colors shadow-lg shadow-blue-500/50">
+                        ЧИТАТЬ
+                    </button>
                 </div>
+            </main>
+            
+            <!-- -------------------------------------------------------------------------------------- -->
+            <!-- СТРАНИЦА: СЕРВИСЫ (Services) - По умолчанию скрыта -->
+            <!-- -------------------------------------------------------------------------------------- -->
+            <main id="page-services" class="page-content hidden p-4 space-y-6">
+                <h2 class="text-2xl font-bold text-cyan-300 pt-2">Сервисы Smartwave</h2>
+                <p class="text-gray-400">Здесь находятся все доступные услуги и продукты.</p>
 
-                <!-- Блок 2: Calls (Unlimited) -->
-                <div class="data-block bg-blue-900/50 p-4 rounded-xl text-center cursor-pointer">
-                    <p class="text-sm opacity-80">Calls</p>
-                    <p class="text-2xl font-semibold mt-1 text-cyan-300">Unlimited</p>
+                <div class="grid grid-cols-2 gap-4">
+                    <div class="data-card p-4 rounded-xl cursor-pointer">
+                        <span class="text-3xl block mb-2">📞</span>
+                        <p class="font-semibold">Управление связью</p>
+                        <p class="text-xs opacity-60">Смена тарифа, детализация</p>
+                    </div>
+                    <div class="data-card p-4 rounded-xl cursor-pointer">
+                        <span class="text-3xl block mb-2">🌐</span>
+                        <p class="font-semibold">Интернет-сервисы</p>
+                        <p class="text-xs opacity-60">Домашний интернет, TV</p>
+                    </div>
+                    <div class="data-card p-4 rounded-xl cursor-pointer">
+                        <span class="text-3xl block mb-2">🎁</span>
+                        <p class="font-semibold">Подарки и Акции</p>
+                        <p class="text-xs opacity-60">Кэшбэк, бонусы, скидки</p>
+                    </div>
+                    <div class="data-card p-4 rounded-xl cursor-pointer">
+                        <span class="text-3xl block mb-2">💳</span>
+                        <p class="font-semibold">Финансовые услуги</p>
+                        <p class="text-xs opacity-60">Карты, кредиты</p>
+                    </div>
                 </div>
-
-                <!-- Блок 3: Calls (350 Mins) -->
-                <div class="data-block bg-blue-900/50 p-4 rounded-xl text-center cursor-pointer">
-                    <p class="text-sm opacity-80">Calls</p>
-                    <p class="text-2xl font-semibold mt-1 text-cyan-300">350 Mins</p>
+                
+                <div class="pt-6 pb-20">
+                     <h3 class="text-xl font-semibold mb-3">Интересное для вас</h3>
+                     <div class="data-card p-4 rounded-xl cursor-pointer bg-blue-900/50">
+                        <p class="font-semibold text-cyan-300">Специальное предложение!</p>
+                        <p class="text-sm opacity-80 mt-1">Подключите домашний интернет и получите скидку 50% на 6 месяцев.</p>
+                     </div>
                 </div>
+            </main>
 
-                <!-- Блок 4: SMS -->
-                <div class="data-block bg-blue-900/50 p-4 rounded-xl text-center cursor-pointer">
-                    <p class="text-sm opacity-80">SMS</p>
-                    <p class="text-2xl font-semibold mt-1 text-cyan-300">Unlimited</p>
+            <!-- -------------------------------------------------------------------------------------- -->
+            <!-- СТРАНИЦА: БАЛАНС (Balance) - По умолчанию скрыта -->
+            <!-- -------------------------------------------------------------------------------------- -->
+            <main id="page-balance" class="page-content hidden p-4 space-y-6">
+                <h2 class="text-2xl font-bold text-cyan-300 pt-2">Управление Балансом</h2>
+                <div class="data-card p-4 rounded-xl bg-cyan-700/50">
+                    <p class="text-sm opacity-80">Текущий баланс</p>
+                    <p class="text-4xl font-light text-white mt-1">36.81 ₽</p>
+                    <button class="text-sm mt-3 font-semibold px-4 py-2 rounded-full bg-white text-cyan-700">
+                        Пополнить баланс
+                    </button>
+                </div>
+                <div class="grid grid-cols-2 gap-4">
+                    <div class="data-card p-4 rounded-xl cursor-pointer">
+                        <p class="font-semibold">Автоплатеж</p>
+                        <p class="text-xs opacity-60">Подключено</p>
+                    </div>
+                    <div class="data-card p-4 rounded-xl cursor-pointer">
+                        <p class="font-semibold">История операций</p>
+                        <p class="text-xs opacity-60">Смотреть все расходы</p>
+                    </div>
+                </div>
+                <div class="pt-4 pb-20">
+                     <h3 class="text-xl font-semibold mb-3">Оплата</h3>
+                     <div class="data-card p-4 rounded-xl cursor-pointer">
+                        <p class="font-semibold">Оплата по QR-коду</p>
+                        <p class="text-xs opacity-60">Моментальный платеж</p>
+                     </div>
+                     <div class="data-card p-4 mt-2 rounded-xl cursor-pointer">
+                        <p class="font-semibold">Перевод денег</p>
+                        <p class="text-xs opacity-60">На карту или по номеру</p>
+                     </div>
+                </div>
+            </main>
+
+            <!-- -------------------------------------------------------------------------------------- -->
+            <!-- СТРАНИЦА: ФИНАНСЫ (Finance) - По умолчанию скрыта -->
+            <!-- -------------------------------------------------------------------------------------- -->
+            <main id="page-finance" class="page-content hidden p-4 space-y-6">
+                <h2 class="text-2xl font-bold text-cyan-300 pt-2">Финансы Smartwave</h2>
+                <p class="text-gray-400">Управляйте вашими картами и счетами.</p>
+                <div class="grid grid-cols-1 gap-4">
+                    <div class="data-card p-4 rounded-xl bg-orange-500/60 cursor-pointer">
+                        <p class="text-sm opacity-80">Основная карта</p>
+                        <p class="text-2xl font-semibold text-white mt-1">Smart Card Black</p>
+                    </div>
+                    <div class="data-card p-4 rounded-xl cursor-pointer">
+                        <p class="font-semibold">Кредитный лимит</p>
+                        <p class="text-sm opacity-60">Доступно: 50 000 ₽</p>
+                    </div>
+                    <div class="data-card p-4 rounded-xl cursor-pointer">
+                        <p class="font-semibold">Открыть вклад</p>
+                        <p class="text-sm opacity-60">Выгодные условия</p>
+                    </div>
+                </div>
+                <div class="pt-4 pb-20">
+                    <button class="w-full mt-4 py-3 rounded-full text-lg font-medium text-white bg-green-600 hover:bg-green-700 transition-colors shadow-lg shadow-green-500/50">
+                        Оформить новую карту
+                    </button>
+                </div>
+            </main>
+        </div>
+
+        <!-- Нижняя фиксированная панель навигации (Footer) -->
+        <footer class="sticky bottom-0 z-10 w-full p-3 bg-[#101538] border-t border-gray-700/50">
+            <div class="flex justify-around text-xs text-gray-400">
+                <!-- Кнопка 1: Главная -->
+                <div class="nav-item flex flex-col items-center cursor-pointer transition-colors" data-page="home">
+                    <svg class="w-6 h-6" fill="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"></path></svg>
+                    Главная
+                </div>
+                <!-- Кнопка 2: Сервисы -->
+                <div class="nav-item flex flex-col items-center cursor-pointer transition-colors" data-page="services">
+                    <svg class="w-6 h-6" fill="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-6h2v6zm0-8h-2V7h2v2z"></path></svg>
+                    Сервисы
+                </div>
+                <!-- Кнопка 3: Баланс -->
+                <div class="nav-item flex flex-col items-center cursor-pointer transition-colors" data-page="balance">
+                    <svg class="w-6 h-6" fill="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M20 4H4c-1.11 0-1.99.89-1.99 2L2 18c0 1.11.89 2 2 2h16c1.11 0 2-.89 2-2V6c0-1.11-.89-2-2-2zm0 14H4V8h16v10z"></path></svg>
+                    Баланс
+                </div>
+                <!-- Кнопка 4: Финансы -->
+                <div class="nav-item flex flex-col items-center cursor-pointer transition-colors" data-page="finance">
+                    <svg class="w-6 h-6" fill="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 17.93c-3.95-.49-7-3.96-7-7.93h2c0 3.32 2.69 6 6 6v2.07z"></path></svg>
+                    Финансы
                 </div>
             </div>
+        </footer>
 
-            <!-- Кнопка "Пополнить" -->
-            <button class="w-full mt-4 py-3 rounded-full text-lg font-medium text-white 
-                           bg-blue-600 hover:bg-blue-700 transition-colors 
-                           shadow-lg shadow-blue-500/50">
-                Пополнить
-            </button>
-            
-        </div>
     </div>
+
+    <script>
+        // Функция для переключения страниц
+        function showPage(pageId) {
+            // 1. Скрыть все страницы
+            const pages = document.querySelectorAll('.page-content');
+            pages.forEach(page => {
+                page.classList.add('hidden');
+            });
+
+            // 2. Показать нужную страницу
+            const activePage = document.getElementById('page-' + pageId);
+            if (activePage) {
+                activePage.classList.remove('hidden');
+                // Прокрутить наверх при переключении страницы
+                activePage.closest('.flex-grow').scrollTop = 0; 
+            }
+
+            // 3. Обновить активное состояние кнопок в футере
+            const navItems = document.querySelectorAll('.nav-item');
+            navItems.forEach(item => {
+                item.classList.remove('text-cyan-400', 'font-semibold');
+                item.classList.add('text-gray-400');
+                
+                if (item.getAttribute('data-page') === pageId) {
+                    item.classList.add('text-cyan-400', 'font-semibold');
+                    item.classList.remove('text-gray-400');
+                }
+            });
+        }
+
+        // Навешивание обработчиков событий на кнопки футера
+        document.addEventListener('DOMContentLoaded', () => {
+            const navItems = document.querySelectorAll('.nav-item');
+            
+            navItems.forEach(item => {
+                item.addEventListener('click', function() {
+                    const pageId = this.getAttribute('data-page');
+                    showPage(pageId);
+                });
+            });
+
+            // Установить начальную страницу (Главная) при загрузке
+            showPage('home');
+        });
+    </script>
 
 </body>
 </html>
+
