@@ -3,470 +3,719 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Smartwave Full App</title>
+    <title>PAOM Чат 5Б</title>
+    <!-- Load Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Inter Font -->
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap');
-        
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap');
         body {
             font-family: 'Inter', sans-serif;
-            background-color: #080c1d;
-            height: 100vh;
-            overflow: hidden; 
-        }
-
-        /* Пользовательский градиент фона для всей ленты */
-        .app-gradient-bg {
-            background: linear-gradient(180deg, #101538 0%, #171b4a 100%);
-        }
-        
-        /* Стили для горизонтальной прокрутки */
-        .horizontal-scroll-container {
-            -ms-overflow-style: none; /* IE and Edge */
-            scrollbar-width: none; /* Firefox */
-            overflow-x: scroll;
-        }
-        .horizontal-scroll-container::-webkit-scrollbar {
-            display: none; /* Chrome, Safari and Opera */
-        }
-        
-        /* Стили элементов данных */
-        .data-card {
-            background-color: #1e254e;
-            transition: transform 0.2s;
-            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
-        }
-        .data-card:hover {
-            transform: translateY(-2px);
-            background-color: #242c5a;
-        }
-
-        /* Свечение для главной кнопки */
-        .main-button-glow {
-            box-shadow: 0 5px 20px rgba(0, 200, 255, 0.4);
-            transition: all 0.2s;
-        }
-        .main-button-glow:hover {
-            box-shadow: 0 5px 30px rgba(0, 200, 255, 0.7);
-        }
-
-        /* Основной контейнер, имитирующий экран телефона */
-        .phone-frame {
-            height: 100%;
-            width: 100%;
-            max-width: 480px;
-            margin: 0 auto;
+            background-color: #1f2937; /* Dark background */
             display: flex;
-            flex-direction: column;
-            overflow: hidden;
-            color: #e0e7ff;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            padding: 20px;
         }
-
-        /* Стиль для кругового индикатора */
-        .circle-progress-container {
-            width: 140px;
-            height: 140px;
-            position: relative;
-            box-shadow: 0 0 40px rgba(0, 200, 255, 0.2);
-            border-radius: 50%;
+        /* Styling for the central chat card */
+        .chat-card {
+            background-color: #2c3e50; /* Slightly lighter dark background for the card */
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.5), 0 0 50px rgba(79, 70, 229, 0.3);
+            transition: all 0.3s ease-in-out;
         }
-        .circle-background {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            border-radius: 50%;
-            border: 8px solid rgba(0, 150, 255, 0.15); 
+        /* Custom styles for the glowing buttons/inputs like in the video */
+        .glowing-element {
+            background-color: rgba(255, 255, 255, 0.1);
+            border: 2px solid rgba(255, 255, 255, 0.2);
+            backdrop-filter: blur(5px);
+            box-shadow: 0 0 15px rgba(129, 140, 248, 0.5);
+            color: white;
+            transition: all 0.3s;
         }
-        .circle-progress {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            border-radius: 50%;
-            border: 8px solid transparent;
-            /* 72.5% = 261deg */
-            background: conic-gradient(
-                #00c8ff 0deg, 
-                #00c8ff 261deg, 
-                transparent 261deg, 
-                transparent 360deg
-            );
-            transform: rotate(-90deg);
+        .glowing-element:hover:not(:disabled) {
+            box-shadow: 0 0 25px rgba(129, 140, 248, 0.7);
+            background-color: rgba(255, 255, 255, 0.15);
         }
-
+        .glowing-element:focus {
+            border-color: #818cf8;
+            outline: none;
+        }
+        .main-button {
+            background-color: #4f46e5;
+            box-shadow: 0 4px 15px rgba(79, 70, 229, 0.7);
+        }
+        .main-button:hover:not(:disabled) {
+            background-color: #4338ca;
+            box-shadow: 0 4px 20px rgba(79, 70, 229, 1);
+        }
+        
+        /* Styling for the emoji grid */
+        #emoji-picker-container {
+            display: grid;
+            grid-template-columns: repeat(8, 1fr);
+            gap: 4px;
+        }
+        .emoji-item {
+            cursor: pointer;
+            font-size: 20px;
+            text-align: center;
+            padding: 4px;
+            border-radius: 6px;
+            transition: background-color 0.1s;
+        }
+        .emoji-item:hover {
+            background-color: rgba(255, 255, 255, 0.1);
+        }
     </style>
 </head>
-<body class="bg-gray-900">
+<body>
 
-    <div class="phone-frame app-gradient-bg">
-        
-        <!-- Верхняя фиксированная панель (Header) -->
-        <header class="sticky top-0 z-10 w-full p-4 bg-[#101538] shadow-lg">
-            <!-- Строка состояния (Время/Батарея) -->
-            <div class="flex justify-between items-center text-sm font-semibold opacity-80 mb-4">
-                <span>10:47</span>
-                <div class="flex items-center space-x-1">
-                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.288 15.118a1.53 1.53 0 011.096-2.02l4.81-1.603a1.53 1.53 0 012.02 1.096l-4.81 1.603zM2.02 12a10 10 0 1120 0 10 10 0 01-20 0z"></path></svg>
-                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 3h-2a2 2 0 00-2 2v10a2 2 0 002 2h2a2 2 0 002-2V5a2 2 0 00-2-2zM4 18h16"></path></svg>
-                </div>
-            </div>
+<!-- Главный контейнер приложения, который переключает виды -->
+<div id="app-container" class="chat-card rounded-3xl w-full max-w-lg flex flex-col h-[75vh] min-h-[500px] overflow-hidden p-6 text-white">
 
-            <div class="flex items-center justify-between">
-                
-                <!-- БЛОК ЛОГОТИПА И НОМЕРА ТЕЛЕФОНА -->
-                <div class="flex items-center space-x-3 text-sm">
-                    <!-- Логотип Smartwave (простая иконка волны) -->
-                    <div class="flex items-center space-x-1">
-                        <svg class="w-6 h-6 text-cyan-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                            <!-- Иконка волны (для Smartwave) -->
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.5 10.5l-2.775 5.55A1 1 0 019.832 17H5M4.5 9.5l.5-1.5M19.5 9.5l-.5-1.5M15 15l-3.5 5 3.5 5M20 10.5h-5.5a1 1 0 00-.866.5l-2.775 5.55"></path>
-                        </svg>
-                        <span class="text-xl font-bold text-cyan-400">Smartwave</span>
-                    </div>
-
-                    <span class="font-medium">+7 905 581 07 05</span>
-                    <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
-                </div>
-                <!-- КОНЕЦ БЛОКА ЛОГОТИПА -->
-
-                <div class="flex items-center space-x-3">
-                    <button class="text-sm font-semibold px-4 py-2 rounded-full bg-cyan-600/30 text-cyan-300 main-button-glow hover:bg-cyan-600/50">
-                        ПОПОЛНИТЬ
-                    </button>
-                    <svg class="w-6 h-6 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
-                </div>
-            </div>
-        </header>
-
-        <!-- Основной контейнер для переключения страниц -->
-        <div class="flex-grow overflow-y-auto">
-
-            <!-- -------------------------------------------------------------------------------------- -->
-            <!-- СТРАНИЦА: ГЛАВНАЯ (Home) -->
-            <!-- -------------------------------------------------------------------------------------- -->
-            <main id="page-home" class="page-content p-4 space-y-6">
-
-                <!-- Блок 1: Основной баланс и автоплатеж -->
-                <div class="flex justify-between items-center pb-2 border-b border-gray-700/50">
-                    <div class="flex items-center space-x-2">
-                        <span class="text-lg font-light opacity-80">ЛИЧНЫЙ</span>
-                        <span class="text-3xl font-semibold text-white">36.81 ₽</span>
-                    </div>
-                    <button class="flex items-center text-cyan-300 text-sm opacity-90">
-                        подключить автоплатёж 
-                        <svg class="w-5 h-5 ml-1" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 0h-4M7.8 17.2a6 6 0 01-1.428-2.68l-1.5-3.5a.5.5 0 01.95-.407l1.5 3.5a7 7 0 001.428 2.68zM12 12V3"></path></svg>
-                    </button>
-                </div>
-                
-                <!-- БЛОК 1.5: ПРОМО АКЦИЯ (ВЫСОКАЯ СКОРОСТЬ...) -->
-                <div class="p-4 rounded-xl bg-cyan-600/50 main-button-glow cursor-pointer text-center border border-cyan-400">
-                    <p class="text-lg md:text-xl font-extrabold text-white leading-snug tracking-wider">
-                        ВЫСОКАЯ СКОРОСТЬ, НЕДОРОГО, БЕЗЛИМИТНО, <span class="text-yellow-300">да, это smartwave</span>
-                    </p>
-                </div>
-                <!-- КОНЕЦ БЛОКА 1.5 -->
-
-
-                <!-- Блок 2: Индикатор данных (Круговой прогресс) -->
-                <div class="flex justify-center py-4">
-                    <div class="circle-progress-container">
-                        <div class="circle-background"></div>
-                        <div class="circle-progress"></div>
-                        <div class="absolute inset-0 flex flex-col justify-center items-center">
-                            <span class="text-3xl font-light text-white">1022.6</span>
-                            <span class="text-xs font-light text-cyan-300 opacity-80 mt-1">ГБ / 1024 ГБ</span>
-                        </div>
-                    </div>
-                </div>
-                <p class="text-center text-sm text-gray-400">мобильная связь</p>
-                <p class="text-center text-xs text-gray-500">14 ноября спишем 990 ₽</p>
-
-                <!-- Блок 3: Использование (Data/Mins/SMS Grid) -->
-                <div class="grid grid-cols-3 gap-3 pt-2">
-                    <!-- Data -->
-                    <div class="data-card p-3 rounded-xl text-center cursor-pointer">
-                        <p class="text-xl font-semibold text-cyan-300">1022.6 ГБ</p>
-                        <p class="text-xs opacity-60 mt-1">из 1024</p>
-                    </div>
-                    <!-- Mins -->
-                    <div class="data-card p-3 rounded-xl text-center cursor-pointer">
-                        <p class="text-xl font-semibold text-cyan-300">1000 мин</p>
-                        <p class="text-xs opacity-60 mt-1">из 1000</p>
-                    </div>
-                    <!-- SMS -->
-                    <div class="data-card p-3 rounded-xl text-center cursor-pointer">
-                        <p class="text-xl font-semibold text-cyan-300">1 млн</p>
-                        <p class="text-xs opacity-60 mt-1">смс</p>
-                    </div>
-                </div>
-                <p class="text-xs text-center text-gray-400">Безлимитные звонки на Билайн</p>
-
-                <!-- Блок 4: Предложения (Горизонтальная прокрутка) -->
-                <div class="pt-4">
-                    <h2 class="text-base font-semibold text-white mb-3">Делитесь и управляйте</h2>
-                    <div class="horizontal-scroll-container flex space-x-3 pb-2">
-                        <div class="data-card flex flex-col items-center justify-center p-4 rounded-xl min-w-[100px] cursor-pointer">
-                            <span class="text-2xl">🌍</span>
-                            <span class="text-xs text-gray-300 mt-1">Все равны</span>
-                        </div>
-                        <div class="data-card flex flex-col items-center justify-center p-4 rounded-xl min-w-[100px] cursor-pointer">
-                            <span class="text-2xl">💰</span>
-                            <span class="text-xs text-gray-300 mt-1">Платите меньше</span>
-                        </div>
-                        <div class="data-card flex flex-col items-center justify-center p-4 rounded-xl min-w-[100px] cursor-pointer">
-                            <span class="text-2xl">🎁</span>
-                            <span class="text-xs text-gray-300 mt-1">Осенние скидки</span>
-                        </div>
-                        <div class="data-card flex flex-col items-center justify-center p-4 rounded-xl min-w-[100px] cursor-pointer">
-                            <span class="text-2xl">🚨</span>
-                            <span class="text-xs text-gray-300 mt-1">Алло, это мошенники!</span>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Блок 5: Покупка игр (Горизонтальная прокрутка) -->
-                <div class="pt-4">
-                    <h2 class="text-base font-semibold text-white mb-3">Покупайте в любимых играх</h2>
-                    <div class="horizontal-scroll-container flex space-x-3 pb-2">
-                        <div class="data-card flex flex-col items-center p-3 rounded-xl min-w-[100px] cursor-pointer">
-                            <img src="https://placehold.co/70x70/00c8ff/ffffff?text=ML" onerror="this.onerror=null; this.src='https://placehold.co/70x70/00c8ff/ffffff?text=ML';" alt="Mobile Legends icon" class="w-14 h-14 rounded-lg">
-                            <span class="text-xs text-gray-300 mt-1">Mobile Legends</span>
-                        </div>
-                        <div class="data-card flex flex-col items-center p-3 rounded-xl min-w-[100px] cursor-pointer">
-                            <img src="https://placehold.co/70x70/ff8c00/ffffff?text=P" onerror="this.onerror=null; this.src='https://placehold.co/70x70/ff8c00/ffffff?text=P';" alt="PUBG icon" class="w-14 h-14 rounded-lg">
-                            <span class="text-xs text-gray-300 mt-1">PUBG</span>
-                        </div>
-                        <div class="data-card flex flex-col items-center p-3 rounded-xl min-w-[100px] cursor-pointer">
-                            <img src="https://placehold.co/70x70/00ffaa/000000?text=R" onerror="this.onerror=null; this.src='https://placehold.co/70x70/00ffaa/000000?text=R';" alt="Roblox icon" class="w-14 h-14 rounded-lg">
-                            <span class="text-xs text-gray-300 mt-1">ROBLOX</span>
-                        </div>
-                        <div class="data-card flex flex-col items-center p-3 rounded-xl min-w-[100px] cursor-pointer">
-                            <img src="https://placehold.co/70x70/9400d3/ffffff?text=SF" onerror="this.onerror=null; this.src='https://placehold.co/70x70/9400d3/ffffff?text=SF';" alt="Street Fighter icon" class="w-14 h-14 rounded-lg">
-                            <span class="text-xs text-gray-300 mt-1">Street Fighter</span>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Блок 6: Акция (Карта с акцентом) -->
-                <div class="pt-4 p-4 rounded-xl bg-orange-600/60 main-button-glow cursor-pointer">
-                    <p class="text-lg font-light">
-                        Получай баллы <span class="font-bold">«Х5 Клуба»</span> и кэшбэк
-                    </p>
-                    <div class="flex justify-between items-end mt-2">
-                        <p class="text-sm opacity-80">
-                            обменивай на рубли
-                        </p>
-                        <button class="bg-white text-orange-600 text-xs font-bold px-3 py-1 rounded-full">
-                            +5 000 X
-                        </button>
-                    </div>
-                </div>
-                
-                <!-- Блок 7: Книги (Горизонтальная прокрутка) -->
-                <div class="pt-4 pb-20">
-                    <h2 class="text-base font-semibold text-white mb-3">Больше 40 000 книг</h2>
-                    <div class="horizontal-scroll-container flex space-x-3 pb-2">
-                        <div class="flex flex-col items-center min-w-[100px] cursor-pointer">
-                            <img src="https://placehold.co/70x100/9400d3/ffffff?text=Book+1" onerror="this.onerror=null; this.src='https://placehold.co/70x100/9400d3/ffffff?text=Book+1';" alt="Обложка книги 1" class="w-14 h-24 rounded-lg shadow-lg">
-                            <span class="text-xs text-gray-300 mt-1 text-center">ЕБС-я...</span>
-                        </div>
-                        <div class="flex flex-col items-center min-w-[100px] cursor-pointer">
-                            <img src="https://placehold.co/70x100/00c8ff/ffffff?text=Book+2" onerror="this.onerror=null; this.src='https://placehold.co/70x100/00c8ff/ffffff?text=Book+2';" alt="Обложка книги 2" class="w-14 h-24 rounded-lg shadow-lg">
-                            <span class="text-xs text-gray-300 mt-1 text-center">Думай быстро</span>
-                        </div>
-                        <div class="flex flex-col items-center min-w-[100px] cursor-pointer">
-                            <img src="https://placehold.co/70x100/ff8c00/ffffff?text=Book+3" onerror="this.onerror=null; this.src='https://placehold.co/70x100/ff8c00/ffffff?text=Book+3';" alt="Обложка книги 3" class="w-14 h-24 rounded-lg shadow-lg">
-                            <span class="text-xs text-gray-300 mt-1 text-center">Психотрики</span>
-                        </div>
-                        <div class="flex flex-col items-center min-w-[100px] cursor-pointer">
-                            <img src="https://placehold.co/70x100/00ffaa/000000?text=Book+4" onerror="this.onerror=null; this.src='https://placehold.co/70x100/00ffaa/000000?text=Book+4';" alt="Обложка книги 4" class="w-14 h-24 rounded-lg shadow-lg">
-                            <span class="text-xs text-gray-300 mt-1 text-center">Крутой</span>
-                        </div>
-                    </div>
-                    <button class="w-full mt-4 py-3 rounded-full text-lg font-medium text-white bg-blue-600 hover:bg-blue-700 transition-colors shadow-lg shadow-blue-500/50">
-                        ЧИТАТЬ
-                    </button>
-                </div>
-            </main>
-            
-            <!-- -------------------------------------------------------------------------------------- -->
-            <!-- СТРАНИЦА: СЕРВИСЫ (Services) - По умолчанию скрыта -->
-            <!-- -------------------------------------------------------------------------------------- -->
-            <main id="page-services" class="page-content hidden p-4 space-y-6">
-                <h2 class="text-2xl font-bold text-cyan-300 pt-2">Сервисы Smartwave</h2>
-                <p class="text-gray-400">Здесь находятся все доступные услуги и продукты.</p>
-
-                <div class="grid grid-cols-2 gap-4">
-                    <div class="data-card p-4 rounded-xl cursor-pointer">
-                        <span class="text-3xl block mb-2">📞</span>
-                        <p class="font-semibold">Управление связью</p>
-                        <p class="text-xs opacity-60">Смена тарифа, детализация</p>
-                    </div>
-                    <div class="data-card p-4 rounded-xl cursor-pointer">
-                        <span class="text-3xl block mb-2">🌐</span>
-                        <p class="font-semibold">Интернет-сервисы</p>
-                        <p class="text-xs opacity-60">Домашний интернет, TV</p>
-                    </div>
-                    <div class="data-card p-4 rounded-xl cursor-pointer">
-                        <span class="text-3xl block mb-2">🎁</span>
-                        <p class="font-semibold">Подарки и Акции</p>
-                        <p class="text-xs opacity-60">Кэшбэк, бонусы, скидки</p>
-                    </div>
-                    <div class="data-card p-4 rounded-xl cursor-pointer">
-                        <span class="text-3xl block mb-2">💳</span>
-                        <p class="font-semibold">Финансовые услуги</p>
-                        <p class="text-xs opacity-60">Карты, кредиты</p>
-                    </div>
-                </div>
-                
-                <div class="pt-6 pb-20">
-                     <h3 class="text-xl font-semibold mb-3">Интересное для вас</h3>
-                     <div class="data-card p-4 rounded-xl cursor-pointer bg-blue-900/50">
-                        <p class="font-semibold text-cyan-300">Специальное предложение!</p>
-                        <p class="text-sm opacity-80 mt-1">Подключите домашний интернет и получите скидку 50% на 6 месяцев.</p>
-                     </div>
-                </div>
-            </main>
-
-            <!-- -------------------------------------------------------------------------------------- -->
-            <!-- СТРАНИЦА: БАЛАНС (Balance) - По умолчанию скрыта -->
-            <!-- -------------------------------------------------------------------------------------- -->
-            <main id="page-balance" class="page-content hidden p-4 space-y-6">
-                <h2 class="text-2xl font-bold text-cyan-300 pt-2">Управление Балансом</h2>
-                <div class="data-card p-4 rounded-xl bg-cyan-700/50">
-                    <p class="text-sm opacity-80">Текущий баланс</p>
-                    <p class="text-4xl font-light text-white mt-1">36.81 ₽</p>
-                    <button class="text-sm mt-3 font-semibold px-4 py-2 rounded-full bg-white text-cyan-700">
-                        Пополнить баланс
-                    </button>
-                </div>
-                <div class="grid grid-cols-2 gap-4">
-                    <div class="data-card p-4 rounded-xl cursor-pointer">
-                        <p class="font-semibold">Автоплатеж</p>
-                        <p class="text-xs opacity-60">Подключено</p>
-                    </div>
-                    <div class="data-card p-4 rounded-xl cursor-pointer">
-                        <p class="font-semibold">История операций</p>
-                        <p class="text-xs opacity-60">Смотреть все расходы</p>
-                    </div>
-                </div>
-                <div class="pt-4 pb-20">
-                     <h3 class="text-xl font-semibold mb-3">Оплата</h3>
-                     <div class="data-card p-4 rounded-xl cursor-pointer">
-                        <p class="font-semibold">Оплата по QR-коду</p>
-                        <p class="text-xs opacity-60">Моментальный платеж</p>
-                     </div>
-                     <div class="data-card p-4 mt-2 rounded-xl cursor-pointer">
-                        <p class="font-semibold">Перевод денег</p>
-                        <p class="text-xs opacity-60">На карту или по номеру</p>
-                     </div>
-                </div>
-            </main>
-
-            <!-- -------------------------------------------------------------------------------------- -->
-            <!-- СТРАНИЦА: ФИНАНСЫ (Finance) - По умолчанию скрыта -->
-            <!-- -------------------------------------------------------------------------------------- -->
-            <main id="page-finance" class="page-content hidden p-4 space-y-6">
-                <h2 class="text-2xl font-bold text-cyan-300 pt-2">Финансы Smartwave</h2>
-                <p class="text-gray-400">Управляйте вашими картами и счетами.</p>
-                <div class="grid grid-cols-1 gap-4">
-                    <div class="data-card p-4 rounded-xl bg-orange-500/60 cursor-pointer">
-                        <p class="text-sm opacity-80">Основная карта</p>
-                        <p class="text-2xl font-semibold text-white mt-1">Smart Card Black</p>
-                    </div>
-                    <div class="data-card p-4 rounded-xl cursor-pointer">
-                        <p class="font-semibold">Кредитный лимит</p>
-                        <p class="text-sm opacity-60">Доступно: 50 000 ₽</p>
-                    </div>
-                    <div class="data-card p-4 rounded-xl cursor-pointer">
-                        <p class="font-semibold">Открыть вклад</p>
-                        <p class="text-sm opacity-60">Выгодные условия</p>
-                    </div>
-                </div>
-                <div class="pt-4 pb-20">
-                    <button class="w-full mt-4 py-3 rounded-full text-lg font-medium text-white bg-green-600 hover:bg-green-700 transition-colors shadow-lg shadow-green-500/50">
-                        Оформить новую карту
-                    </button>
-                </div>
-            </main>
-        </div>
-
-        <!-- Нижняя фиксированная панель навигации (Footer) -->
-        <footer class="sticky bottom-0 z-10 w-full p-3 bg-[#101538] border-t border-gray-700/50">
-            <div class="flex justify-around text-xs text-gray-400">
-                <!-- Кнопка 1: Главная -->
-                <div class="nav-item flex flex-col items-center cursor-pointer transition-colors" data-page="home">
-                    <svg class="w-6 h-6" fill="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"></path></svg>
-                    Главная
-                </div>
-                <!-- Кнопка 2: Сервисы -->
-                <div class="nav-item flex flex-col items-center cursor-pointer transition-colors" data-page="services">
-                    <svg class="w-6 h-6" fill="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-6h2v6zm0-8h-2V7h2v2z"></path></svg>
-                    Сервисы
-                </div>
-                <!-- Кнопка 3: Баланс -->
-                <div class="nav-item flex flex-col items-center cursor-pointer transition-colors" data-page="balance">
-                    <svg class="w-6 h-6" fill="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M20 4H4c-1.11 0-1.99.89-1.99 2L2 18c0 1.11.89 2 2 2h16c1.11 0 2-.89 2-2V6c0-1.11-.89-2-2-2zm0 14H4V8h16v10z"></path></svg>
-                    Баланс
-                </div>
-                <!-- Кнопка 4: Финансы -->
-                <div class="nav-item flex flex-col items-center cursor-pointer transition-colors" data-page="finance">
-                    <svg class="w-6 h-6" fill="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 17.93c-3.95-.49-7-3.96-7-7.93h2c0 3.32 2.69 6 6 6v2.07z"></path></svg>
-                    Финансы
-                </div>
-            </div>
-        </footer>
-
+    <!-- 1. ЭКРАН ЗАПУСКА -->
+    <div id="view-splash" class="view flex flex-col items-center justify-center h-full text-center">
+        <h1 class="text-5xl font-extrabold mb-10 tracking-widest text-indigo-400">PAOM chat</h1>
+        <button id="start-button" class="glowing-element py-3 px-8 rounded-full text-xl font-bold">
+            Начать вход
+        </button>
     </div>
 
-    <script>
-        // Функция для переключения страниц
-        function showPage(pageId) {
-            // 1. Скрыть все страницы
-            const pages = document.querySelectorAll('.page-content');
-            pages.forEach(page => {
-                page.classList.add('hidden');
-            });
+    <!-- 2. ЭКРАН РЕГИСТРАЦИИ / ВХОДА -->
+    <div id="view-auth" class="view flex-col items-center justify-center h-full text-center hidden p-4">
+        <h2 id="auth-title" class="text-3xl font-semibold mb-8 text-indigo-400">Вход в аккаунт</h2>
+        
+        <input
+            type="email"
+            id="email-input"
+            placeholder="Электронная почта"
+            autocomplete="email"
+            class="glowing-element text-center py-3 px-5 rounded-xl text-lg w-full mb-4 focus:ring-2 focus:ring-indigo-400"
+        >
+        <input
+            type="password"
+            id="password-input"
+            placeholder="Пароль"
+            autocomplete="current-password"
+            class="glowing-element text-center py-3 px-5 rounded-xl text-lg w-full mb-6 focus:ring-2 focus:ring-indigo-400"
+        >
+        
+        <button id="main-auth-button" class="main-button py-3 px-8 rounded-full text-xl font-bold w-full transition duration-300 disabled:opacity-50" disabled>
+            Войти
+        </button>
+        
+        <p id="auth-error" class="text-red-400 mt-4 text-sm hidden">Текст ошибки</p>
+        
+        <div class="mt-8">
+            <button id="toggle-auth-mode" class="text-indigo-300 text-sm opacity-80 hover:opacity-100 transition duration-150">
+                Нет аккаунта? Зарегистрироваться
+            </button>
+        </div>
+    </div>
 
-            // 2. Показать нужную страницу
-            const activePage = document.getElementById('page-' + pageId);
-            if (activePage) {
-                activePage.classList.remove('hidden');
-                // Прокрутить наверх при переключении страницы
-                activePage.closest('.flex-grow').scrollTop = 0; 
-            }
+    <!-- 3. ЭКРАН РЕГИСТРАЦИИ НИКА (ТОЛЬКО ДЛЯ НОВЫХ ПОЛЬЗОВАТЕЛЕЙ) -->
+    <div id="view-name" class="view flex-col items-center justify-center h-full text-center hidden">
+        <h2 class="text-3xl font-semibold mb-8 text-gray-200">Выберите ник:</h2>
+        <input
+            type="text"
+            id="name-input-field"
+            placeholder="Напишите здесь"
+            maxlength="20"
+            class="glowing-element text-center py-3 px-5 rounded-full text-lg w-3/4 mb-6 focus:ring-2 focus:ring-indigo-400"
+        >
+        <button id="name-next-button" class="main-button py-3 px-8 rounded-full text-xl font-bold disabled:opacity-50" disabled>
+            Сохранить и продолжить
+        </button>
+    </div>
 
-            // 3. Обновить активное состояние кнопок в футере
-            const navItems = document.querySelectorAll('.nav-item');
-            navItems.forEach(item => {
-                item.classList.remove('text-cyan-400', 'font-semibold');
-                item.classList.add('text-gray-400');
+    <!-- 4. ЭКРАН МЕНЮ (ЧАТЫ) -->
+    <div id="view-menu" class="view flex-col h-full hidden">
+        <h1 class="text-3xl font-bold mb-6 text-indigo-400">Чаты:</h1>
+        <div class="space-y-4">
+            <!-- Кнопка перехода в общий чат -->
+            <button id="open-chat-button" class="glowing-element w-full text-left py-4 px-6 rounded-2xl text-xl font-semibold flex items-center justify-between">
+                Общий чат 5Б 
+                <span class="text-red-400 text-2xl">📌</span>
+            </button>
+        </div>
+        <button id="logout-button" class="mt-8 text-red-400 opacity-80 hover:opacity-100 transition duration-150 flex items-center">
+             <svg class="w-5 h-5 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"></path></svg>
+             Выйти из аккаунта
+        </button>
+    </div>
+
+    <!-- 5. ЭКРАН ОСНОВНОГО ЧАТА -->
+    <div id="view-chat" class="view flex-col h-full hidden">
+        <!-- Заголовок ЧАТа -->
+        <div class="p-4 border-b border-gray-700 bg-gray-800 rounded-t-2xl">
+            <h1 class="text-2xl font-extrabold tracking-tight text-indigo-300">Общий чат 5Б</h1>
+            <p id="chat-user-info" class="text-sm mt-1 opacity-80 transition duration-300">
+                Загрузка...
+            </p>
+        </div>
+
+        <!-- Область для сообщений -->
+        <div id="messages-list" class="flex-grow p-4 space-y-4 overflow-y-auto bg-gray-800/50">
+            <p id="loading-message" class="text-center text-gray-400">Загрузка сообщений...</p>
+        </div>
+
+        <!-- Форма ввода сообщения -->
+        <div class="p-4 border-t border-gray-700 bg-gray-800 relative">
+            <!-- Окно выбора смайликов -->
+            <div 
+                id="emoji-picker" 
+                class="absolute bottom-full mb-3 p-3 glowing-element z-10 w-full hidden rounded-xl shadow-lg"
+            >
+                <div id="emoji-picker-container">
+                    <!-- Emojis will be added here -->
+                </div>
+            </div>
+
+            <form id="message-form" class="flex gap-3">
+                <input
+                    type="text"
+                    id="message-input"
+                    placeholder="Напишите свое сообщение..."
+                    autocomplete="off"
+                    required
+                    class="glowing-element flex-grow p-3 rounded-xl focus:ring-2 focus:ring-indigo-400 text-sm placeholder:text-gray-400"
+                >
                 
-                if (item.getAttribute('data-page') === pageId) {
-                    item.classList.add('text-cyan-400', 'font-semibold');
-                    item.classList.remove('text-gray-400');
-                }
-            });
+                <!-- Кнопка смайлика -->
+                <button
+                    type="button"
+                    id="emoji-button"
+                    class="bg-gray-700 text-white font-bold p-3 rounded-xl hover:bg-gray-600 transition duration-150 shadow-md"
+                    aria-label="Открыть выбор смайликов"
+                >
+                    😊
+                </button>
+
+                <!-- Кнопка отправки -->
+                <button
+                    type="submit"
+                    id="send-button"
+                    class="main-button text-white font-bold py-3 px-5 rounded-xl transition duration-150 shadow-lg shadow-indigo-500/50 active:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed disabled:shadow-none"
+                    disabled
+                >
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3"></path></svg>
+                </button>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Блок для Firebase (должен быть type="module") -->
+<script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+    import { 
+        getAuth, 
+        signInWithEmailAndPassword, 
+        createUserWithEmailAndPassword,
+        signInWithCustomToken, 
+        onAuthStateChanged,
+        signOut
+    } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+    import { getFirestore, doc, collection, query, orderBy, onSnapshot, addDoc, serverTimestamp, setLogLevel, getDoc, setDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+
+    setLogLevel('Debug');
+
+    // 1. Глобальные переменные Canvas (Обязательны)
+    const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-chat-app-id';
+    const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : null;
+    const initialAuthToken = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null;
+
+    // --- ГЛОБАЛЬНЫЕ ПЕРЕМЕННЫЕ ПРИЛОЖЕНИЯ ---
+    let db, auth, userId = null;
+    let currentDisplayName = null; 
+    let isRegistrationMode = false; // Состояние: true = Регистрация, false = Вход
+
+    // Элементы DOM
+    const views = {
+        splash: document.getElementById('view-splash'),
+        auth: document.getElementById('view-auth'),
+        name: document.getElementById('view-name'),
+        menu: document.getElementById('view-menu'),
+        chat: document.getElementById('view-chat'),
+    };
+    
+    // Элементы АУТЕНТИФИКАЦИИ
+    const authTitle = document.getElementById('auth-title');
+    const emailInput = document.getElementById('email-input');
+    const passwordInput = document.getElementById('password-input');
+    const mainAuthButton = document.getElementById('main-auth-button');
+    const authError = document.getElementById('auth-error');
+    const toggleAuthModeButton = document.getElementById('toggle-auth-mode');
+    const logoutButton = document.getElementById('logout-button');
+
+    // Элементы НИКНЕЙМА
+    const nameInputField = document.getElementById('name-input-field');
+    const nameNextButton = document.getElementById('name-next-button');
+    
+    // Элементы НАВИГАЦИИ
+    const startButton = document.getElementById('start-button');
+    const openChatButton = document.getElementById('open-chat-button');
+    
+    // Элементы ЧАТА
+    const messagesList = document.getElementById('messages-list');
+    const messageForm = document.getElementById('message-form');
+    const messageInput = document.getElementById('message-input');
+    const sendButton = document.getElementById('send-button');
+    const chatUserInfo = document.getElementById('chat-user-info');
+    const loadingMessage = document.getElementById('loading-message');
+    const emojiPicker = document.getElementById('emoji-picker');
+    const emojiPickerContainer = document.getElementById('emoji-picker-container');
+    const emojiButton = document.getElementById('emoji-button');
+
+
+    /**
+     * Список популярных смайликов
+     */
+    const commonEmojis = [
+        '😊', '😂', '😍', '👍', '🙏', '❤️', '🔥', '🎉',
+        '🥳', '😎', '😢', '💯', '🤔', '👋', '👀', '💡',
+        '🚀', '💻', '📚', '✏️', '🍎', '🍕', '⚽', '🎶'
+    ];
+
+    // --- ЛОГИКА НАВИГАЦИИ и СОСТОЯНИЯ ---
+
+    /**
+     * Переключает текущий активный вид приложения.
+     * @param {string} viewName Имя вида ('splash', 'auth', 'name', 'menu', 'chat').
+     */
+    function switchView(viewName) {
+        Object.keys(views).forEach(key => {
+            if (key === viewName) {
+                views[key].style.display = 'flex';
+                // Фокус на первое поле ввода в новом виде
+                if (key === 'auth') emailInput.focus();
+                if (key === 'name') nameInputField.focus();
+            } else {
+                views[key].style.display = 'none';
+            }
+        });
+    }
+
+    /**
+     * Проверяет состояние входа и запускает соответствующий вид.
+     */
+    async function checkStateAndNavigate() {
+        if (!userId) {
+            // Если пользователь не аутентифицирован
+            switchView('splash');
+        } else {
+            // Если пользователь аутентифицирован, проверяем ник
+            await loadAndCheckProfile();
+            if (currentDisplayName) {
+                // Если ник есть, идем в меню
+                switchView('menu');
+            } else {
+                // Если ника нет (новый пользователь), идем на экран ника
+                switchView('name');
+            }
+        }
+    }
+    
+    // --- ЛОГИКА АУТЕНТИФИКАЦИИ (Email/Password) ---
+
+    /**
+     * Обновляет интерфейс в зависимости от режима (Вход/Регистрация).
+     */
+    function updateAuthView() {
+        authError.classList.add('hidden');
+        if (isRegistrationMode) {
+            authTitle.textContent = 'Регистрация';
+            mainAuthButton.textContent = 'Зарегистрироваться';
+            toggleAuthModeButton.textContent = 'Уже есть аккаунт? Войти';
+            passwordInput.setAttribute('autocomplete', 'new-password');
+        } else {
+            authTitle.textContent = 'Вход в аккаунт';
+            mainAuthButton.textContent = 'Войти';
+            toggleAuthModeButton.textContent = 'Нет аккаунта? Зарегистрироваться';
+            passwordInput.setAttribute('autocomplete', 'current-password');
+        }
+        mainAuthButton.disabled = !emailInput.value || !passwordInput.value;
+    }
+
+    /**
+     * Отображает сообщение об ошибке аутентификации.
+     * @param {string} message Сообщение об ошибке.
+     */
+    function showAuthError(message) {
+        authError.textContent = message;
+        authError.classList.remove('hidden');
+    }
+
+    /**
+     * Обработчик основной кнопки аутентификации (Вход или Регистрация).
+     */
+    async function handleAuthSubmit() {
+        const email = emailInput.value.trim();
+        const password = passwordInput.value.trim();
+        authError.classList.add('hidden');
+        mainAuthButton.disabled = true;
+
+        if (!email || !password) {
+            showAuthError("Введите почту и пароль.");
+            mainAuthButton.disabled = false;
+            return;
         }
 
-        // Навешивание обработчиков событий на кнопки футера
-        document.addEventListener('DOMContentLoaded', () => {
-            const navItems = document.querySelectorAll('.nav-item');
+        try {
+            if (isRegistrationMode) {
+                // Регистрация нового пользователя
+                await createUserWithEmailAndPassword(auth, email, password);
+                // onAuthStateChanged сработает и переведет на 'view-name'
+            } else {
+                // Вход существующего пользователя
+                await signInWithEmailAndPassword(auth, email, password);
+                // onAuthStateChanged сработает и переведет дальше
+            }
+        } catch (error) {
+            let userMessage = "Произошла ошибка аутентификации. Попробуйте снова.";
             
-            navItems.forEach(item => {
-                item.addEventListener('click', function() {
-                    const pageId = this.getAttribute('data-page');
-                    showPage(pageId);
-                });
+            // Обработка стандартных ошибок Firebase
+            switch (error.code) {
+                case 'auth/invalid-email':
+                    userMessage = 'Неверный формат электронной почты.';
+                    break;
+                case 'auth/user-not-found':
+                case 'auth/wrong-password':
+                    userMessage = 'Неверная почта или пароль.';
+                    break;
+                case 'auth/email-already-in-use':
+                    userMessage = 'Этот адрес уже зарегистрирован.';
+                    break;
+                case 'auth/weak-password':
+                    userMessage = 'Пароль должен быть не менее 6 символов.';
+                    break;
+            }
+            showAuthError(userMessage);
+            mainAuthButton.disabled = false;
+        }
+    }
+    
+    /**
+     * Обработчик кнопки "Сохранить и продолжить" для ника.
+     */
+    function handleNameSubmit() {
+        const name = nameInputField.value.trim();
+        if (name) {
+            saveUserProfile(name).then(() => {
+                // Успешно сохранили ник, переходим в меню
+                switchView('menu');
+            });
+        }
+    }
+
+    /**
+     * Выход из аккаунта.
+     */
+    async function handleLogout() {
+        try {
+            await signOut(auth);
+            userId = null;
+            currentDisplayName = null;
+            switchView('splash');
+        } catch (error) {
+            console.error("Ошибка при выходе:", error);
+        }
+    }
+
+
+    // --- ФУНКЦИИ ПРОФИЛЯ FIREBASE ---
+
+    /**
+     * Преобразует строковое значение userId в цвет HSL для аватара.
+     */
+    function stringToHslColor(str) {
+        let hash = 0;
+        for (let i = 0; i < str.length; i++) {
+            hash = str.charCodeAt(i) + ((hash << 5) - hash);
+        }
+        const h = hash % 360;
+        return `hsl(${h}, 70%, 70%)`; 
+    }
+
+    /**
+     * Обновляет информацию о пользователе в шапке чата.
+     */
+    function updateChatUserInfoDisplay(name, fullId) {
+        chatUserInfo.innerHTML = `
+            <span class="flex items-center text-gray-300">
+                <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5.121 17.804A13.937 13.937 0 0112 16c2.5 0 4.847.655 6.879 1.804M15 10a3 3 0 11-6 0 3 3 0 016 0zm6 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                Вы вошли как: <span title="${fullId}" class="font-bold text-indigo-300 ml-1 cursor-pointer">${name}</span>
+            </span>
+        `;
+    }
+
+    /**
+     * Загружает ник пользователя из Firestore.
+     */
+    async function loadAndCheckProfile() {
+        if (!db || !userId) return;
+
+        try {
+            const profileDocRef = doc(db, 'artifacts', appId, 'public', 'data', 'user_profiles', userId);
+            const docSnap = await getDoc(profileDocRef);
+
+            if (docSnap.exists() && docSnap.data().name) {
+                currentDisplayName = docSnap.data().name;
+            } else {
+                currentDisplayName = null;
+            }
+        } catch (error) {
+            console.error("Ошибка при загрузке профиля:", error);
+            currentDisplayName = null;
+        }
+    }
+
+    /**
+     * Сохраняет ник пользователя в Firestore.
+     */
+    async function saveUserProfile(name) {
+        if (!name || !db || !userId) return;
+
+        try {
+            const profileDocRef = doc(db, 'artifacts', appId, 'public', 'data', 'user_profiles', userId);
+            await setDoc(profileDocRef, { name: name }, { merge: true });
+            currentDisplayName = name;
+        } catch (error) {
+            console.error("Ошибка при сохранении имени пользователя:", error);
+        }
+    }
+    
+    // --- ЛОГИКА ЧАТА FIREBASE ---
+
+    /**
+     * Инициализирует Firebase и настраивает слушатель аутентификации.
+     */
+    async function initializeFirebase() {
+        if (!firebaseConfig) {
+            console.error("Firebase config is missing.");
+            return;
+        }
+        
+        try {
+            const app = initializeApp(firebaseConfig);
+            db = getFirestore(app);
+            auth = getAuth(app);
+
+            // Слушатель состояния аутентификации - основная логика навигации
+            onAuthStateChanged(auth, (user) => {
+                if (user) {
+                    userId = user.uid;
+                    sendButton.disabled = false;
+                    checkStateAndNavigate(); // Переход к меню или вводу ника
+                    setupMessageListener(); 
+                } else {
+                    userId = null;
+                    sendButton.disabled = true;
+                    // Если пользователь выходит (SignOut), показать Splash/Auth
+                    if (views.auth.style.display !== 'flex') {
+                        switchView('splash');
+                    }
+                }
             });
 
-            // Установить начальную страницу (Главная) при загрузке
-            showPage('home');
+            // Пытаемся использовать токен только для первоначального входа
+            if (initialAuthToken) {
+                 await signInWithCustomToken(auth, initialAuthToken).catch(e => {
+                    console.warn("Токен Canvas недействителен или отсутствует. Требуется вход по Email/Password.");
+                    // Игнорируем ошибку и позволяем onAuthStateChanged установить правильное состояние (null)
+                 });
+            }
+            
+        } catch (error) {
+            console.error("Ошибка при инициализации Firebase:", error);
+        }
+    }
+
+    /**
+     * Настраивает слушатель Firestore для получения сообщений в реальном времени.
+     */
+    function setupMessageListener() {
+        if (!db) return;
+
+        const publicDataPath = doc(db, 'artifacts', appId, 'public', 'data');
+        const messagesColRef = collection(publicDataPath, 'chat_messages');
+        const q = query(messagesColRef, orderBy('timestamp', 'asc'));
+
+        onSnapshot(q, (snapshot) => {
+            if (loadingMessage) {
+                loadingMessage.remove(); 
+            }
+            
+            const messages = [];
+            snapshot.forEach(doc => {
+                messages.push({ id: doc.id, ...doc.data() });
+            });
+            
+            // Обновляем сообщения только если пользователь в режиме чата
+            if (views.chat.style.display === 'flex') {
+                displayMessages(messages);
+            }
+        }, (error) => {
+            console.error("Ошибка при получении сообщений:", error);
         });
-    </script>
+    }
+
+    /**
+     * Отображает список сообщений в DOM и прокручивает вниз.
+     */
+    function displayMessages(messages) {
+        messagesList.innerHTML = '';
+        
+        messages.forEach(message => {
+            const isMine = message.senderId === userId;
+            const messageElement = document.createElement('div');
+            
+            const senderName = message.displayName || (isMine ? 'Вы (ID)' : message.senderId.substring(0, 8) + '...');
+            
+            let timeStr = 'Сейчас';
+            if (message.timestamp && message.timestamp.toDate) {
+                const date = message.timestamp.toDate();
+                timeStr = date.toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' });
+            }
+
+            const alignment = isMine ? 'self-end' : 'self-start';
+            const bgColor = isMine ? 'bg-indigo-600 text-white shadow-lg' : 'bg-gray-700 text-gray-100 border border-gray-600 shadow-md';
+            const rounding = isMine ? 'rounded-3xl rounded-br-sm' : 'rounded-3xl rounded-bl-sm'; 
+            
+            const idColor = stringToHslColor(message.senderId);
+
+            messageElement.className = `flex flex-col max-w-[85%] md:max-w-md ${alignment} transition duration-200 ease-in-out`;
+            messageElement.innerHTML = `
+                <div class="px-4 py-3 ${rounding} ${bgColor} relative break-words">
+                    <!-- Имя отправителя -->
+                    <span class="text-xs font-bold block mb-1" 
+                        style="color: ${isMine ? '#E0E7FF' : idColor};" 
+                        title="ID: ${message.senderId}"
+                    >
+                        ${senderName}
+                    </span>
+                    <p class="text-sm">${message.text}</p>
+                    <span class="text-[10px] opacity-70 mt-1 block ${isMine ? 'text-indigo-200' : 'text-gray-400'} text-right">${timeStr}</span>
+                </div>
+            `;
+            messagesList.appendChild(messageElement);
+        });
+
+        messagesList.scrollTop = messagesList.scrollHeight;
+    }
+
+    /**
+     * Обработчик отправки формы.
+     */
+    async function handleSendMessage(e) {
+        e.preventDefault();
+        
+        const text = messageInput.value.trim();
+        if (!text || !db || !userId || !currentDisplayName) {
+            console.warn("Сообщение не отправлено: нет данных или имени.");
+            return;
+        }
+
+        sendButton.disabled = true; 
+        
+        const message = {
+            senderId: userId,
+            displayName: currentDisplayName,
+            text: text,
+            timestamp: serverTimestamp()
+        };
+
+        try {
+            const publicDataPath = doc(db, 'artifacts', appId, 'public', 'data');
+            const messagesColRef = collection(publicDataPath, 'chat_messages');
+            await addDoc(messagesColRef, message);
+            messageInput.value = '';
+        } catch (error) {
+            console.error("Ошибка при отправке сообщения:", error);
+        } finally {
+            sendButton.disabled = false;
+        }
+    }
+
+
+    // --- ФУНКЦИИ СМАЙЛИКОВ ---
+
+    function renderEmojis() {
+        emojiPickerContainer.innerHTML = '';
+        commonEmojis.forEach(emoji => {
+            const span = document.createElement('span');
+            span.className = 'emoji-item';
+            span.textContent = emoji;
+            span.addEventListener('click', () => insertEmoji(emoji));
+            emojiPickerContainer.appendChild(span);
+        });
+    }
+
+    function insertEmoji(emoji) {
+        const start = messageInput.selectionStart;
+        const end = messageInput.selectionEnd;
+        messageInput.value = messageInput.value.substring(0, start) + emoji + messageInput.value.substring(end);
+        messageInput.selectionStart = messageInput.selectionEnd = start + emoji.length;
+        messageInput.focus();
+        emojiPicker.classList.add('hidden');
+    }
+
+    function toggleEmojiPicker() {
+        emojiPicker.classList.toggle('hidden');
+    }
+
+
+    // --- НАСТРОЙКА СОБЫТИЙ И ЗАПУСК ---
+
+    // События Навигации
+    startButton.addEventListener('click', () => switchView('auth'));
+    openChatButton.addEventListener('click', () => {
+        updateChatUserInfoDisplay(currentDisplayName, userId);
+        switchView('chat');
+    });
+
+    // События Аутентификации
+    [emailInput, passwordInput].forEach(input => {
+        input.addEventListener('input', updateAuthView);
+    });
+    mainAuthButton.addEventListener('click', handleAuthSubmit);
+    toggleAuthModeButton.addEventListener('click', () => {
+        isRegistrationMode = !isRegistrationMode;
+        emailInput.value = '';
+        passwordInput.value = '';
+        updateAuthView();
+    });
+    logoutButton.addEventListener('click', handleLogout);
+
+    // События Имени
+    nameInputField.addEventListener('input', (e) => {
+        nameNextButton.disabled = e.target.value.trim().length === 0;
+    });
+    nameInputField.addEventListener('keypress', (e) => {
+        if (e.key === 'Enter' && !nameNextButton.disabled) {
+            e.preventDefault();
+            handleNameSubmit();
+        }
+    });
+    nameNextButton.addEventListener('click', handleNameSubmit);
+    
+    // События Чата
+    messageForm.addEventListener('submit', handleSendMessage);
+    emojiButton.addEventListener('click', toggleEmojiPicker);
+    document.addEventListener('click', (e) => {
+        if (views.chat.style.display === 'flex' && !emojiPicker.contains(e.target) && e.target !== emojiButton && !emojiButton.contains(e.target)) {
+            emojiPicker.classList.add('hidden');
+        }
+    });
+
+
+    // Инициализация
+    renderEmojis();
+    initializeFirebase();
+    updateAuthView(); // Устанавливаем начальный режим (Вход)
+
+</script>
 
 </body>
 </html>
