@@ -3,1333 +3,700 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>paom.study - Платформа Обучения</title>
-    <!-- Загрузка Tailwind CSS -->
+    <title>Сайт 5Б — Наш класс!</title>
+    <!-- Загрузка Tailwind CSS CDN -->
     <script src="https://cdn.tailwindcss.com"></script>
-    <!-- Настройка Tailwind для кастомных цветов и шрифтов -->
+    <style>
+        /* Настройка шрифта для дружелюбного, "школьного" вида */
+        :root {
+            --color-primary: #ff6b35; /* Оранжевый */
+            --color-secondary: #4ecdc4; /* Бирюзовый */
+            --color-text: #374151; /* Темно-серый */
+        }
+        .font-friendly {
+            font-family: 'Chalkboard SE', 'Comic Sans MS', 'cursive', sans-serif;
+            color: var(--color-text);
+        }
+        /* Пользовательская конфигурация Tailwind для использования наших цветов */
+        .config-colors {
+            --tw-bg-primary: var(--color-primary);
+            --tw-bg-secondary: var(--color-secondary);
+            --tw-text-primary: var(--color-primary);
+            --tw-text-secondary: var(--color-secondary);
+        }
+        /* Стиль для крупных, анимированных кнопок навигации */
+        .nav-btn {
+            @apply flex-1 py-3 px-2 md:px-6 text-xl md:text-2xl font-bold rounded-xl transition-all duration-200 shadow-lg transform hover:scale-105 hover:shadow-xl active:scale-95 text-white;
+        }
+        /* Стиль карточек контента */
+        .content-card {
+            @apply bg-white p-6 rounded-2xl shadow-2xl transition-all duration-300 transform hover:scale-[1.01] border-4 border-gray-100;
+        }
+        /* Стили для скроллбара (опционально, для лучшего вида) */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: var(--color-secondary);
+            border-radius: 4px;
+        }
+        /* Добавляем простую анимацию "пульса" для праздничного объявления */
+        @keyframes pulse-once {
+            0% { transform: scale(1); opacity: 1; }
+            50% { transform: scale(1.02); opacity: 0.9; }
+            100% { transform: scale(1); opacity: 1; }
+        }
+        .animate-pulse-once {
+            animation: pulse-once 2s ease-in-out infinite;
+        }
+    </style>
     <script>
         tailwind.config = {
             theme: {
                 extend: {
                     colors: {
-                        'paom-green': {
-                            '50': '#f0fdf4',
-                            '100': '#dcfce7',
-                            '200': '#bbf7d0',
-                            '300': '#86efac',
-                            '400': '#4ade80',
-                            '500': '#22c55e', // Основной зеленый
-                            '600': '#16a34a', // Более темный зеленый
-                            '700': '#15803d',
-                            '800': '#166534',
-                            '900': '#14532d',
-                            '950': '#0f3d24',
-                        },
-                    },
-                    fontFamily: {
-                        sans: ['Inter', 'sans-serif'],
+                        'primary-orange': '#ff6b35',
+                        'secondary-teal': '#4ecdc4',
                     },
                 },
-            }
+            },
         }
     </script>
-    <!-- Подключение иконок Lucide (Исправлено: Используем UMD для глобального доступа) -->
-    <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.js"></script>
-    <script>
-        // Создаем глобальную функцию для вызова createIcons, используя глобальный объект lucide
-        window.createIcons = lucide.createIcons;
-        window.icons = lucide.icons; // Делаем объект icons доступным для функций
-    </script>
-    <style>
-        /* Общие стили для плавности */
-        body { font-family: 'Inter', sans-serif; }
-        .transition-all { transition-property: all; transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1); transition-duration: 150ms; }
-        .paom-nav-icon { height: 24px; width: 24px; }
-
-        /* Стилизация для модального окна */
-        .modal-overlay {
-            position: fixed;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            background-color: rgba(0, 0, 0, 0.75);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            z-index: 50;
-        }
-
-        /* Адаптивность навигации */
-        @media (min-width: 1024px) {
-            #nav-menu {
-                width: 5rem; /* lg:w-20 */
-                height: 100vh;
-                position: fixed;
-                top: 0;
-                left: 0;
-                flex-direction: column;
-                padding-top: 2rem;
-            }
-            #main-content {
-                margin-left: 5rem;
-                padding-bottom: 0;
-            }
-        }
-    </style>
 </head>
-<body class="bg-paom-green-50 min-h-screen">
+<body class="bg-gray-50 min-h-screen p-4 md:p-8 font-friendly config-colors">
 
-    <!-- Контейнер для всего приложения -->
-    <div id="app-container" class="min-h-screen flex flex-col lg:flex-row">
+    <!-- Заголовок и Навигация -->
+    <header class="mb-8 md:mb-12">
+        <h1 class="text-4xl md:text-6xl text-center font-extrabold mb-6 text-primary-orange">
+            Сайт нашего 5&nbsp;Б! 🚀
+        </h1>
+        
+        <nav class="flex space-x-2 md:space-x-4 max-w-5xl mx-auto">
+            <button class="nav-btn bg-primary-orange" onclick="showSection('home')">Главная</button>
+            <button class="nav-btn bg-secondary-teal" onclick="showSection('schedule')">Расписание</button>
+            <!-- Кнопка ДЗ удалена -->
+            <button class="nav-btn bg-primary-orange" onclick="showSection('chat')">Чат</button> <!-- NEW CHAT -->
+            <button class="nav-btn bg-secondary-teal" onclick="showSection('photos')">Фото</button>
+            <button class="nav-btn bg-primary-orange" onclick="showSection('games')">Игры</button>
+        </nav>
+    </header>
 
-        <!-- Навигационное меню (фиксировано снизу на мобильных, слева на десктопе) -->
-        <div id="nav-menu" class="fixed bottom-0 left-0 right-0 bg-paom-green-800 shadow-xl z-30 flex justify-around p-2 lg:relative lg:flex-col lg:space-y-4 lg:justify-start">
-            <!-- Элементы навигации будут добавлены JavaScript -->
-        </div>
-
-        <!-- Основная область контента -->
-        <main id="main-content" class="flex-grow pb-20 lg:pb-0">
-            <div id="app-content" class="max-w-7xl mx-auto p-4 sm:p-8">
-                <!-- Контент загружается JavaScript -->
+    <!-- Основное содержимое -->
+    <main id="content-container" class="max-w-5xl mx-auto space-y-8">
+        
+        <!-- 1. Главная (Новости) -->
+        <section id="section-home" class="content-card">
+            <h2 class="text-3xl font-bold mb-6 text-primary-orange">🔥 Главные новости класса!</h2>
+            <div id="news-feed" class="space-y-4">
+                <!-- Объявление о каникулах -->
+                <div class="p-8 bg-primary-orange/20 border-l-8 border-primary-orange rounded-xl shadow-2xl animate-pulse-once">
+                    <p class="text-3xl md:text-5xl font-extrabold text-primary-orange text-center transform hover:scale-105 transition duration-300">
+                        ☀️ УРА! НАЧАЛИСЬ КАНИКУЛЫ! 🏝️
+                    </p>
+                    <p class="text-center text-gray-700 mt-4 text-xl font-semibold">
+                        Желаем всем отлично отдохнуть! Встречаемся 24.11.25!
+                    </p>
+                </div>
+                <!-- Конец объявления -->
             </div>
-        </main>
-    </div>
+        </section>
 
-    <!-- Область для модальных окон -->
-    <div id="modal-container"></div>
+        <!-- 2. Расписание -->
+        <section id="section-schedule" class="content-card hidden">
+            <h2 class="text-3xl font-bold mb-6 text-secondary-teal">🗓️ Расписание уроков</h2>
+            <div class="overflow-x-auto">
+                <table id="schedule-table" class="min-w-full table-auto border-separate border-spacing-1 md:border-spacing-2">
+                    <thead>
+                        <tr class="bg-primary-orange text-white text-left text-lg">
+                            <th class="p-3 rounded-lg">День</th>
+                            <th class="p-3 rounded-lg">1-й урок</th>
+                            <th class="p-3 rounded-lg">2-й урок</th>
+                            <th class="p-3 rounded-lg">3-й урок</th>
+                            <th class="p-3 rounded-lg">4-й урок</th>
+                            <th class="p-3 rounded-lg">5-й урок</th>
+                            <th class="p-3 rounded-lg">6-й урок</th> 
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <!-- Данные будут заполнены JS и подсвечен текущий день -->
+                    </tbody>
+                </table>
+            </div>
+        </section>
 
-    <script>
-        // --- КОНСТАНТЫ И НАЧАЛЬНЫЕ ДАННЫЕ ---
-
-        const APP_NAME = "paom.study";
-        const STORAGE_KEY = `${APP_NAME}_DATA_V2`;
-
-        const LEAGUE_NAMES = ["Бронза", "Серебро", "Золото", "Платина", "Изумруд", "Рубин", "Алмаз", "Легенда"];
-        const LEAGUE_SIZES = 25;
-        const PROMOTION_ZONE = 4;
-        const DEMOTION_ZONE = 5;
-
-        const XP_PER_TASK = 10;
-        const DIAMONDS_PER_LESSON = [10, 15];
-
-        const AVATAR_URLS = [
-            'https://placehold.co/100x100/16a34a/ffffff?text=P', // paom-green-600
-            'https://placehold.co/100x100/3b82f6/ffffff?text=A', // blue-500
-            'https://placehold.co/100x100/f59e0b/333333?text=O', // amber-500
-            'https://placehold.co/100x100/8b5cf6/ffffff?text=M', // violet-500
-        ];
-
-        const COURSES_DATA = [
-            { id: 'en', title: 'Английский язык', icon: '🇬🇧', color: 'paom-green-600', lessons: generateLessons('en', 'Базовые глаголы', 25) },
-            { id: 'math', title: 'Математика', icon: '➕', color: 'yellow-600', lessons: generateLessons('math', 'Основы алгебры', 25) },
-            { id: 'geo', title: 'География', icon: '🌍', color: 'blue-600', lessons: generateLessons('geo', 'Материки и океаны', 25) },
-            { id: 'music', title: 'Музыка', icon: '🎶', color: 'red-600', lessons: generateLessons('music', 'Ноты и ритмы', 25) },
-            { id: 'chess', title: 'Шахматы', icon: '♟️', color: 'gray-700', lessons: generateLessons('chess', 'Дебюты', 25) },
-            { id: 'art', title: 'ИЗО', icon: '🎨', color: 'purple-600', lessons: generateLessons('art', 'Цветоведение', 25) },
-        ];
-
-        // --- ГЛОБАЛЬНОЕ СОСТОЯНИЕ ---
-
-        let appState = {};
-        let currentView = '';
-        let currentLesson = null; // { courseId, lessonId, currentTaskIndex }
-        let currentProfile = null; // Для просмотра профиля бота/пользователя
-        let botUpdateInterval = null;
-
-        // --- ВСПОМОГАТЕЛЬНЫЕ ФУНКЦИИ ГЕНЕРАЦИИ ДАННЫХ ---
-
-        function generateLessons(courseId, baseTitle, count) {
-            const characters = {
-                en: ['Профессор Грин', 'Сова Оливия'],
-                math: ['Академик Эйн', 'Гений Пи'],
-                geo: ['Путешественник Джек', 'Картограф Катя'],
-                music: ['Композитор Крис', 'Маэстро Миша'],
-                chess: ['Мастер Каспаров', 'Чемпионка Чиа'],
-                art: ['Художница Лина', 'Скульптор Слава'],
-            };
-            return Array.from({ length: count }, (_, i) => ({
-                id: `${courseId}_l${i+1}`,
-                title: `Урок ${i+1}: ${baseTitle}`,
-                tasks: Array.from({ length: 15 }, (_, j) => {
-                    const type = j % 3 === 0 ? 'translation' : j % 3 === 1 ? 'choice' : 'fill';
-                    const char = characters[courseId][j % characters[courseId].length];
-                    
-                    let question, answer, options = null;
-
-                    if (courseId === 'en') {
-                        question = type === 'translation' ? `Переведите: "Я люблю учиться."` : type === 'choice' ? `Выберите: She ___ a student.` : `Заполните: We ___ books. (read/reads)`;
-                        answer = type === 'translation' ? 'I love to study.' : type === 'choice' ? 'is' : 'read';
-                        options = type === 'choice' ? ['is', 'are', 'am'] : null;
-                    } else if (courseId === 'math') {
-                        const num = (i + 1) * (j + 1);
-                        question = `Каков результат: $${num} \\times 5$ ?`;
-                        answer = `${num * 5}`;
-                        options = null;
-                    } else {
-                        question = `Вопрос по теме ${baseTitle}, задание ${j+1}.`;
-                        answer = `Ответ ${j+1}`;
-                        options = type === 'choice' ? ['Вариант A', 'Вариант B', 'Ответ'] : null;
-                    }
-
-                    return {
-                        id: `t${j+1}`,
-                        type: type,
-                        character: char,
-                        question: question,
-                        answer: answer,
-                        options: options,
-                    };
-                })
-            }));
-        }
-
-        function generateRandomBots(count, currentLeague) {
-            return Array.from({ length: count }, (_, i) => ({
-                id: `bot_${crypto.randomUUID()}`,
-                nickname: `Бот_${i + 1}_${currentLeague}`,
-                avatar: AVATAR_URLS[Math.floor(Math.random() * AVATAR_URLS.length)],
-                xp: Math.floor(Math.random() * 5000) + 100,
-                diamonds: Math.floor(Math.random() * 500) + 50,
-                league: currentLeague,
-                score: Math.floor(Math.random() * 1000) + 100,
-                status: ['Проходит Английский', 'Учит Математику', 'Перешел в новую лигу'][Math.floor(Math.random() * 3)],
-            }));
-        }
-
-        // --- УПРАВЛЕНИЕ СОСТОЯНИЕМ (LocalStorage) ---
-
-        function loadState() {
-            try {
-                const savedData = localStorage.getItem(STORAGE_KEY);
-                if (savedData) {
-                    const data = JSON.parse(savedData);
-                    // Проверка на целостность данных
-                    if (!data.leaderboard || !data.user) throw new Error("Invalid saved data");
-
-                    // Корректировка ботов, если их нет или лига изменилась
-                    const currentLeague = data.user.currentLeague || LEAGUE_NAMES[0];
-                    if (!data.leaderboard.bots || data.leaderboard.bots.length !== LEAGUE_SIZES - 1 || data.leaderboard.league !== currentLeague) {
-                        data.leaderboard.league = currentLeague;
-                        data.leaderboard.bots = generateRandomBots(LEAGUE_SIZES - 1, currentLeague);
-                    }
-                    
-                    // Обновление ежедневных сундуков
-                    const today = new Date().toLocaleDateString();
-                    if (data.user.dailyChests.lastCheckDate !== today) {
-                        data.user.dailyChests = {
-                            lastCheckDate: today,
-                            earlyBird: false,
-                            nightOwl: false,
-                            regular: false,
-                        };
-                    }
-
-                    return data;
-                }
-            } catch (e) {
-                console.error("Ошибка загрузки состояния:", e);
-                localStorage.removeItem(STORAGE_KEY); // Сброс неверных данных
-            }
-
-            // Начальное состояние
-            const initialLeague = LEAGUE_NAMES[0];
-            return {
-                user: {
-                    isRegistered: false,
-                    nickname: '',
-                    avatar: AVATAR_URLS[0],
-                    xp: 0,
-                    diamonds: 50,
-                    currentLeague: initialLeague,
-                    completedLessons: {}, // { courseId: lessonIndex }
-                    xpBoost: { active: false, multiplier: 1, lessonsLeft: 0, bought: false },
-                    dailyChests: {
-                        lastCheckDate: new Date().toLocaleDateString(),
-                        earlyBird: false,
-                        nightOwl: false,
-                        regular: false,
-                    },
-                    friends: [],
-                },
-                leaderboard: {
-                    league: initialLeague,
-                    score: 0, // Недельный счет
-                    bots: generateRandomBots(LEAGUE_SIZES - 1, initialLeague),
-                },
-                newsFeed: {
-                    updates: [
-                        { id: 1, text: 'Добро пожаловать! Зарегистрируйтесь, чтобы начать.', date: new Date().toLocaleDateString() },
-                        { id: 2, text: 'Вышло обновление: теперь уроки во весь экран!', date: new Date().toLocaleDateString() },
-                    ]
-                }
-            };
-        }
-
-        function saveState() {
-            localStorage.setItem(STORAGE_KEY, JSON.stringify(appState));
-        }
-
-        // --- УТИЛИТЫ UI ---
-
-        function showMessage(text) {
-            // Имитация alert, но без использования window.alert
-            const container = document.getElementById('modal-container');
-            const messageBox = document.createElement('div');
-            messageBox.className = 'fixed top-4 right-4 bg-paom-green-500 text-white p-4 rounded-lg shadow-xl z-50 transition-all duration-300 transform translate-y-0 opacity-100';
-            messageBox.textContent = text;
-            container.appendChild(messageBox);
-
-            setTimeout(() => {
-                messageBox.classList.add('opacity-0', 'translate-y-full');
-                messageBox.addEventListener('transitionend', () => messageBox.remove());
-            }, 3000);
-        }
-
-        function clearContent() {
-            const content = document.getElementById('app-content');
-            content.innerHTML = '';
-        }
-
-        function getIcon(iconName, classes = 'paom-nav-icon') {
-            return `<i data-lucide="${iconName}" class="${classes}"></i>`;
-        }
-
-        // --- ЛОГИКА АУТЕНТИФИКАЦИИ/РЕГИСТРАЦИИ ---
-
-        function renderAuthScreen() {
-            clearContent();
-            const content = document.getElementById('app-content');
-            content.className = "min-h-screen flex items-center justify-center p-4";
-
-            content.innerHTML = `
-                <div class="bg-white p-8 rounded-xl shadow-2xl max-w-sm w-full text-center border-t-8 border-paom-green-600">
-                    ${getIcon('Aperture', 'w-12 h-12 text-paom-green-600 mx-auto mb-4')}
-                    <h1 class="text-3xl font-bold text-gray-900 mb-2">Добро пожаловать в ${APP_NAME}!</h1>
-                    <p class="text-gray-500 mb-8">Платформа для вашего развития.</p>
-
-                    <input
-                        type="text"
-                        id="nickname-input"
-                        placeholder="Выберите ваш никнейм"
-                        class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-paom-green-500 mb-6"
-                        maxlength="20"
-                    />
-                    <button
-                        id="register-btn"
-                        class="w-full bg-paom-green-600 text-white py-3 rounded-lg font-semibold hover:bg-paom-green-700 transition duration-150 disabled:opacity-50 shadow-md"
-                        disabled
-                    >
-                        Начать обучение
+        <!-- 3. Чат -->
+        <section id="section-chat" class="content-card hidden">
+            <h2 class="text-3xl font-bold mb-6 text-primary-orange">💬 Классный Чат (5Б)</h2>
+            
+            <!-- Регистрация Имени (Добавлено) -->
+            <div id="name-prompt" class="p-4 bg-yellow-100 rounded-xl mb-4 border border-yellow-300 hidden">
+                <p class="font-semibold mb-2 text-gray-700">Привет! Введите свое имя, чтобы оно отображалось в чате:</p>
+                <div class="flex space-x-2">
+                    <input type="text" id="name-input" placeholder="Ваше имя или ник (до 20 символов)" maxlength="20"
+                           class="flex-1 p-2 border border-gray-300 rounded-lg focus:outline-none focus:border-primary-orange text-base">
+                    <button onclick="saveDisplayName()"
+                            class="bg-primary-orange text-white py-2 px-4 rounded-lg font-bold transition hover:bg-primary-orange/90 active:scale-95">
+                        Сохранить
                     </button>
                 </div>
-            `;
-            // ИСПРАВЛЕНО: передаем window.icons
-            window.createIcons({ icons: window.icons });
-
-            const input = document.getElementById('nickname-input');
-            const button = document.getElementById('register-btn');
-
-            input.addEventListener('input', () => {
-                button.disabled = input.value.trim().length < 3;
-            });
-
-            button.addEventListener('click', () => {
-                const nickname = input.value.trim();
-                if (nickname.length >= 3) {
-                    appState.user.isRegistered = true;
-                    appState.user.nickname = nickname;
-                    saveState();
-                    renderView('home');
-                }
-            });
-        }
-
-        // --- ЛОГИКА СУНДУКОВ ---
-
-        function getAvailableChest() {
-            const now = new Date();
-            const hour = now.getHours();
-            const chests = appState.user.dailyChests;
-
-            if (hour >= 6 && hour < 12 && !chests.earlyBird) {
-                return { type: 'earlyBird', name: 'Ранняя пташка', xp: [2, 3], icon: 'Sunrise' };
-            }
-            if (hour >= 18 && hour < 24 && !chests.nightOwl) {
-                return { type: 'nightOwl', name: 'Полуночник', xp: [2, 3], icon: 'Moon' };
-            }
-            if (!chests.regular) {
-                return { type: 'regular', name: 'Обычный', xp: [1.5, 2], icon: 'Gift' };
-            }
-            return null;
-        }
-
-        function handleOpenChest(chestType, multiplier) {
-            const lessons = 3;
+            </div>
             
-            // Найти случайный множитель из диапазона
-            const [min, max] = multiplier;
-            const finalMultiplier = min === max ? min : (Math.random() < 0.5 ? min : max);
+            <div id="auth-info" class="mb-4 text-sm text-gray-600">
+                <!-- Здесь будет отображаться ваш ID и статус аутентификации -->
+            </div>
 
-            appState.user.dailyChests[chestType] = true;
-            appState.user.xpBoost = { active: true, multiplier: finalMultiplier, lessonsLeft: lessons, bought: false };
-            saveState();
-            renderView('home');
-            showMessage(`Вы получили множитель x${finalMultiplier} опыта на следующие ${lessons} урока!`);
-        }
+            <div id="chat-window" class="h-96 bg-gray-100 p-4 overflow-y-auto rounded-xl mb-4 shadow-inner flex flex-col space-y-3">
+                <div id="chat-loading" class="text-center text-gray-500 mt-20">Загрузка чата...</div>
+            </div>
 
-        // --- УПРАВЛЕНИЕ НАВИГАЦИЕЙ ---
-
-        function renderNavMenu() {
-            const menu = document.getElementById('nav-menu');
-            menu.innerHTML = `
-                ${renderNavItem('home', 'Курсы', 'BookOpen', currentView === 'home')}
-                ${renderNavItem('leaderboard', 'Лидеры', 'BarChart', currentView === 'leaderboard')}
-                ${renderNavItem('newsfeed', 'Лента', 'Users', currentView === 'newsfeed')}
-                ${renderNavItem('profile', 'Профиль', 'User', currentView === 'profile')}
-            `;
-            // ИСПРАВЛЕНО: передаем window.icons
-            window.createIcons({ icons: window.icons });
-
-            menu.querySelectorAll('button').forEach(button => {
-                button.addEventListener('click', () => {
-                    const targetView = button.getAttribute('data-view');
-                    if (targetView) {
-                        currentProfile = null; // Сбрасываем просмотр профиля бота при навигации
-                        renderView(targetView);
-                    }
-                });
-            });
-        }
-
-        function renderNavItem(view, label, iconName, isActive) {
-            return `
-                <button
-                    data-view="${view}"
-                    class="flex flex-col items-center justify-center p-2 rounded-xl transition-all duration-200 w-full ${
-                        isActive
-                            ? 'text-white bg-paom-green-700 shadow-lg'
-                            : 'text-paom-green-200 hover:bg-paom-green-600'
-                    } lg:py-4"
-                >
-                    ${getIcon(iconName)}
-                    <span class="text-xs mt-1 font-medium">${label}</span>
+            <div class="flex">
+                <input type="text" id="chat-input" placeholder="Напишите сообщение..." 
+                       class="flex-1 p-3 border-2 border-gray-300 rounded-l-xl focus:outline-none focus:border-secondary-teal transition duration-150 text-base">
+                <button onclick="sendMessage()" id="send-btn" disabled
+                        class="bg-secondary-teal text-white py-3 px-6 rounded-r-xl font-bold transition-all duration-200 hover:bg-secondary-teal/90 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed">
+                    Отправить
                 </button>
-            `;
+            </div>
+        </section>
+
+        <!-- 4. Фотогалерея -->
+        <section id="section-photos" class="content-card hidden">
+            <h2 class="text-3xl font-bold mb-6 text-secondary-teal">📸 Наши лучшие моменты</h2>
+            
+            <div class="flex flex-col md:flex-row justify-between items-center mb-6">
+                <p class="text-gray-600 mb-4 md:mb-0">Загрузи свои классные снимки, чтобы все увидели!</p>
+                <input type="file" id="photo-upload-input" accept="image/*" class="hidden" onchange="handlePhotoUpload(event)">
+                <button onclick="document.getElementById('photo-upload-input').click()"
+                        class="bg-primary-orange text-white py-3 px-6 rounded-full font-bold shadow-md transition-all duration-200 hover:bg-primary-orange/90 hover:scale-105 active:scale-95 flex items-center">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
+                    </svg>
+                    Загрузить фото
+                </button>
+            </div>
+
+            <div id="photo-grid" class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+                <!-- Примеры фото -->
+                <div class="aspect-square rounded-xl overflow-hidden shadow-lg transition duration-200 hover:shadow-2xl hover:scale-[1.03]">
+                    <img src="https://placehold.co/400x400/ff6b35/ffffff?text=Поход" onerror="this.src='https://placehold.co/400x400/ff6b35/ffffff?text=Фото+1'" alt="Фото 1" class="w-full h-full object-cover">
+                </div>
+                <div class="aspect-square rounded-xl overflow-hidden shadow-lg transition duration-200 hover:shadow-2xl hover:scale-[1.03]">
+                    <img src="https://placehold.co/400x400/4ecdc4/ffffff?text=Урок+Труда" onerror="this.src='https://placehold.co/400x400/4ecdc4/ffffff?text=Фото+2'" alt="Фото 2" class="w-full h-full object-cover">
+                </div>
+                <div class="aspect-square rounded-xl overflow-hidden shadow-lg transition duration-200 hover:shadow-2xl hover:scale-[1.03]">
+                    <img src="https://placehold.co/400x400/ff6b35/ffffff?text=Спорт" onerror="this.src='https://placehold.co/400x400/ff6b35/ffffff?text=Фото+3'" alt="Фото 3" class="w-full h-full object-cover">
+                </div>
+                <div class="aspect-square rounded-xl overflow-hidden shadow-lg transition duration-200 hover:shadow-2xl hover:scale-[1.03]">
+                    <img src="https://placehold.co/400x400/4ecdc4/ffffff?text=ДР" onerror="this.src='https://placehold.co/400x400/4ecdc4/ffffff?text=Фото+4'" alt="Фото 4" class="w-full h-full object-cover">
+                </div>
+            </div>
+            <p id="upload-status" class="mt-4 text-center text-green-600 font-semibold hidden"></p>
+        </section>
+
+        <!-- 5. Игры -->
+        <section id="section-games" class="content-card hidden">
+            <h2 class="text-3xl font-bold mb-6 text-primary-orange">🎮 Игровой уголок</h2>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                
+                <!-- Мини-игра 1: Викторина по предметам -->
+                <div class="p-6 bg-pink-100 rounded-xl shadow-lg border-2 border-primary-orange transition duration-200 hover:shadow-xl">
+                    <h3 class="text-2xl font-bold mb-4 text-primary-orange">💡 Классная Викторина</h3>
+                    <p class="mb-4 text-gray-700">Проверь свои знания по предметам 5 класса!</p>
+                    <div id="quiz-area">
+                        <p id="quiz-question" class="text-xl font-semibold mb-4"></p>
+                        <div id="quiz-options" class="space-y-3">
+                            <!-- Кнопки ответов -->
+                        </div>
+                        <button id="start-quiz-btn" onclick="startQuiz()" class="bg-primary-orange text-white py-2 px-4 rounded-full font-bold mt-4 transition hover:scale-105 active:scale-95">
+                            Начать!
+                        </button>
+                        <p id="quiz-feedback" class="mt-4 font-bold text-center"></p>
+                    </div>
+                </div>
+
+                <!-- Мини-игра 2: Пазл (имитация) -->
+                <div class="p-6 bg-teal-100 rounded-xl shadow-lg border-2 border-secondary-teal transition duration-200 hover:shadow-xl">
+                    <h3 class="text-2xl font-bold mb-4 на вторичный-teal">🧩 Пазл "Наш класс"</h3>
+                    <p class="mb-4 text-gray-700">Собери нашу классную фотографию!</p>
+                    <div class="aspect-[4/3] bg-gray-200 rounded-lg flex items-center justify-center border-4 border-secondary-teal border-dashed">
+                        <img src="https://placehold.co/300x225/4ecdc4/ffffff?text=Пазл+5Б" alt="Пазл" class="max-w-full max-h-full rounded-md opacity-80">
+                    </div>
+                    <button onclick="alertMessage('Ой! Пазл пока в разработке. Скоро будет!')"
+                            class="bg-secondary-teal text-white py-2 px-4 rounded-full font-bold mt-4 w-full transition hover:scale-105 active:scale-95">
+                        Играть!
+                    </button>
+                </div>
+
+            </div>
+            
+            <!-- Модальное окно для сообщений (вместо alert) -->
+            <div id="message-modal" class="fixed inset-0 bg-black bg-opacity-50 hidden items-center justify-center z-50">
+                <div class="bg-white p-8 rounded-xl shadow-2xl max-w-sm w-full text-center border-4 border-primary-orange transform transition-transform duration-300 scale-0">
+                    <p id="modal-text" class="text-xl font-semibold mb-6"></p>
+                    <button onclick="closeAlertMessage()" class="bg-primary-orange text-white py-2 px-6 rounded-full font-bold hover:bg-primary-orange/90 active:scale-95 transition">
+                        Понятно
+                    </button>
+                </div>
+            </div>
+        </section>
+
+    </main>
+    
+    <footer class="mt-12 text-center text-gray-400 text-sm py-4">
+        &copy; 2025 Сайт 5Б класса. Сделано с любовью и бирюзовым цветом!
+    </footer>
+
+    <script type="module">
+        // --- Firebase Imports (for Chat) ---
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        // Обновлен импорт: добавлены doc, getDoc, setDoc для работы с профилем
+        import { getFirestore, collection, query, onSnapshot, addDoc, serverTimestamp, setLogLevel, doc, getDoc, setDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+
+        // --- Глобальные данные ---
+        const scheduleData = [
+            { day: 'Понедельник', lessons: ['Разговоры о важном', 'Русский язык', 'Литературное чтение', 'Биология', 'Английский язык', 'Математика'] },
+            { day: 'Вторник', lessons: ['Естествознание', 'Литературное чтение', 'Русский язык', 'Труд', 'ИЗО', 'Математика'] },
+            { day: 'Среда', lessons: ['Русский язык', 'История', 'Литературное чтение', 'Математика', 'Физическая культура', 'Английский язык'] },
+            { day: 'Четверг', lessons: ['Труд', 'Английский язык', 'История', 'Русский язык', 'Математика', ''] }, 
+            { day: 'Пятница', lessons: ['Музыка', 'История', 'География', 'Физическая культура', 'Русский язык', 'Математика'] },
+            { day: 'Суббота', lessons: ['', '', '', '', '', ''] }, 
+        ];
+        
+        const quizQuestions = [
+            { question: "Сколько материков на Земле?", options: ["Пять", "Шесть", "Семь", "Четыре"], answer: "Шесть" },
+            { question: "Самая крупная планета Солнечной системы?", options: ["Марс", "Юпитер", "Венера", "Земля"], answer: "Юпитер" },
+            { question: "Кто написал 'Муму'?", options: ["Пушкин", "Лермонтов", "Тургенев", "Толстой"], answer: "Тургенев" },
+        ];
+        
+        let currentQuizIndex = 0;
+        let score = 0;
+        
+        // --- Firebase/Chat Variables ---
+        let app, db, auth;
+        let currentUserId = null;
+        let isFirebaseReady = false;
+        let userDisplayName = null; // Новая переменная для отображаемого имени
+
+        // --- Auth Logic: Handles sign-in asynchronously ---
+        async function handleAuth() {
+            if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
+                try {
+                    // Попытка входа с пользовательским токеном
+                    await signInWithCustomToken(auth, __initial_auth_token);
+                } catch (error) {
+                    console.error("Primary sign-in failed, attempting anonymous sign-in.", error);
+                    // Fallback to anonymous sign-in if the custom token fails
+                    await signInAnonymously(auth);
+                }
+            } else {
+                // Анонимный вход, если нет пользовательского токена
+                await signInAnonymously(auth);
+            }
         }
 
-        function renderView(viewName) {
-            if (viewName === 'lesson') {
-                renderLessonView();
+        // --- Profile Management Logic ---
+        function getProfileDocRef(appId, userId) {
+            // Путь для личных данных: /artifacts/{appId}/users/{userId}/profile/user_data
+            return doc(db, `artifacts/${appId}/users/${userId}/profile/user_data`);
+        }
+        
+        async function loadUserProfile(appId, userId) {
+            try {
+                const docRef = getProfileDocRef(appId, userId);
+                const docSnap = await getDoc(docRef);
+                
+                if (docSnap.exists()) {
+                    userDisplayName = docSnap.data().displayName || null;
+                    console.log("Loaded Display Name:", userDisplayName);
+                } else {
+                    userDisplayName = null;
+                    console.log("No existing profile data found.");
+                }
+            } catch (e) {
+                console.error("Error loading user profile:", e);
+            }
+        }
+        
+        window.saveDisplayName = async function() {
+            const nameInput = document.getElementById('name-input');
+            const newName = nameInput.value.trim().substring(0, 20); // Обрезка до 20 символов
+            
+            if (newName.length < 2) {
+                window.alertMessage("Имя должно содержать не менее 2 символов!");
                 return;
             }
 
-            // Установка основного стиля контента для всех кроме полноэкранного урока
-            const content = document.getElementById('app-content');
-            content.className = "max-w-7xl mx-auto p-4 sm:p-8";
-
-            currentView = viewName;
-            renderNavMenu();
-
-            // Очищаем интервал бота, если не на таблице лидеров
-            if (botUpdateInterval) {
-                clearInterval(botUpdateInterval);
-                botUpdateInterval = null;
-            }
-
-            switch (viewName) {
-                case 'home':
-                    renderHomeScreen();
-                    break;
-                case 'leaderboard':
-                    renderLeaderboardView();
-                    startBotUpdates();
-                    break;
-                case 'profile':
-                    renderProfileView();
-                    break;
-                case 'newsfeed':
-                    renderNewsFeedView();
-                    break;
-                default:
-                    renderHomeScreen();
-            }
-            window.scrollTo(0, 0); // Прокрутка вверх при смене страницы
-            saveState();
-        }
-
-        // --- РЕНДЕРИНГ СТРАНИЦ ---
-
-        // 1. Домашняя страница
-        function renderHomeScreen() {
-            clearContent();
-            const content = document.getElementById('app-content');
-            const availableChest = getAvailableChest();
-
-            const xpBoostInfo = appState.user.xpBoost.active ? `
-                <div class="ml-auto p-2 bg-yellow-500 text-white rounded-lg text-sm font-semibold shadow-md animate-pulse">
-                    XP x${appState.user.xpBoost.multiplier} (Осталось: ${appState.user.xpBoost.lessonsLeft} ур.)
-                </div>
-            ` : '';
-
-            const chestContent = availableChest ? `
-                <div class="flex items-center justify-between p-4 bg-paom-green-100 rounded-lg border border-paom-green-300">
-                    <p class="font-medium text-gray-700">
-                        Доступен сундук "${availableChest.name}"!
-                    </p>
-                    <button
-                        id="open-chest-btn"
-                        data-chest-type="${availableChest.type}"
-                        data-multiplier-min="${availableChest.xp[0]}"
-                        data-multiplier-max="${availableChest.xp[1]}"
-                        class="bg-paom-green-600 text-white px-4 py-2 rounded-lg font-semibold hover:bg-paom-green-700 transition duration-150 shadow-md"
-                    >
-                        Открыть
-                    </button>
-                </div>
-            ` : `
-                <p class="text-gray-500">
-                    На сегодня вы уже открыли все доступные сундуки. Возвращайтесь завтра!
-                </p>
-            `;
-
-            let coursesHtml = '';
-            COURSES_DATA.forEach(course => {
-                const userProgress = appState.user.completedLessons[course.id] || 0;
-                const totalLessons = course.lessons.length;
-                const percentage = (userProgress / totalLessons) * 100;
-
-                coursesHtml += `
-                    <div class="p-4 rounded-xl shadow-lg border border-${course.color}">
-                        <p class="text-3xl mb-2">${course.icon}</p>
-                        <h4 class="font-bold text-lg text-gray-800">${course.title}</h4>
-                        <p class="text-xs text-gray-500 mt-1">
-                            ${userProgress} / ${totalLessons} уроков
-                        </p>
-                        <div class="w-full bg-gray-200 rounded-full h-1.5 mt-2">
-                            <div class="h-1.5 rounded-full" style="width: ${percentage}%; background-color: ${course.color.split('-')[0] === 'paom' ? 'var(--tw-colors-paom-green-600)' : `var(--tw-colors-${course.color.split('-')[0]}-600)`};"></div>
-                        </div>
-                        <button
-                            data-course-id="${course.id}"
-                            data-lesson-index="${userProgress}"
-                            class="start-lesson-btn mt-4 w-full py-2 rounded-lg text-sm font-semibold transition duration-150 ${
-                                userProgress >= totalLessons
-                                    ? 'bg-gray-400 text-gray-700 cursor-not-allowed'
-                                    : 'bg-paom-green-600 text-white hover:bg-paom-green-700 shadow-md'
-                            }"
-                            ${userProgress >= totalLessons ? 'disabled' : ''}
-                        >
-                            ${userProgress >= totalLessons ? 'Завершено' : 'Продолжить'}
-                        </button>
-                    </div>
-                `;
-            });
-
-            content.innerHTML = `
-                <div class="space-y-8">
-                    <h2 class="text-3xl font-bold text-gray-800">
-                        Привет, ${appState.user.nickname}! 👋
-                    </h2>
-
-                    <!-- Секция Бустов и Прогресса -->
-                    <div class="flex items-center space-x-4 bg-paom-green-50 p-4 rounded-xl shadow-inner border border-paom-green-200">
-                        ${getIcon('Zap', 'text-paom-green-600 w-8 h-8')}
-                        <div>
-                            <p class="text-xs font-semibold text-gray-600 uppercase">Опыт / Алмазы</p>
-                            <p class="text-2xl font-bold text-gray-900">
-                                ${appState.user.xp} XP | ${appState.user.diamonds} 💎
-                            </p>
-                        </div>
-                        ${xpBoostInfo}
-                    </div>
-
-                    <!-- Секция Сундуков -->
-                    <div class="bg-white p-6 rounded-xl shadow-lg border border-gray-100">
-                        <h3 class="text-xl font-semibold text-gray-700 mb-4 flex items-center">
-                            ${getIcon('Gift', 'w-6 h-6 mr-2 text-paom-green-600')} Ежедневные сундуки
-                        </h3>
-                        ${chestContent}
-                    </div>
-
-                    <!-- Секция Курсов -->
-                    <div class="bg-white p-6 rounded-xl shadow-lg border border-gray-100">
-                        <h3 class="text-xl font-semibold text-gray-700 mb-4 flex items-center">
-                            ${getIcon('BookOpen', 'w-6 h-6 mr-2 вtext-paom-green-600')} Выберите курс
-                        </h3>
-                        <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4">
-                            ${coursesHtml}
-                        </div>
-                    </div>
-                </div>
-            `;
-            // ИСПРАВЛЕНО: передаем window.icons
-            window.createIcons({ icons: window.icons });
-
-            // Обработчики для сундука
-            const openChestBtn = document.getElementById('open-chest-btn');
-            if (openChestBtn) {
-                openChestBtn.addEventListener('click', () => {
-                    const type = openChestBtn.getAttribute('data-chest-type');
-                    const min = parseFloat(openChestBtn.getAttribute('data-multiplier-min'));
-                    const max = parseFloat(openChestBtn.getAttribute('data-multiplier-max'));
-                    handleOpenChest(type, [min, max]);
-                });
-            }
-
-            // Обработчики для уроков
-            document.querySelectorAll('.start-lesson-btn').forEach(button => {
-                button.addEventListener('click', () => {
-                    const courseId = button.getAttribute('data-course-id');
-                    const lessonIndex = parseInt(button.getAttribute('data-lesson-index'));
-                    const lessonId = COURSES_DATA.find(c => c.id === courseId).lessons[lessonIndex].id;
-                    
-                    currentLesson = { courseId, lessonId, currentTaskIndex: 0 };
-                    renderView('lesson');
-                });
-            });
-        }
-
-        // 2. Страница Урока (Full Screen)
-
-        function getLessonData(courseId, lessonId) {
-            const course = COURSES_DATA.find(c => c.id === courseId);
-            return course ? course.lessons.find(l => l.id === lessonId) : null;
-        }
-
-        function handleLessonComplete(xpEarned, diamondsEarned) {
-            const { courseId, lessonId } = currentLesson;
-            const course = COURSES_DATA.find(c => c.id === courseId);
-            const lessonIndex = course.lessons.findIndex(l => l.id === lessonId);
-            const nextLessonIndex = lessonIndex + 1;
-
-            let { xpBoost, completedLessons } = appState.user;
-            let actualXp = xpEarned;
-
-            if (xpBoost.active) {
-                actualXp = Math.round(xpEarned * xpBoost.multiplier);
-                xpBoost.lessonsLeft -= 1;
-                if (xpBoost.lessonsLeft <= 0) {
-                    xpBoost = { active: false, multiplier: 1, lessonsLeft: 0, bought: false };
-                }
-            }
-
-            const newCompletedLessons = { ...completedLessons };
-            if (!newCompletedLessons[courseId] || newCompletedLessons[courseId] < nextLessonIndex) {
-                newCompletedLessons[courseId] = nextLessonIndex;
-            }
-            
-            appState.user.xp += actualXp;
-            appState.user.diamonds += diamondsEarned;
-            appState.user.xpBoost = xpBoost;
-            appState.user.completedLessons = newCompletedLessons;
-            appState.leaderboard.score += actualXp;
-
-            saveState();
-            currentLesson = null;
-            renderView('home');
-            showMessage(`Урок завершен! Получено ${actualXp} XP (x${appState.user.xpBoost.multiplier} буст) и ${diamondsEarned} 💎.`);
-        }
-
-        function renderLessonView() {
-            document.getElementById('nav-menu').style.display = 'none'; // Скрыть навигацию
-            const mainContent = document.getElementById('main-content');
-            mainContent.className = "flex-grow pb-0"; // Убрать отступы
-            
-            const content = document.getElementById('app-content');
-            content.className = "fixed inset-0 flex flex-col p-0";
-            clearContent();
-
-            const lesson = getLessonData(currentLesson.courseId, currentLesson.lessonId);
-            const course = COURSES_DATA.find(c => c.id === currentLesson.courseId);
-            const currentTask = lesson.tasks[currentLesson.currentTaskIndex];
-            const totalTasks = lesson.tasks.length;
-
-            let isCorrect = null;
-
-            // Хедер урока
-            const header = document.createElement('div');
-            header.className = `p-4 shadow-lg flex items-center justify-between bg-${course.color} text-white`;
-            header.innerHTML = `
-                <button id="exit-lesson-btn" class="flex items-center font-semibold hover:opacity-80 transition">
-                    ${getIcon('ChevronLeft', 'w-5 h-5 mr-1')} Выйти
-                </button>
-                <div class="font-bold text-lg">${course.title}</div>
-                <div class="flex items-center space-x-2">
-                    <span class="font-semibold">${currentLesson.currentTaskIndex + 1} / ${totalTasks}</span>
-                </div>
-            `;
-            content.appendChild(header);
-
-            // Основная область задания
-            const mainArea = document.createElement('div');
-            mainArea.id = 'lesson-main-area';
-            mainArea.className = 'flex-grow p-4 sm:p-8 overflow-y-auto';
-            content.appendChild(mainArea);
-            
-            // Футер/Кнопка действия
-            const footer = document.createElement('div');
-            footer.id = 'lesson-footer';
-            footer.className = 'p-4 shadow-2xl bg-white';
-            footer.innerHTML = `
-                <div class="max-w-3xl mx-auto">
-                    <button id="action-btn" class="w-full py-4 rounded-lg font-extrabold text-white transition duration-150 shadow-lg bg-paom-green-600 hover:bg-paom-green-700 disabled:opacity-50" disabled>
-                        Проверить
-                    </button>
-                </div>
-            `;
-            content.appendChild(footer);
-
-            // ИСПРАВЛЕНО: передаем window.icons
-            window.createIcons({ icons: window.icons });
-
-            // Функции для обновления UI урока
-            function updateLessonUI() {
-                const task = lesson.tasks[currentLesson.currentTaskIndex];
+            try {
+                const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
+                const docRef = getProfileDocRef(appId, currentUserId);
                 
-                let inputHtml = '';
-                let inputValue = document.getElementById('lesson-input')?.value || '';
+                // Сохранение имени
+                await setDoc(docRef, { displayName: newName }, { merge: true });
+                
+                userDisplayName = newName;
+                window.alertMessage(`Имя '${newName}' успешно сохранено!`);
+                showNamePrompt(false);
+                
+                // Обновление информации об авторизации
+                document.getElementById('auth-info').innerHTML = `Вы вошли как: ID пользователя: <span class="font-bold text-secondary-teal break-all">${currentUserId}</span> (Имя: <span class="text-primary-orange">${userDisplayName}</span>)`;
 
-                if (task.type === 'translation' || task.type === 'fill' || task.type === 'math_input' || task.type === 'text') {
-                    const inputType = task.type === 'math_input' ? 'number' : 'text';
-                    inputHtml = `
-                        <input
-                            type="${inputType}"
-                            id="lesson-input"
-                            value="${inputValue}"
-                            placeholder="Введите ваш ответ здесь..."
-                            class="w-full px-4 py-3 border rounded-lg text-lg focus:outline-none border-gray-300 focus:border-paom-green-500"
-                        />
-                    `;
-                } else if (task.type === 'choice' && task.options) {
-                    inputHtml = `
-                        <div id="choice-options" class="grid grid-cols-2 gap-3">
-                            ${task.options.map(option => `
-                                <button
-                                    data-value="${option}"
-                                    class="choice-option-btn px-4 py-3 border rounded-lg font-medium transition duration-150 bg-gray-100 text-gray-800 hover:bg-gray-200"
-                                >
-                                    ${option}
-                                </button>
-                            `).join('')}
-                        </div>
-                        <input type="hidden" id="lesson-input" value="${inputValue}" />
-                    `;
-                }
-
-                mainArea.innerHTML = `
-                    <div class="max-w-3xl mx-auto space-y-8">
-                        <!-- Карточка персонажа -->
-                        <div class="flex items-start space-x-4 bg-white p-6 rounded-xl shadow-xl border-t-4 border-paom-green-500">
-                            <img src="${AVATAR_URLS[0]}" alt="Персонаж" class="w-16 h-16 rounded-full object-cover shadow-md" onerror="this.onerror=null; this.src='https://placehold.co/100x100/4CAF50/ffffff?text=P'"/>
-                            <div>
-                                <p class="font-bold text-paom-green-700">${task.character}:</p>
-                                <p class="text-xl text-gray-800 mt-1">${task.question}</p>
-                            </div>
-                        </div>
-
-                        <!-- Область ввода ответа -->
-                        <div class="bg-white p-6 rounded-xl shadow-lg border border-gray-200">
-                            <p class="text-sm font-medium text-gray-500 mb-3">Ваш ответ:</p>
-                            ${inputHtml}
-                        </div>
-
-                        <!-- Обратная связь (если есть) -->
-                        <div id="feedback-box"></div>
-                    </div>
-                `;
-
-                // Обновление состояния кнопки
-                const actionBtn = document.getElementById('action-btn');
-                actionBtn.textContent = 'Проверить';
-                actionBtn.className = 'w-full py-4 rounded-lg font-extrabold text-white transition duration-150 shadow-lg bg-paom-green-600 hover:bg-paom-green-700 disabled:opacity-50';
-                actionBtn.disabled = true;
-
-                // Добавление обработчиков ввода и выбора
-                const inputElement = document.getElementById('lesson-input');
-                if (inputElement && inputElement.type !== 'hidden') {
-                    inputElement.addEventListener('input', (e) => {
-                        actionBtn.disabled = e.target.value.trim() === '';
-                    });
-                    actionBtn.disabled = inputElement.value.trim() === '';
-                } else if (task.type === 'choice') {
-                    document.querySelectorAll('.choice-option-btn').forEach(btn => {
-                        btn.addEventListener('click', (e) => {
-                            const value = e.currentTarget.getAttribute('data-value');
-                            inputElement.value = value;
-                            document.querySelectorAll('.choice-option-btn').forEach(b => {
-                                b.classList.remove('bg-paom-green-600', 'text-white', 'shadow-md');
-                                b.classList.add('bg-gray-100', 'text-gray-800', 'hover:bg-gray-200');
-                            });
-                            e.currentTarget.classList.add('bg-paom-green-600', 'text-white', 'shadow-md');
-                            e.currentTarget.classList.remove('bg-gray-100', 'text-gray-800', 'hover:bg-gray-200');
-                            actionBtn.disabled = false;
-                        });
-                    });
-                }
+            } catch (e) {
+                console.error("Error saving display name:", e);
+                window.alertMessage("Не удалось сохранить имя. Попробуйте еще раз.");
             }
+        }
+        
+        function showNamePrompt(show) {
+            const prompt = document.getElementById('name-prompt');
+            if (prompt) {
+                prompt.classList.toggle('hidden', !show);
+            }
+        }
 
-            function handleAction() {
-                const actionBtn = document.getElementById('action-btn');
-                if (actionBtn.textContent !== 'Проверить') {
-                    // Это кнопка "Далее" или "Завершить"
-                    currentLesson.currentTaskIndex++;
-                    if (currentLesson.currentTaskIndex < totalTasks) {
-                        updateLessonUI(); // Переход к следующему заданию
-                    } else {
-                        // Урок завершен
-                        const xpEarned = totalTasks * XP_PER_TASK;
-                        const diamondsEarned = Math.floor(Math.random() * (DIAMONDS_PER_LESSON[1] - DIAMONDS_PER_LESSON[0] + 1)) + DIAMONDS_PER_LESSON[0];
-                        handleLessonComplete(xpEarned, diamondsEarned);
-                    }
+
+        // --- Firebase Initialization ---
+        async function initFirebase() {
+            try {
+                // setLogLevel('Debug'); // Раскомментировать для отладки
+                const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
+                const firebaseConfig = JSON.parse(typeof __firebase_config !== 'undefined' ? __firebase_config : '{}');
+
+                if (Object.keys(firebaseConfig).length === 0) {
+                    console.error("Firebase config is missing or empty.");
+                    document.getElementById('chat-loading').textContent = "Ошибка: Конфигурация Firebase недоступна.";
                     return;
                 }
 
-                // Логика проверки
-                const inputElement = document.getElementById('lesson-input');
-                const userAnswer = inputElement.value.trim().toLowerCase();
-                const expectedAnswer = String(currentTask.answer).trim().toLowerCase();
-
-                isCorrect = userAnswer === expectedAnswer;
+                app = initializeApp(firebaseConfig);
+                db = getFirestore(app);
+                auth = getAuth(app);
                 
-                const feedbackBox = document.getElementById('feedback-box');
-                const footer = document.getElementById('lesson-footer');
+                // 1. Wait for Auth to complete
+                await handleAuth();
 
-                if (isCorrect) {
-                    feedbackBox.innerHTML = `<div class="p-4 rounded-xl shadow-md font-bold text-white bg-paom-green-500">Верно! Продолжайте в том же духе.</div>`;
-                    footer.className = 'p-4 shadow-2xl bg-paom-green-500';
-                    actionBtn.textContent = currentLesson.currentTaskIndex < totalTasks - 1 ? 'Далее' : 'Завершить Урок';
-                    actionBtn.className = 'w-full py-4 rounded-lg font-extrabold text-white transition duration-150 shadow-lg bg-indigo-600 hover:bg-indigo-700';
-                    actionBtn.disabled = false;
-                } else {
-                    feedbackBox.innerHTML = `<div class="p-4 rounded-xl shadow-md font-bold text-white bg-red-500">Неверно. Правильный ответ: ${currentTask.answer}</div>`;
-                    footer.className = 'p-4 shadow-2xl bg-red-500';
-                    actionBtn.textContent = currentLesson.currentTaskIndex < totalTasks - 1 ? 'Далее' : 'Завершить Урок';
-                    actionBtn.className = 'w-full py-4 rounded-lg font-extrabold text-white transition duration-150 shadow-lg bg-indigo-600 hover:bg-indigo-700';
-                    actionBtn.disabled = false;
+                // 2. Set user info and ready state after successful auth
+                currentUserId = auth.currentUser?.uid || crypto.randomUUID(); 
+                isFirebaseReady = true;
+                
+                // NEW: Загружаем профиль пользователя
+                await loadUserProfile(appId, currentUserId);
+
+                console.log("Firebase Auth Ready. User ID:", currentUserId);
+                
+                let authInfoText = `Вы вошли как: ID пользователя: <span class="font-bold text-secondary-teal break-all">${currentUserId}</span>`;
+                if (userDisplayName) {
+                     authInfoText += ` (Имя: <span class="text-primary-orange">${userDisplayName}</span>)`;
                 }
+                document.getElementById('auth-info').innerHTML = authInfoText;
                 
-                // Блокируем ввод после проверки
-                if(inputElement.type !== 'hidden') inputElement.disabled = true;
-                if(document.getElementById('choice-options')) {
-                    document.querySelectorAll('.choice-option-btn').forEach(b => b.disabled = true);
-                }
-            }
-
-            // Инициализация UI и обработчиков
-            updateLessonUI();
-
-            document.getElementById('exit-lesson-btn').addEventListener('click', () => {
-                document.getElementById('nav-menu').style.display = 'flex';
-                const mainContent = document.getElementById('main-content');
-                mainContent.className = "flex-grow pb-20 lg:pb-0";
-                renderView('home');
-            });
-            document.getElementById('action-btn').addEventListener('click', handleAction);
-        }
-        
-        // 3. Таблица лидеров (LeaderboardView)
-
-        function startBotUpdates() {
-            if (botUpdateInterval) return;
-            // Обновление очков ботов и проверка лиги каждые 5 секунд
-            botUpdateInterval = setInterval(() => {
-                let didChange = false;
+                document.getElementById('send-btn').disabled = false;
+                document.getElementById('chat-loading').textContent = "Загрузка сообщений...";
                 
-                // 1. Обновление очков ботов
-                appState.leaderboard.bots = appState.leaderboard.bots.map(bot => {
-                    return {
-                        ...bot,
-                        score: bot.score + Math.floor(Math.random() * 50) + 10,
-                        status: ['Проходит Английский', 'Учит Математику', 'Перешел в новую лигу'][Math.floor(Math.random() * 3)],
-                    };
-                });
-
-                // 2. Имитация еженедельной проверки лиги (редкий шанс)
-                if (Math.random() < 0.05) {
-                    const allPlayers = [
-                        { id: 'user', nickname: appState.user.nickname, score: appState.leaderboard.score, isUser: true, avatar: appState.user.avatar },
-                        ...appState.leaderboard.bots.map(b => ({ ...b, isUser: false }))
-                    ].sort((a, b) => b.score - a.score);
-
-                    const userRank = allPlayers.findIndex(p => p.isUser) + 1;
-                    const currentLeagueIndex = LEAGUE_NAMES.indexOf(appState.user.currentLeague);
-                    let newLeagueIndex = currentLeagueIndex;
-                    let message = `Ваша лига (${appState.user.currentLeague}) осталась без изменений.`;
-
-                    // Повышение
-                    if (userRank <= PROMOTION_ZONE && currentLeagueIndex < LEAGUE_NAMES.length - 1) {
-                        newLeagueIndex = currentLeagueIndex + 1;
-                        message = `Поздравляем! Вы переходите в лигу ${LEAGUE_NAMES[newLeagueIndex]}.`;
-                        didChange = true;
-                    }
-                    // Понижение
-                    else if (userRank > LEAGUE_SIZES - DEMOTION_ZONE && currentLeagueIndex > 0) {
-                        newLeagueIndex = currentLeagueIndex - 1;
-                        message = `К сожалению, вы опускаетесь в лигу ${LEAGUE_NAMES[newLeagueIndex]}.`;
-                        didChange = true;
-                    }
-
-                    if (didChange) {
-                        const newLeague = LEAGUE_NAMES[newLeagueIndex];
-                        appState.user.currentLeague = newLeague;
-                        appState.leaderboard.league = newLeague;
-                        appState.leaderboard.score = 0; // Сброс очков
-                        appState.leaderboard.bots = generateRandomBots(LEAGUE_SIZES - 1, newLeague);
-                        showMessage(message);
-                    }
-                }
-
-                saveState();
-                if (currentView === 'leaderboard') {
-                    renderLeaderboardView(false); // Перерендеринг без очистки контента
-                }
-            }, 5000);
-        }
-
-
-        function renderLeaderboardView(clear = true) {
-            if (clear) clearContent();
-            const content = document.getElementById('app-content');
-
-            const allPlayers = [
-                { id: 'user', nickname: appState.user.nickname, score: appState.leaderboard.score, isUser: true, avatar: appState.user.avatar, league: appState.user.currentLeague },
-                ...appState.leaderboard.bots.map(b => ({ ...b, isUser: false }))
-            ].sort((a, b) => b.score - a.score);
-
-            const playersWithRank = allPlayers.map((player, index) => ({ ...player, rank: index + 1 }));
-
-            const currentLeagueIndex = LEAGUE_NAMES.indexOf(appState.user.currentLeague);
-            const nextLeagueName = LEAGUE_NAMES[currentLeagueIndex + 1];
-
-            let playersHtml = '';
-            playersWithRank.forEach(player => {
-                const isUser = player.isUser;
-                const rankStatus = player.rank <= PROMOTION_ZONE ? 'text-green-600 font-extrabold' : (player.rank > LEAGUE_SIZES - DEMOTION_ZONE ? 'text-red-600 font-extrabold' : 'text-gray-700 font-medium');
-                const isFriend = appState.user.friends.includes(player.id);
-                const isBot = !isUser;
-
-                playersHtml += `
-                    <div class="flex items-center p-4 border-b last:border-b-0 transition duration-150 ${isUser ? 'bg-yellow-50 shadow-inner' : 'hover:bg-gray-50'}">
-                        <span class="w-10 text-xl text-center ${rankStatus}">${player.rank}</span>
-                        <img src="${player.avatar}" alt="Аватар" class="w-10 h-10 rounded-full mr-4" onerror="this.onerror=null; this.src='https://placehold.co/100x100/4CAF50/ffffff?text=P'"/>
-                        <div class="flex-grow">
-                            <p class="font-semibold text-lg ${isUser ? 'text-paom-green-700' : 'text-gray-800'}">
-                                ${player.nickname} ${isUser ? '(Вы)' : ''}
-                            </p>
-                            <p class="text-sm text-gray-500">${player.league || player.currentLeague}</p>
-                        </div>
-                        <div class="text-right mr-4">
-                            <p class="text-xl font-bold text-gray-900">${player.score}</p>
-                            <p class="text-xs text-gray-500">Очки</p>
-                        </div>
-                        ${isBot && !isFriend ? `
-                            <button
-                                data-player-id="${player.id}"
-                                class="add-friend-btn bg-paom-green-500 text-white px-3 py-1 rounded-lg text-xs hover:bg-paom-green-600 transition shadow-sm"
-                            >
-                                + Друг
-                            </button>
-                        ` : ''}
-                        <button
-                            data-player-id="${player.id}"
-                            class="view-profile-btn ml-2 bg-gray-200 text-gray-700 px-3 py-1 rounded-lg text-xs hover:bg-gray-300 transition shadow-sm"
-                        >
-                            Профиль
-                        </button>
-                    </div>
-                `;
-            });
-
-            content.innerHTML = `
-                <div class="space-y-6">
-                    <h2 class="text-3xl font-bold text-gray-800">
-                        Таблица Лидеров
-                    </h2>
-
-                    <div class="bg-paom-green-600 text-white p-5 rounded-xl shadow-xl">
-                        <h3 class="text-xl font-bold">Текущая лига: ${appState.user.currentLeague}</h3>
-                        <p class="text-sm mt-1">Очки для повышения (топ ${PROMOTION_ZONE}): ${nextLeagueName ? `Переход в ${nextLeagueName}` : 'Вы на вершине!'}</p>
-                        <p class="text-sm text-red-100">Зона понижения (последние ${DEMOTION_ZONE} мест).</p>
-                    </div>
-
-                    <div class="bg-white rounded-xl shadow-lg overflow-hidden">
-                        ${playersHtml}
-                    </div>
-                </div>
-            `;
-
-            document.querySelectorAll('.add-friend-btn').forEach(button => {
-                button.addEventListener('click', (e) => {
-                    const botId = e.currentTarget.getAttribute('data-player-id');
-                    if (!appState.user.friends.includes(botId)) {
-                        appState.user.friends.push(botId);
-                        saveState();
-                        renderLeaderboardView(true);
-                        showMessage('Бот добавлен в список друзей!');
-                    }
-                });
-            });
-
-            document.querySelectorAll('.view-profile-btn').forEach(button => {
-                button.addEventListener('click', (e) => {
-                    const playerId = e.currentTarget.getAttribute('data-player-id');
-                    const player = playersWithRank.find(p => p.id === playerId);
-                    if (player) {
-                        currentProfile = player;
-                        renderView('profile');
-                    }
-                });
-            });
-        }
-
-        // 4. Профиль Пользователя/Бота (ProfileView)
-
-        function showConfirmationModal(title, message, onConfirm, confirmText = 'Подтвердить') {
-            const container = document.getElementById('modal-container');
-            container.innerHTML = `
-                <div class="modal-overlay">
-                    <div class="bg-white rounded-xl shadow-2xl max-w-lg w-full p-6 sm:p-8 transform transition-all border-t-4 border-red-600">
-                        <h3 class="text-xl font-bold text-gray-800 mb-3">${title}</h3>
-                        <p class="text-gray-600 mb-6">${message}</p>
-                        <div class="flex justify-end space-x-3">
-                            <button id="modal-cancel-btn" class="px-4 py-2 border border-gray-300 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-100 transition duration-150">
-                                Отмена
-                            </button>
-                            <button id="modal-confirm-btn" class="px-4 py-2 border border-transparent rounded-lg text-sm font-medium text-white bg-red-600 hover:bg-red-700 shadow-md transition duration-150">
-                                ${confirmText}
-                            </button>
-                        </div>
-                    </div>
-                </div>
-            `;
-            
-            document.getElementById('modal-cancel-btn').addEventListener('click', () => container.innerHTML = '');
-            document.getElementById('modal-confirm-btn').addEventListener('click', () => {
-                onConfirm();
-                container.innerHTML = '';
-            });
-        }
-
-        function handleResetProgress() {
-            const initialLeague = LEAGUE_NAMES[0];
-            appState.user.xp = 0;
-            appState.user.diamonds = 50;
-            appState.user.currentLeague = initialLeague;
-            appState.user.completedLessons = {};
-            appState.user.xpBoost = { active: false, multiplier: 1, lessonsLeft: 0, bought: false };
-            appState.leaderboard.league = initialLeague;
-            appState.leaderboard.score = 0;
-            appState.leaderboard.bots = generateRandomBots(LEAGUE_SIZES - 1, initialLeague);
-            
-            saveState();
-            renderView('profile');
-            showMessage('Ваш прогресс был успешно сброшен.');
-        }
-
-        function handleBuyXP(multiplier, cost) {
-            if (appState.user.diamonds < cost) {
-                showMessage('Недостаточно алмазов!');
-                return;
-            }
-            if (appState.user.xpBoost.active && appState.user.xpBoost.bought) {
-                showMessage('У вас уже активен купленный буст!');
-                return;
-            }
-
-            appState.user.diamonds -= cost;
-            appState.user.xpBoost = { active: true, multiplier: multiplier, lessonsLeft: 3, bought: true };
-            saveState();
-            renderProfileView(); // Перерендеринг для обновления магазина
-            showMessage(`Куплен буст x${multiplier} на 3 урока за ${cost} 💎!`);
-        }
-
-        function renderProfileView() {
-            clearContent();
-            const content = document.getElementById('app-content');
-            
-            const profile = currentProfile && currentProfile.id !== 'user' ? 
-                appState.leaderboard.bots.find(b => b.id === currentProfile.id) || appState.user : appState.user;
-            
-            const isUser = profile.id === 'user' || (profile === appState.user);
-            
-            if (!profile || (!isUser && !appState.leaderboard.bots.find(b => b.id === profile.id))) {
-                // Если бот не найден (выбыл из лиги)
-                content.innerHTML = `<div class="p-8"><p class="text-red-500">Профиль не найден.</p><button onclick="currentProfile = null; renderView('leaderboard')" class="mt-4 text-paom-green-600 hover:underline">Вернуться к лидерам</button></div>`;
-                return;
-            }
-
-            let isEditingNickname = false;
-
-            const statCard = (title, value, color) => `
-                <div class="p-4 rounded-xl shadow-md bg-${color} border border-gray-200">
-                    <p class="text-sm font-medium text-gray-500">${title}</p>
-                    <p class="text-2xl font-extrabold text-gray-900 mt-1">${value}</p>
-                </div>
-            `;
-
-            const buyCard = (title, cost, multiplier) => {
-                const isDisabled = appState.user.xpBoost.active && appState.user.xpBoost.bought;
-                return `
-                    <div class="p-4 rounded-xl shadow-md bg-white border-2 border-paom-green-500 flex items-center justify-between">
-                        <div>
-                            <p class="font-semibold text-gray-800">${title} (3 урока)</p>
-                            <p class="text-sm text-gray-500 flex items-center mt-1">
-                                Стоимость: <span class="font-bold text-paom-green-600 ml-1">${cost} 💎</span>
-                            </p>
-                        </div>
-                        <button
-                            data-multiplier="${multiplier}"
-                            data-cost="${cost}"
-                            class="buy-xp-btn px-4 py-2 bg-paom-green-600 text-white rounded-lg text-sm font-semibold hover:bg-paom-green-700 transition ${isDisabled ? 'bg-gray-400 cursor-not-allowed' : ''}"
-                            ${isDisabled ? 'disabled' : ''}
-                        >
-                            ${isDisabled ? 'Активен' : 'Купить'}
-                        </button>
-                    </div>
-                `;
-            };
-
-            const nicknameBlock = `
-                <div id="nickname-display" class="flex items-center space-x-2">
-                    <h3 class="text-3xl font-bold text-gray-800">${profile.nickname} ${isUser ? '' : '(Бот)'}</h3>
-                    ${isUser ? `<button id="edit-nickname-btn" class="ml-3 text-gray-400 hover:text-paom-green-600">${getIcon('Edit', 'w-5 h-5')}</button>` : ''}
-                </div>
-            `;
-            
-            const editingBlock = isUser ? `
-                <div id="nickname-edit" class="hidden flex items-center space-x-2">
-                    <input
-                        type="text"
-                        id="new-nickname-input"
-                        value="${appState.user.nickname}"
-                        class="px-3 py-1 border rounded-lg text-2xl font-bold text-gray-800 focus:outline-none focus:ring-2 focus:ring-paom-green-500"
-                    />
-                    <button id="save-nickname-btn" class="p-1 bg-paom-green-500 text-white rounded-full hover:bg-paom-green-600">${getIcon('Check', 'w-5 h-5')}</button>
-                    <button id="cancel-nickname-btn" class="p-1 bg-gray-500 text-white rounded-full hover:bg-gray-600">${getIcon('X', 'w-5 h-5')}</button>
-                </div>
-            ` : '';
-
-            content.innerHTML = `
-                <div class="space-y-8">
-                    <div class="flex items-center justify-between">
-                        <h2 class="text-3xl font-bold text-gray-800">
-                            ${isUser ? 'Мой Профиль' : 'Профиль Бота'}
-                        </h2>
-                        <button onclick="currentProfile = null; renderView('${isUser ? 'home' : 'leaderboard'}')" class="text-paom-green-600 hover:underline flex items-center">
-                            ${getIcon('X', 'w-5 h-5 mr-1')} Закрыть
-                        </button>
-                    </div>
-            
-                    <div class="bg-white p-6 rounded-xl shadow-lg border border-gray-100">
-                        <!-- Аватар и Никнейм -->
-                        <div class="flex flex-col sm:flex-row items-center sm:items-start space-y-4 sm:space-y-0 sm:space-x-6 pb-6 border-b">
-                            <img src="${profile.avatar}" alt="Аватар" class="w-24 h-24 rounded-full object-cover shadow-xl border-4 border-paom-green-200" onerror="this.onerror=null; this.src='https://placehold.co/100x100/4CAF50/ffffff?text=P'"/>
-                            <div class="text-center sm:text-left">
-                                ${isUser ? `${nicknameBlock}${editingBlock}` : nicknameBlock}
-                                <p class="text-lg text-gray-500 mt-1">${isUser ? 'Ваш профиль' : profile.league + ' Лига'}</p>
-                            </div>
-                        </div>
-
-                        <!-- Статистика -->
-                        <div class="mt-6 grid grid-cols-2 md:grid-cols-4 gap-4">
-                            ${statCard("Общий XP", profile.xp, "paom-green-100")}
-                            ${statCard("Алмазы", profile.diamonds, "blue-100")}
-                            ${statCard("Текущий счет", profile.score, "yellow-100")}
-                            ${statCard("Лига", profile.currentLeague || profile.league, "purple-100")}
-                        </div>
-
-                        ${isUser ? `
-                            <!-- Секция магазина опыта -->
-                            <div class="mt-10 pt-6 border-t border-gray-200">
-                                <h3 class="text-2xl font-semibold text-gray-800 mb-4 flex items-center">${getIcon('DollarSign', 'w-6 h-6 mr-2 text-paom-green-600')} Магазин Опыта</h3>
-                                <p class="text-gray-600 mb-4">Потратьте алмазы на ускорение вашего прогресса.</p>
-
-                                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                                    ${buyCard("XP Буст x1.5", 50, 1.5)}
-                                    ${buyCard("XP Буст x2", 100, 2)}
-                                </div>
-                            </div>
-
-                            <!-- Опасная зона (Сброс прогресса) -->
-                            <div class="mt-10 pt-6 border-t border-red-200">
-                                <h3 class="text-2xl font-semibold text-red-700 mb-4 flex items-center">${getIcon('RefreshCw', 'w-6 h-6 mr-2')} Опасная Зона</h3>
-                                <p class="text-gray-600 mb-6">Сброс прогресса удалит все ваши достижения, XP, алмазы и переведет вас в Бронзовую лигу. Это действие необратимо.</p>
-                                <button
-                                    id="reset-progress-btn"
-                                    class="w-full sm:w-auto px-6 py-3 border border-transparent text-base font-medium rounded-lg shadow-sm text-white bg-red-600 hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 transition duration-150 ease-in-out"
-                                >
-                                    Сбросить Весь Прогресс
-                                </button>
-                            </div>
-                        ` : ''}
-                    </div>
-                </div>
-            `;
-            // ИСПРАВЛЕНО: передаем window.icons
-            window.createIcons({ icons: window.icons });
-            
-            // Обработчики для смены ника
-            if (isUser) {
-                const display = document.getElementById('nickname-display');
-                const edit = document.getElementById('nickname-edit');
+                // NEW: Показываем запрос имени, если оно не установлено
+                showNamePrompt(!userDisplayName);
                 
-                document.getElementById('edit-nickname-btn').addEventListener('click', () => {
-                    display.style.display = 'none';
-                    edit.style.display = 'flex';
-                });
+                // 3. Start Chat Listener ONLY after Auth is ready
+                setupChatListener(appId);
 
-                document.getElementById('cancel-nickname-btn').addEventListener('click', () => {
-                    document.getElementById('new-nickname-input').value = appState.user.nickname;
-                    display.style.display = 'flex';
-                    edit.style.display = 'none';
-                });
-
-                document.getElementById('save-nickname-btn').addEventListener('click', () => {
-                    const newNickname = document.getElementById('new-nickname-input').value.trim();
-                    if (newNickname && newNickname !== appState.user.nickname) {
-                        appState.user.nickname = newNickname;
-                        saveState();
-                        showMessage('Никнейм успешно изменен!');
-                    }
-                    display.style.display = 'flex';
-                    edit.style.display = 'none';
-                    renderProfileView(); // Перерендеринг для обновления заголовка
-                });
-
-                document.getElementById('reset-progress-btn').addEventListener('click', () => {
-                    showConfirmationModal(
-                        "Сбросить Прогресс?",
-                        "Вы уверены? Это действие навсегда удалит ваш XP, алмазы и достижения. Вы начнете с Бронзовой лиги.",
-                        handleResetProgress,
-                        "Сбросить навсегда"
-                    );
-                });
-                
-                document.querySelectorAll('.buy-xp-btn').forEach(button => {
-                    button.addEventListener('click', (e) => {
-                        const multiplier = parseFloat(e.currentTarget.getAttribute('data-multiplier'));
-                        const cost = parseInt(e.currentTarget.getAttribute('data-cost'));
-                        handleBuyXP(multiplier, cost);
-                    });
-                });
+            } catch (e) {
+                console.error("Error initializing Firebase:", e);
+                document.getElementById('chat-loading').textContent = "Ошибка инициализации чата. (См. консоль)";
             }
         }
         
-        // 5. Лента Новостей (NewsFeedView)
+        // --- Chat Logic ---
 
-        function renderNewsFeedView() {
-            clearContent();
-            const content = document.getElementById('app-content');
-            
-            const friendActivity = appState.leaderboard.bots
-                .filter(bot => appState.user.friends.includes(bot.id))
-                .map(friend => ({
-                    id: friend.id,
-                    nickname: friend.nickname,
-                    avatar: friend.avatar,
-                    status: friend.status,
-                    date: new Date(Date.now() - Math.random() * 86400000).toLocaleTimeString(),
-                })).sort((a, b) => new Date(b.date) - new Date(a.date));
-
-            let newsHtml = '';
-            appState.newsFeed.updates.forEach(item => {
-                newsHtml += `
-                    <div class="p-3 border-b last:border-b-0">
-                        <p class="font-semibold text-gray-800">${item.text}</p>
-                        <p class="text-xs text-gray-500 mt-1">${item.date}</p>
-                    </div>
-                `;
-            });
-            
-            let friendsHtml = '';
-            if (friendActivity.length > 0) {
-                friendActivity.forEach(friend => {
-                    friendsHtml += `
-                        <div data-player-id="${friend.id}" class="friend-activity-item flex items-center p-3 border-b last:border-b-0 hover:bg-gray-50 rounded-lg transition cursor-pointer">
-                            <img src="${friend.avatar}" alt="Аватар" class="w-10 h-10 rounded-full mr-4" onerror="this.onerror=null; this.src='https://placehold.co/100x100/4CAF50/ffffff?text=P'"/>
-                            <div class='flex-grow'>
-                                <p class="font-semibold text-gray-800">${friend.nickname}</p>
-                                <p class="text-sm text-gray-600">${friend.status}</p>
-                            </div>
-                            <span class="text-xs text-gray-400">${friend.date}</span>
-                        </div>
-                    `;
-                });
-            } else {
-                friendsHtml = `<p class="text-center text-gray-500 p-8">Ваш список друзей пуст. Добавьте ботов из Таблицы лидеров!</p>`;
+        function setupChatListener(appId) {
+            if (!db) {
+                console.error("Firestore DB is not initialized.");
+                document.getElementById('chat-loading').textContent = "Ошибка: База данных не инициализирована.";
+                return;
             }
 
-
-            content.innerHTML = `
-                <div class="space-y-6">
-                    <h2 class="text-3xl font-bold text-gray-800">
-                        Лента Активности
-                    </h2>
-
-                    <!-- Переключатель вкладок -->
-                    <div class="flex bg-gray-200 rounded-xl p-1 shadow-inner">
-                        <button id="news-tab-btn" class="flex-1 py-2 rounded-lg font-semibold transition bg-white text-paom-green-600 shadow-md">
-                            Новости
-                        </button>
-                        <button id="friends-tab-btn" class="flex-1 py-2 rounded-lg font-semibold transition text-gray-600">
-                            Друзья
-                        </button>
-                    </div>
-
-                    <!-- Контент вкладок -->
-                    <div id="newsfeed-content" class="bg-white rounded-xl shadow-lg border border-gray-100 p-4">
-                        <div id="news-content-area">${newsHtml}</div>
-                        <div id="friends-content-area" class="hidden">${friendsHtml}</div>
-                    </div>
-                </div>
-            `;
+            const messagesCollectionPath = `artifacts/${appId}/public/data/messages`;
+            console.log("Attempting to listen to path:", messagesCollectionPath);
+            const messagesCollectionRef = collection(db, messagesCollectionPath);
             
-            const newsTab = document.getElementById('news-tab-btn');
-            const friendsTab = document.getElementById('friends-tab-btn');
-            const newsArea = document.getElementById('news-content-area');
-            const friendsArea = document.getElementById('friends-content-area');
-            
-            function setActiveTab(tab) {
-                if (tab === 'news') {
-                    newsTab.className = 'flex-1 py-2 rounded-lg font-semibold transition bg-white text-paom-green-600 shadow-md';
-                    friendsTab.className = 'flex-1 py-2 rounded-lg font-semibold transition text-gray-600';
-                    newsArea.classList.remove('hidden');
-                    friendsArea.classList.add('hidden');
-                } else {
-                    friendsTab.className = 'flex-1 py-2 rounded-lg font-semibold transition bg-white text-paom-green-600 shadow-md';
-                    newsTab.className = 'flex-1 py-2 rounded-lg font-semibold transition text-gray-600';
-                    friendsArea.classList.remove('hidden');
-                    newsArea.classList.add('hidden');
+            // Запрос, без orderBy для предотвращения ошибок индексации
+            const q = query(messagesCollectionRef); 
+
+            onSnapshot(q, (snapshot) => {
+                const chatLoading = document.getElementById('chat-loading'); // Получаем элемент
+                if (chatLoading) { // Проверяем его наличие перед использованием
+                    chatLoading.style.display = 'none'; // Скрываем "Загрузка..."
                 }
-            }
 
-            newsTab.addEventListener('click', () => setActiveTab('news'));
-            friendsTab.addEventListener('click', () => setActiveTab('friends'));
-            
-            document.querySelectorAll('.friend-activity-item').forEach(item => {
-                item.addEventListener('click', (e) => {
-                    const playerId = e.currentTarget.getAttribute('data-player-id');
-                    const player = friendActivity.find(f => f.id === playerId);
-                    if(player) {
-                        currentProfile = player;
-                        renderView('profile');
-                    }
+                const messages = [];
+                snapshot.forEach(doc => {
+                    const data = doc.data();
+                    messages.push({ id: doc.id, ...data });
                 });
+                
+                // Сортировка в памяти по метке времени
+                messages.sort((a, b) => (a.timestamp?.seconds || 0) - (b.timestamp?.seconds || 0));
+
+                renderMessages(messages);
+            }, (error) => {
+                // Убедитесь, что ошибки разрешений не отображаются после успешного входа
+                if (error.code !== 'permission-denied') { 
+                    console.error("Error listening to chat messages:", error);
+                    document.getElementById('chat-loading').textContent = "Ошибка загрузки сообщений. Проверьте разрешения.";
+                }
             });
         }
 
-
-        // --- ИНИЦИАЛИЗАЦИЯ ---
-
-        window.onload = function() {
-            appState = loadState();
+        function renderMessages(messages) {
+            const chatWindow = document.getElementById('chat-window');
+            chatWindow.innerHTML = '';
             
-            if (appState.user.isRegistered) {
-                renderView('home');
-            } else {
-                renderAuthScreen();
+            if (messages.length === 0) {
+                chatWindow.innerHTML = '<div class="text-center text-gray-500 mt-20">Пока нет сообщений. Начните общение!</div>';
+                return;
             }
-        };
+
+            messages.forEach(msg => {
+                // currentUserId теперь глобальная переменная, установленная в initFirebase
+                const isSelf = msg.userId === currentUserId; 
+                const messageDiv = document.createElement('div');
+                
+                // Санитизация текста
+                const safeText = msg.text ? String(msg.text).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;') : '';
+                const timestampText = msg.timestamp?.toDate() ? msg.timestamp.toDate().toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' }) : 'сейчас';
+                
+                // NEW: Определение имени отправителя
+                let senderText = '';
+                if (isSelf) {
+                    senderText = 'Вы';
+                } else if (msg.displayName) {
+                    senderText = msg.displayName; // Используем сохраненное имя, если есть
+                } else {
+                    senderText = msg.userId ? msg.userId : 'Неизвестный'; // Иначе полный ID
+                }
+                
+                // Стиль сообщения
+                messageDiv.className = `flex ${isSelf ? 'justify-end' : 'justify-start'}`;
+                
+                messageDiv.innerHTML = `
+                    <div class="max-w-xs md:max-w-md p-3 rounded-xl shadow-md ${isSelf ? 'bg-secondary-teal text-white rounded-br-none' : 'bg-primary-orange/20 text-gray-800 rounded-tl-none'}">
+                        <div class="text-xs font-bold mb-1 ${isSelf ? 'text-white' : 'text-primary-orange'} break-all">${senderText}</div>
+                        <p class="text-sm md:text-base whitespace-pre-wrap">${safeText}</p>
+                        <div class="text-[10px] text-right mt-1 opacity-70 ${isSelf ? 'text-white' : 'text-gray-600'}">${timestampText}</div>
+                    </div>
+                `;
+                
+                chatWindow.appendChild(messageDiv);
+            });
+            
+            // Прокрутка вниз
+            chatWindow.scrollTop = chatWindow.scrollHeight;
+        }
+
+
+        window.sendMessage = async function() {
+            const input = document.getElementById('chat-input');
+            const text = input.value.trim();
+            
+            // NEW: Проверка наличия имени перед отправкой
+            if (!userDisplayName) {
+                showNamePrompt(true);
+                window.alertMessage("Пожалуйста, сначала введите и сохраните свое имя в поле выше!");
+                return;
+            }
+            
+            if (!isFirebaseReady || !currentUserId || !text) {
+                console.warn("Чат не готов или сообщение пусто.");
+                return;
+            }
+
+            const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
+            const messagesCollectionRef = collection(db, `artifacts/${appId}/public/data/messages`);
+
+            try {
+                // Реализуем экспоненциальный откат для повторных попыток
+                for (let i = 0; i < 3; i++) {
+                    try {
+                        await addDoc(messagesCollectionRef, {
+                            userId: currentUserId,
+                            text: text,
+                            timestamp: serverTimestamp(),
+                            displayName: userDisplayName // NEW: Добавляем отображаемое имя
+                        });
+                        input.value = ''; // Очистка после успешной отправки
+                        return; // Успех, выходим из цикла
+                    } catch (error) {
+                        if (i < 2) {
+                            const delay = Math.pow(2, i) * 1000;
+                            await new Promise(resolve => setTimeout(resolve, delay));
+                        } else {
+                            throw error; // Бросаем ошибку после последней попытки
+                        }
+                    }
+                }
+            } catch (e) {
+                console.error("Error sending message:", e);
+                window.alertMessage('Не удалось отправить сообщение. Проверьте подключение.');
+            }
+        }
+
+        // --- Инициализация при загрузке страницы ---
+        document.addEventListener('DOMContentLoaded', () => {
+            renderSchedule();
+            window.showSection('home');
+            initFirebase(); // Теперь асинхронный вызов
+
+            // Добавляем слушатель Enter для чата
+            const chatInput = document.getElementById('chat-input');
+            if (chatInput) {
+                chatInput.addEventListener('keypress', function (e) {
+                    if (e.key === 'Enter' && !document.getElementById('send-btn').disabled) {
+                        window.sendMessage();
+                    }
+                });
+            }
+        });
+
+        // --- Управление разделами ---
+        window.showSection = function(sectionId) {
+            document.querySelectorAll('section[id^="section-"]').forEach(section => {
+                section.classList.add('hidden');
+            });
+            document.getElementById(`section-${sectionId}`).classList.remove('hidden');
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+            
+            // Специальная инициализация для викторины
+            if (sectionId === 'games') {
+                document.getElementById('start-quiz-btn').classList.remove('hidden');
+                document.getElementById('quiz-question').innerHTML = '';
+                document.getElementById('quiz-options').innerHTML = '';
+                document.getElementById('quiz-feedback').innerHTML = 'Нажми "Начать!" для старта Викторины!';
+            }
+        }
+        
+        // --- Расписание: Генерация и подсветка ---
+        function renderSchedule() {
+            const tbody = document.getElementById('schedule-table').querySelector('tbody');
+            tbody.innerHTML = '';
+            
+            const todayIndex = new Date().getDay(); // 0=Вс, 1=Пн, ..., 6=Сб
+            
+            scheduleData.forEach((item, index) => {
+                const dayIndex = index + 1; // Пн=1, Вт=2, ...
+                const isToday = dayIndex === todayIndex;
+                
+                const row = document.createElement('tr');
+                row.className = `text-gray-800 text-sm md:text-base ${isToday ? 'bg-yellow-200 font-extrabold shadow-inner' : 'bg-white hover:bg-gray-100 transition duration-150'}`;
+                
+                let rowHtml = `<td class="p-3 rounded-l-lg">${item.day}</td>`;
+                item.lessons.forEach((lesson, lessonIndex) => {
+                    const isLastLesson = lessonIndex === item.lessons.length - 1;
+                    const lessonText = lesson || ''; // Если урока нет, показываем пустое место
+                    rowHtml += `<td class="p-3 ${isLastLesson ? 'rounded-r-lg' : ''}">${lessonText}</td>`;
+                });
+                row.innerHTML = rowHtml;
+                tbody.appendChild(row);
+            });
+        }
+        
+        // --- Фото: Имитация загрузки ---
+        window.handlePhotoUpload = function(event) {
+            const file = event.target.files[0];
+            const status = document.getElementById('upload-status');
+            
+            if (file) {
+                console.log('Файл готов к загрузке:', file.name);
+                status.textContent = `🎉 Файл '${file.name}' успешно загружен (имитация)! Спасибо!`;
+                status.classList.remove('hidden');
+                
+                const newPhotoUrl = URL.createObjectURL(file);
+                const grid = document.getElementById('photo-grid');
+                const newPhotoDiv = document.createElement('div');
+                newPhotoDiv.className = 'aspect-square rounded-xl overflow-hidden shadow-lg transition duration-200 hover:shadow-2xl hover:scale-[1.03]';
+                newPhotoDiv.innerHTML = `<img src="${newPhotoUrl}" alt="Загруженное фото" class="w-full h-full object-cover">`;
+                grid.prepend(newPhotoDiv); 
+            }
+            event.target.value = null;
+        }
+
+        // --- Игры: Викторина ---
+        window.startQuiz = function() {
+            currentQuizIndex = 0;
+            score = 0;
+            document.getElementById('start-quiz-btn').classList.add('hidden');
+            document.getElementById('quiz-question').innerHTML = '';
+            document.getElementById('quiz-options').innerHTML = '';
+            document.getElementById('quiz-feedback').innerHTML = 'Нажми "Начать!" для старта Викторины!';
+            showQuestion();
+        }
+        
+        function showQuestion() {
+            if (currentQuizIndex >= quizQuestions.length) {
+                document.getElementById('quiz-question').textContent = `Викторина окончена! Твой результат: ${score} из ${quizQuestions.length}!`;
+                document.getElementById('quiz-options').innerHTML = '';
+                document.getElementById('quiz-feedback').textContent = score === quizQuestions.length ? 'Супер! Ты — гений!' : 'Неплохо! Попробуй еще раз!';
+                document.getElementById('start-quiz-btn').textContent = 'Сыграть еще раз';
+                document.getElementById('start-quiz-btn').classList.remove('hidden');
+                return;
+            }
+            
+            const q = quizQuestions[currentQuizIndex];
+            document.getElementById('quiz-question').textContent = `Вопрос ${currentQuizIndex + 1}: ${q.question}`;
+            const optionsDiv = document.getElementById('quiz-options');
+            optionsDiv.innerHTML = '';
+            
+            q.options.forEach(option => {
+                const btn = document.createElement('button');
+                btn.textContent = option;
+                btn.className = 'w-full text-left bg-secondary-teal/80 text-white py-2 px-4 rounded-lg font-semibold transition hover:bg-secondary-teal hover:scale-[1.02] active:scale-[0.98]';
+                btn.onclick = () => checkAnswer(option, q.answer);
+                optionsDiv.appendChild(btn);
+            });
+        }
+        
+        function checkAnswer(selected, correct) {
+            const feedback = document.getElementById('quiz-feedback');
+            document.getElementById('quiz-options').querySelectorAll('button').forEach(btn => btn.disabled = true);
+            
+            if (selected === correct) {
+                feedback.textContent = 'Правильно! Молодец! 🎉';
+                feedback.className = 'mt-4 font-bold text-center text-green-600';
+                score++;
+            } else {
+                feedback.textContent = `Ошибка. Правильный ответ: ${correct} 😟`;
+                feedback.className = 'mt-4 font-bold text-center text-red-600';
+            }
+            
+            currentQuizIndex++;
+            
+            // Задержка перед следующим вопросом
+            setTimeout(() => {
+                showQuestion();
+            }, 1500);
+        }
+
+        // --- Управление модальным окном (вместо alert) ---
+        window.alertMessage = function(text) {
+            document.getElementById('modal-text').textContent = text;
+            const modal = document.getElementById('message-modal');
+            modal.classList.remove('hidden');
+            modal.classList.add('flex');
+            // Анимация появления
+            setTimeout(() => {
+                modal.querySelector('div').classList.remove('scale-0');
+                modal.querySelector('div').classList.add('scale-100');
+            }, 10);
+        }
+
+        window.closeAlertMessage = function() {
+            const modal = document.getElementById('message-modal');
+            modal.querySelector('div').classList.remove('scale-100');
+            modal.querySelector('div').classList.add('scale-0');
+            // Анимация исчезновения
+            setTimeout(() => {
+                modal.classList.add('hidden');
+                modal.classList.remove('flex');
+            }, 300);
+        }
     </script>
 </body>
 </html>
