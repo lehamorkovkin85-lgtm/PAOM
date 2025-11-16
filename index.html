@@ -142,7 +142,7 @@
             </div>
             
             <div id="auth-info" class="mb-4 text-sm text-gray-600">
-                <!-- Здесь будет отображаться ваш ID и статус аутентификации -->
+                <!-- Здесь будет отображаться ваш ID, статус аутентификации или КРИТИЧЕСКАЯ ОШИБКА -->
             </div>
 
             <div id="chat-window" class="h-96 bg-gray-100 p-4 overflow-y-auto rounded-xl mb-4 shadow-inner flex flex-col space-y-3">
@@ -363,8 +363,14 @@
                 const firebaseConfig = JSON.parse(typeof __firebase_config !== 'undefined' ? __firebase_config : '{}');
 
                 if (Object.keys(firebaseConfig).length === 0) {
-                    console.error("Firebase config is missing or empty.");
-                    document.getElementById('chat-loading').textContent = "Ошибка: Конфигурация Firebase недоступна.";
+                    const errorMessage = "⚠️ КРИТИЧЕСКАЯ ОШИБКА: Конфигурация Firebase недоступна. Пожалуйста, откройте сайт в режиме 'Preview' или повторно опубликуйте его.";
+                    console.error(errorMessage);
+                    
+                    // Улучшенное визуальное сообщение об ошибке
+                    document.getElementById('chat-loading').style.display = 'none';
+                    document.getElementById('auth-info').innerHTML = `<p class="p-4 bg-red-100 border border-red-400 text-red-700 rounded-lg font-bold">${errorMessage}</p>`;
+                    document.getElementById('send-btn').disabled = true;
+                    showNamePrompt(false);
                     return;
                 }
 
@@ -467,7 +473,7 @@
                 // NEW: Определение имени отправителя
                 let senderText = '';
                 if (isSelf) {
-                    senderText = 'Вы';
+                    senderText = userDisplayName || 'Вы';
                 } else if (msg.displayName) {
                     senderText = msg.displayName; // Используем сохраненное имя, если есть
                 } else {
