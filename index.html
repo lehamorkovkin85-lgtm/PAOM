@@ -3,706 +3,651 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Сайт 5Б — Наш класс!</title>
-    <!-- Загрузка Tailwind CSS CDN -->
+    <title>PAOM Учёба - ИИ-Помощник (API)</title>
+    <!-- Подключение Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
-    <style>
-        /* Настройка шрифта для дружелюбного, "школьного" вида */
-        :root {
-            --color-primary: #ff6b35; /* Оранжевый */
-            --color-secondary: #4ecdc4; /* Бирюзовый */
-            --color-text: #374151; /* Темно-серый */
-        }
-        .font-friendly {
-            font-family: 'Chalkboard SE', 'Comic Sans MS', 'cursive', sans-serif;
-            color: var(--color-text);
-        }
-        /* Пользовательская конфигурация Tailwind для использования наших цветов */
-        .config-colors {
-            --tw-bg-primary: var(--color-primary);
-            --tw-bg-secondary: var(--color-secondary);
-            --tw-text-primary: var(--color-primary);
-            --tw-text-secondary: var(--color-secondary);
-        }
-        /* Стиль для крупных, анимированных кнопок навигации */
-        .nav-btn {
-            @apply flex-1 py-3 px-2 md:px-6 text-xl md:text-2xl font-bold rounded-xl transition-all duration-200 shadow-lg transform hover:scale-105 hover:shadow-xl active:scale-95 text-white;
-        }
-        /* Стиль карточек контента */
-        .content-card {
-            @apply bg-white p-6 rounded-2xl shadow-2xl transition-all duration-300 transform hover:scale-[1.01] border-4 border-gray-100;
-        }
-        /* Стили для скроллбара (опционально, для лучшего вида) */
-        ::-webkit-scrollbar {
-            width: 8px;
-        }
-        ::-webkit-scrollbar-thumb {
-            background: var(--color-secondary);
-            border-radius: 4px;
-        }
-        /* Добавляем простую анимацию "пульса" для праздничного объявления */
-        @keyframes pulse-once {
-            0% { transform: scale(1); opacity: 1; }
-            50% { transform: scale(1.02); opacity: 0.9; }
-            100% { transform: scale(1); opacity: 1; }
-        }
-        .animate-pulse-once {
-            animation: pulse-once 2s ease-in-out infinite;
-        }
-    </style>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/markdown-it/12.3.2/markdown-it.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/katex@0.13.18/dist/katex.min.js"></script>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.13.18/dist/katex.min.css" crossorigin="anonymous">
+    
+    <!-- Конфигурация Tailwind для зеленых цветов и шрифта Inter -->
     <script>
         tailwind.config = {
             theme: {
                 extend: {
                     colors: {
-                        'primary-orange': '#ff6b35',
-                        'secondary-teal': '#4ecdc4',
+                        'paom-dark': '#2E7D32', // Темный зеленый (#2E7D32)
+                        'paom-main': '#4CAF50', // Основной зеленый (#4CAF50)
+                        'paom-light': '#81C784', // Светлый зеленый (#81C784)
+                        'paom-bg': '#F0FFF0', // Очень светлый фон
+                        'citation-color': '#007BFF', // Синий для цитат
                     },
-                },
-            },
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                    }
+                }
+            }
         }
     </script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@100..900&display=swap');
+        /* Базовые стили для адаптивности и центрирования */
+        html, body {
+            height: 100%;
+            margin: 0;
+        }
+        #app-container {
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: flex-start;
+            padding: 2rem 1rem;
+            background-color: var(--tw-colors-paom-bg);
+            box-sizing: border-box;
+        }
+        @media (min-width: 768px) {
+            #app-container {
+                justify-content: center;
+            }
+        }
+        .paom-card {
+            background-color: white;
+            padding: 2rem;
+            border-radius: 1.5rem;
+            box-shadow: 0 10px 30px rgba(46, 125, 50, 0.2);
+            width: 100%;
+            max-width: 650px;
+            transition: all 0.5s ease-in-out;
+            opacity: 0;
+            transform: translateY(20px);
+        }
+        .paom-card.visible {
+            opacity: 1;
+            transform: translateY(0);
+        }
+        .paom-button {
+            transition: background-color 0.2s, transform 0.1s, box-shadow 0.2s;
+            cursor: pointer;
+        }
+        .paom-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(46, 125, 50, 0.4);
+        }
+        .paom-button:active {
+            transform: translateY(0);
+            box-shadow: 0 2px 10px rgba(46, 125, 50, 0.3);
+        }
+        /* Стиль для сообщений истории */
+        .message-user {
+            background-color: #e6f7e6; /* Очень светлый зеленый для пользователя */
+            border-radius: 0.75rem 0.75rem 0.1rem 0.75rem;
+        }
+        .message-ai {
+            background-color: #d1e7d1; /* Светлый зеленый для ИИ */
+            border-radius: 0.75rem 0.75rem 0.75rem 0.1rem;
+        }
+        /* Специальный класс для формул KaTeX */
+        .katex-display {
+            margin-top: 0.5em;
+            margin-bottom: 0.5em;
+            overflow-x: auto;
+            overflow-y: hidden;
+            padding: 0.5em 0;
+            background-color: #f7fdf7;
+            border-radius: 0.5rem;
+        }
+        /* Убираем стили цитат, так как Grounding отключен */
+        .citations {
+            display: none;
+        }
+    </style>
 </head>
-<body class="bg-gray-50 min-h-screen p-4 md:p-8 font-friendly config-colors">
+<body>
+    <div id="app-container">
+        <div id="app-content" class="paom-card">
+            <!-- Контент будет загружаться здесь JS -->
+        </div>
+    </div>
 
-    <!-- Заголовок и Навигация -->
-    <header class="mb-8 md:mb-12">
-        <h1 class="text-4xl md:text-6xl text-center font-extrabold mb-6 text-primary-orange">
-            Сайт нашего 5&nbsp;Б! 🚀
-        </h1>
+    <script>
+        // --- Константы и Инициализация ---
+        const APP_CONTENT = document.getElementById('app-content');
         
-        <nav class="flex space-x-2 md:space-x-4 max-w-5xl mx-auto">
-            <button class="nav-btn bg-primary-orange" onclick="showSection('home')">Главная</button>
-            <button class="nav-btn bg-secondary-teal" onclick="showSection('schedule')">Расписание</button>
-            <!-- Кнопка ДЗ удалена -->
-            <button class="nav-btn bg-primary-orange" onclick="showSection('chat')">Чат</button> <!-- NEW CHAT -->
-            <button class="nav-btn bg-secondary-teal" onclick="showSection('photos')">Фото</button>
-            <button class="nav-btn bg-primary-orange" onclick="showSection('games')">Игры</button>
-        </nav>
-    </header>
-
-    <!-- Основное содержимое -->
-    <main id="content-container" class="max-w-5xl mx-auto space-y-8">
+        // ВНИМАНИЕ: Если вы запускаете этот файл ЛОКАЛЬНО на своем ПК, 
+        // ВАМ НЕОБХОДИМО получить персональный API ключ (Gemini API)
+        // и вставить его ЗДЕСЬ, заменив пустые кавычки. 
+        // Получить ключ можно в Google AI Studio.
+        // Пример: const API_KEY = "YOUR_ACTUAL_API_KEY_HERE";
+        const API_KEY = "AIzaSyDC5DYIJdEDnRurYnj0eDgoVwITXGhsBEw"; 
         
-        <!-- 1. Главная (Новости) -->
-        <section id="section-home" class="content-card">
-            <h2 class="text-3xl font-bold mb-6 text-primary-orange">🔥 Главные новости класса!</h2>
-            <div id="news-feed" class="space-y-4">
-                <!-- Объявление о каникулах -->
-                <div class="p-8 bg-primary-orange/20 border-l-8 border-primary-orange rounded-xl shadow-2xl animate-pulse-once">
-                    <p class="text-3xl md:text-5xl font-extrabold text-primary-orange text-center transform hover:scale-105 transition duration-300">
-                        ☀️ УРА! НАЧАЛИСЬ КАНИКУЛЫ! 🏝️
-                    </p>
-                    <p class="text-center text-gray-700 mt-4 text-xl font-semibold">
-                        Желаем всем отлично отдохнуть! Встречаемся 24.11.25!
-                    </p>
-                </div>
-                <!-- Конец объявления -->
-            </div>
-        </section>
+        // В среде Canvas этот ключ предоставляется автоматически.
+        // Если вы видите ошибку 403 при локальном запуске, вставьте сюда свой ключ.
 
-        <!-- 2. Расписание -->
-        <section id="section-schedule" class="content-card hidden">
-            <h2 class="text-3xl font-bold mb-6 text-secondary-teal">🗓️ Расписание уроков</h2>
-            <div class="overflow-x-auto">
-                <table id="schedule-table" class="min-w-full table-auto border-separate border-spacing-1 md:border-spacing-2">
-                    <thead>
-                        <tr class="bg-primary-orange text-white text-left text-lg">
-                            <th class="p-3 rounded-lg">День</th>
-                            <th class="p-3 rounded-lg">1-й урок</th>
-                            <th class="p-3 rounded-lg">2-й урок</th>
-                            <th class="p-3 rounded-lg">3-й урок</th>
-                            <th class="p-3 rounded-lg">4-й урок</th>
-                            <th class="p-3 rounded-lg">5-й урок</th>
-                            <th class="p-3 rounded-lg">6-й урок</th> 
-                        </tr>
-                    </thead>
-                    <tbody>
-                        <!-- Данные будут заполнены JS и подсвечен текущий день -->
-                    </tbody>
-                </table>
-            </div>
-        </section>
-
-        <!-- 3. Чат -->
-        <section id="section-chat" class="content-card hidden">
-            <h2 class="text-3xl font-bold mb-6 text-primary-orange">💬 Классный Чат (5Б)</h2>
-            
-            <!-- Регистрация Имени (Добавлено) -->
-            <div id="name-prompt" class="p-4 bg-yellow-100 rounded-xl mb-4 border border-yellow-300 hidden">
-                <p class="font-semibold mb-2 text-gray-700">Привет! Введите свое имя, чтобы оно отображалось в чате:</p>
-                <div class="flex space-x-2">
-                    <input type="text" id="name-input" placeholder="Ваше имя или ник (до 20 символов)" maxlength="20"
-                           class="flex-1 p-2 border border-gray-300 rounded-lg focus:outline-none focus:border-primary-orange text-base">
-                    <button onclick="saveDisplayName()"
-                            class="bg-primary-orange text-white py-2 px-4 rounded-lg font-bold transition hover:bg-primary-orange/90 active:scale-95">
-                        Сохранить
-                    </button>
-                </div>
-            </div>
-            
-            <div id="auth-info" class="mb-4 text-sm text-gray-600">
-                <!-- Здесь будет отображаться ваш ID, статус аутентификации или КРИТИЧЕСКАЯ ОШИБКА -->
-            </div>
-
-            <div id="chat-window" class="h-96 bg-gray-100 p-4 overflow-y-auto rounded-xl mb-4 shadow-inner flex flex-col space-y-3">
-                <div id="chat-loading" class="text-center text-gray-500 mt-20">Загрузка чата...</div>
-            </div>
-
-            <div class="flex">
-                <input type="text" id="chat-input" placeholder="Напишите сообщение..." 
-                       class="flex-1 p-3 border-2 border-gray-300 rounded-l-xl focus:outline-none focus:border-secondary-teal transition duration-150 text-base">
-                <button onclick="sendMessage()" id="send-btn" disabled
-                        class="bg-secondary-teal text-white py-3 px-6 rounded-r-xl font-bold transition-all duration-200 hover:bg-secondary-teal/90 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed">
-                    Отправить
-                </button>
-            </div>
-        </section>
-
-        <!-- 4. Фотогалерея -->
-        <section id="section-photos" class="content-card hidden">
-            <h2 class="text-3xl font-bold mb-6 text-secondary-teal">📸 Наши лучшие моменты</h2>
-            
-            <div class="flex flex-col md:flex-row justify-between items-center mb-6">
-                <p class="text-gray-600 mb-4 md:mb-0">Загрузи свои классные снимки, чтобы все увидели!</p>
-                <input type="file" id="photo-upload-input" accept="image/*" class="hidden" onchange="handlePhotoUpload(event)">
-                <button onclick="document.getElementById('photo-upload-input').click()"
-                        class="bg-primary-orange text-white py-3 px-6 rounded-full font-bold shadow-md transition-all duration-200 hover:bg-primary-orange/90 hover:scale-105 active:scale-95 flex items-center">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
-                    </svg>
-                    Загрузить фото
-                </button>
-            </div>
-
-            <div id="photo-grid" class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-                <!-- Примеры фото -->
-                <div class="aspect-square rounded-xl overflow-hidden shadow-lg transition duration-200 hover:shadow-2xl hover:scale-[1.03]">
-                    <img src="https://placehold.co/400x400/ff6b35/ffffff?text=Поход" onerror="this.src='https://placehold.co/400x400/ff6b35/ffffff?text=Фото+1'" alt="Фото 1" class="w-full h-full object-cover">
-                </div>
-                <div class="aspect-square rounded-xl overflow-hidden shadow-lg transition duration-200 hover:shadow-2xl hover:scale-[1.03]">
-                    <img src="https://placehold.co/400x400/4ecdc4/ffffff?text=Урок+Труда" onerror="this.src='https://placehold.co/400x400/4ecdc4/ffffff?text=Фото+2'" alt="Фото 2" class="w-full h-full object-cover">
-                </div>
-                <div class="aspect-square rounded-xl overflow-hidden shadow-lg transition duration-200 hover:shadow-2xl hover:scale-[1.03]">
-                    <img src="https://placehold.co/400x400/ff6b35/ffffff?text=Спорт" onerror="this.src='https://placehold.co/400x400/ff6b35/ffffff?text=Фото+3'" alt="Фото 3" class="w-full h-full object-cover">
-                </div>
-                <div class="aspect-square rounded-xl overflow-hidden shadow-lg transition duration-200 hover:shadow-2xl hover:scale-[1.03]">
-                    <img src="https://placehold.co/400x400/4ecdc4/ffffff?text=ДР" onerror="this.src='https://placehold.co/400x400/4ecdc4/ffffff?text=Фото+4'" alt="Фото 4" class="w-full h-full object-cover">
-                </div>
-            </div>
-            <p id="upload-status" class="mt-4 text-center text-green-600 font-semibold hidden"></p>
-        </section>
-
-        <!-- 5. Игры -->
-        <section id="section-games" class="content-card hidden">
-            <h2 class="text-3xl font-bold mb-6 text-primary-orange">🎮 Игровой уголок</h2>
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                
-                <!-- Мини-игра 1: Викторина по предметам -->
-                <div class="p-6 bg-pink-100 rounded-xl shadow-lg border-2 border-primary-orange transition duration-200 hover:shadow-xl">
-                    <h3 class="text-2xl font-bold mb-4 text-primary-orange">💡 Классная Викторина</h3>
-                    <p class="mb-4 text-gray-700">Проверь свои знания по предметам 5 класса!</p>
-                    <div id="quiz-area">
-                        <p id="quiz-question" class="text-xl font-semibold mb-4"></p>
-                        <div id="quiz-options" class="space-y-3">
-                            <!-- Кнопки ответов -->
-                        </div>
-                        <button id="start-quiz-btn" onclick="startQuiz()" class="bg-primary-orange text-white py-2 px-4 rounded-full font-bold mt-4 transition hover:scale-105 active:scale-95">
-                            Начать!
-                        </button>
-                        <p id="quiz-feedback" class="mt-4 font-bold text-center"></p>
-                    </div>
-                </div>
-
-                <!-- Мини-игра 2: Пазл (имитация) -->
-                <div class="p-6 bg-teal-100 rounded-xl shadow-lg border-2 border-secondary-teal transition duration-200 hover:shadow-xl">
-                    <h3 class="text-2xl font-bold mb-4 на вторичный-teal">🧩 Пазл "Наш класс"</h3>
-                    <p class="mb-4 text-gray-700">Собери нашу классную фотографию!</p>
-                    <div class="aspect-[4/3] bg-gray-200 rounded-lg flex items-center justify-center border-4 border-secondary-teal border-dashed">
-                        <img src="https://placehold.co/300x225/4ecdc4/ffffff?text=Пазл+5Б" alt="Пазл" class="max-w-full max-h-full rounded-md opacity-80">
-                    </div>
-                    <button onclick="alertMessage('Ой! Пазл пока в разработке. Скоро будет!')"
-                            class="bg-secondary-teal text-white py-2 px-4 rounded-full font-bold mt-4 w-full transition hover:scale-105 active:scale-95">
-                        Играть!
-                    </button>
-                </div>
-
-            </div>
-            
-            <!-- Модальное окно для сообщений (вместо alert) -->
-            <div id="message-modal" class="fixed inset-0 bg-black bg-opacity-50 hidden items-center justify-center z-50">
-                <div class="bg-white p-8 rounded-xl shadow-2xl max-w-sm w-full text-center border-4 border-primary-orange transform transition-transform duration-300 scale-0">
-                    <p id="modal-text" class="text-xl font-semibold mb-6"></p>
-                    <button onclick="closeAlertMessage()" class="bg-primary-orange text-white py-2 px-6 rounded-full font-bold hover:bg-primary-orange/90 active:scale-95 transition">
-                        Понятно
-                    </button>
-                </div>
-            </div>
-        </section>
-
-    </main>
-    
-    <footer class="mt-12 text-center text-gray-400 text-sm py-4">
-        &copy; 2025 Сайт 5Б класса. Сделано с любовью и бирюзовым цветом!
-    </footer>
-
-    <script type="module">
-        // --- Firebase Imports (for Chat) ---
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
-        import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
-        // Обновлен импорт: добавлены doc, getDoc, setDoc для работы с профилем
-        import { getFirestore, collection, query, onSnapshot, addDoc, serverTimestamp, setLogLevel, doc, getDoc, setDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
-
-        // --- Глобальные данные ---
-        const scheduleData = [
-            { day: 'Понедельник', lessons: ['Разговоры о важном', 'Русский язык', 'Литературное чтение', 'Биология', 'Английский язык', 'Математика'] },
-            { day: 'Вторник', lessons: ['Естествознание', 'Литературное чтение', 'Русский язык', 'Труд', 'ИЗО', 'Математика'] },
-            { day: 'Среда', lessons: ['Русский язык', 'История', 'Литературное чтение', 'Математика', 'Физическая культура', 'Английский язык'] },
-            { day: 'Четверг', lessons: ['Труд', 'Английский язык', 'История', 'Русский язык', 'Математика', ''] }, 
-            { day: 'Пятница', lessons: ['Музыка', 'История', 'География', 'Физическая культура', 'Русский язык', 'Математика'] },
-            { day: 'Суббота', lessons: ['', '', '', '', '', ''] }, 
-        ];
+        const MODEL_NAME = 'gemini-2.5-flash-preview-09-2025';
+        const API_URL = `https://generativelanguage.googleapis.com/v1beta/models/${MODEL_NAME}:generateContent?key=${API_KEY}`;
         
-        const quizQuestions = [
-            { question: "Сколько материков на Земле?", options: ["Пять", "Шесть", "Семь", "Четыре"], answer: "Шесть" },
-            { question: "Самая крупная планета Солнечной системы?", options: ["Марс", "Юпитер", "Венера", "Земля"], answer: "Юпитер" },
-            { question: "Кто написал 'Муму'?", options: ["Пушкин", "Лермонтов", "Тургенев", "Толстой"], answer: "Тургенев" },
-        ];
-        
-        let currentQuizIndex = 0;
-        let score = 0;
-        
-        // --- Firebase/Chat Variables ---
-        let app, db, auth;
-        let currentUserId = null;
-        let isFirebaseReady = false;
-        let userDisplayName = null; // Новая переменная для отображаемого имени
-
-        // --- Auth Logic: Handles sign-in asynchronously ---
-        async function handleAuth() {
-            if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
-                try {
-                    // Попытка входа с пользовательским токеном
-                    await signInWithCustomToken(auth, __initial_auth_token);
-                } catch (error) {
-                    console.error("Primary sign-in failed, attempting anonymous sign-in.", error);
-                    // Fallback to anonymous sign-in if the custom token fails
-                    await signInAnonymously(auth);
-                }
-            } else {
-                // Анонимный вход, если нет пользовательского токена
-                await signInAnonymously(auth);
-            }
-        }
-
-        // --- Profile Management Logic ---
-        function getProfileDocRef(appId, userId) {
-            // Путь для личных данных: /artifacts/{appId}/users/{userId}/profile/user_data
-            return doc(db, `artifacts/${appId}/users/${userId}/profile/user_data`);
-        }
-        
-        async function loadUserProfile(appId, userId) {
-            try {
-                const docRef = getProfileDocRef(appId, userId);
-                const docSnap = await getDoc(docRef);
-                
-                if (docSnap.exists()) {
-                    userDisplayName = docSnap.data().displayName || null;
-                    console.log("Loaded Display Name:", userDisplayName);
-                } else {
-                    userDisplayName = null;
-                    console.log("No existing profile data found.");
-                }
-            } catch (e) {
-                console.error("Error loading user profile:", e);
-            }
-        }
-        
-        window.saveDisplayName = async function() {
-            const nameInput = document.getElementById('name-input');
-            const newName = nameInput.value.trim().substring(0, 20); // Обрезка до 20 символов
-            
-            if (newName.length < 2) {
-                window.alertMessage("Имя должно содержать не менее 2 символов!");
-                return;
-            }
-
-            try {
-                const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
-                const docRef = getProfileDocRef(appId, currentUserId);
-                
-                // Сохранение имени
-                await setDoc(docRef, { displayName: newName }, { merge: true });
-                
-                userDisplayName = newName;
-                window.alertMessage(`Имя '${newName}' успешно сохранено!`);
-                showNamePrompt(false);
-                
-                // Обновление информации об авторизации
-                document.getElementById('auth-info').innerHTML = `Вы вошли как: ID пользователя: <span class="font-bold text-secondary-teal break-all">${currentUserId}</span> (Имя: <span class="text-primary-orange">${userDisplayName}</span>)`;
-
-            } catch (e) {
-                console.error("Error saving display name:", e);
-                window.alertMessage("Не удалось сохранить имя. Попробуйте еще раз.");
-            }
-        }
-        
-        function showNamePrompt(show) {
-            const prompt = document.getElementById('name-prompt');
-            if (prompt) {
-                prompt.classList.toggle('hidden', !show);
-            }
-        }
-
-
-        // --- Firebase Initialization ---
-        async function initFirebase() {
-            try {
-                // setLogLevel('Debug'); // Раскомментировать для отладки
-                const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
-                const firebaseConfig = JSON.parse(typeof __firebase_config !== 'undefined' ? __firebase_config : '{}');
-
-                if (Object.keys(firebaseConfig).length === 0) {
-                    const errorMessage = "⚠️ КРИТИЧЕСКАЯ ОШИБКА: Конфигурация Firebase недоступна. Пожалуйста, откройте сайт в режиме 'Preview' или повторно опубликуйте его.";
-                    console.error(errorMessage);
-                    
-                    // Улучшенное визуальное сообщение об ошибке
-                    document.getElementById('chat-loading').style.display = 'none';
-                    document.getElementById('auth-info').innerHTML = `<p class="p-4 bg-red-100 border border-red-400 text-red-700 rounded-lg font-bold">${errorMessage}</p>`;
-                    document.getElementById('send-btn').disabled = true;
-                    showNamePrompt(false);
-                    return;
-                }
-
-                app = initializeApp(firebaseConfig);
-                db = getFirestore(app);
-                auth = getAuth(app);
-                
-                // 1. Wait for Auth to complete
-                await handleAuth();
-
-                // 2. Set user info and ready state after successful auth
-                currentUserId = auth.currentUser?.uid || crypto.randomUUID(); 
-                isFirebaseReady = true;
-                
-                // NEW: Загружаем профиль пользователя
-                await loadUserProfile(appId, currentUserId);
-
-                console.log("Firebase Auth Ready. User ID:", currentUserId);
-                
-                let authInfoText = `Вы вошли как: ID пользователя: <span class="font-bold text-secondary-teal break-all">${currentUserId}</span>`;
-                if (userDisplayName) {
-                     authInfoText += ` (Имя: <span class="text-primary-orange">${userDisplayName}</span>)`;
-                }
-                document.getElementById('auth-info').innerHTML = authInfoText;
-                
-                document.getElementById('send-btn').disabled = false;
-                document.getElementById('chat-loading').textContent = "Загрузка сообщений...";
-                
-                // NEW: Показываем запрос имени, если оно не установлено
-                showNamePrompt(!userDisplayName);
-                
-                // 3. Start Chat Listener ONLY after Auth is ready
-                setupChatListener(appId);
-
-            } catch (e) {
-                console.error("Error initializing Firebase:", e);
-                document.getElementById('chat-loading').textContent = "Ошибка инициализации чата. (См. консоль)";
-            }
-        }
-        
-        // --- Chat Logic ---
-
-        function setupChatListener(appId) {
-            if (!db) {
-                console.error("Firestore DB is not initialized.");
-                document.getElementById('chat-loading').textContent = "Ошибка: База данных не инициализирована.";
-                return;
-            }
-
-            const messagesCollectionPath = `artifacts/${appId}/public/data/messages`;
-            console.log("Attempting to listen to path:", messagesCollectionPath);
-            const messagesCollectionRef = collection(db, messagesCollectionPath);
-            
-            // Запрос, без orderBy для предотвращения ошибок индексации
-            const q = query(messagesCollectionRef); 
-
-            onSnapshot(q, (snapshot) => {
-                const chatLoading = document.getElementById('chat-loading'); // Получаем элемент
-                if (chatLoading) { // Проверяем его наличие перед использованием
-                    chatLoading.style.display = 'none'; // Скрываем "Загрузка..."
-                }
-
-                const messages = [];
-                snapshot.forEach(doc => {
-                    const data = doc.data();
-                    messages.push({ id: doc.id, ...data });
-                });
-                
-                // Сортировка в памяти по метке времени
-                messages.sort((a, b) => (a.timestamp?.seconds || 0) - (b.timestamp?.seconds || 0));
-
-                renderMessages(messages);
-            }, (error) => {
-                // Убедитесь, что ошибки разрешений не отображаются после успешного входа
-                if (error.code !== 'permission-denied') { 
-                    console.error("Error listening to chat messages:", error);
-                    document.getElementById('chat-loading').textContent = "Ошибка загрузки сообщений. Проверьте разрешения.";
-                }
-            });
-        }
-
-        function renderMessages(messages) {
-            const chatWindow = document.getElementById('chat-window');
-            chatWindow.innerHTML = '';
-            
-            if (messages.length === 0) {
-                chatWindow.innerHTML = '<div class="text-center text-gray-500 mt-20">Пока нет сообщений. Начните общение!</div>';
-                return;
-            }
-
-            messages.forEach(msg => {
-                // currentUserId теперь глобальная переменная, установленная в initFirebase
-                const isSelf = msg.userId === currentUserId; 
-                const messageDiv = document.createElement('div');
-                
-                // Санитизация текста
-                const safeText = msg.text ? String(msg.text).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;') : '';
-                const timestampText = msg.timestamp?.toDate() ? msg.timestamp.toDate().toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' }) : 'сейчас';
-                
-                // NEW: Определение имени отправителя
-                let senderText = '';
-                if (isSelf) {
-                    senderText = userDisplayName || 'Вы';
-                } else if (msg.displayName) {
-                    senderText = msg.displayName; // Используем сохраненное имя, если есть
-                } else {
-                    senderText = msg.userId ? msg.userId : 'Неизвестный'; // Иначе полный ID
-                }
-                
-                // Стиль сообщения
-                messageDiv.className = `flex ${isSelf ? 'justify-end' : 'justify-start'}`;
-                
-                messageDiv.innerHTML = `
-                    <div class="max-w-xs md:max-w-md p-3 rounded-xl shadow-md ${isSelf ? 'bg-secondary-teal text-white rounded-br-none' : 'bg-primary-orange/20 text-gray-800 rounded-tl-none'}">
-                        <div class="text-xs font-bold mb-1 ${isSelf ? 'text-white' : 'text-primary-orange'} break-all">${senderText}</div>
-                        <p class="text-sm md:text-base whitespace-pre-wrap">${safeText}</p>
-                        <div class="text-[10px] text-right mt-1 opacity-70 ${isSelf ? 'text-white' : 'text-gray-600'}">${timestampText}</div>
-                    </div>
-                `;
-                
-                chatWindow.appendChild(messageDiv);
-            });
-            
-            // Прокрутка вниз
-            chatWindow.scrollTop = chatWindow.scrollHeight;
-        }
-
-
-        window.sendMessage = async function() {
-            const input = document.getElementById('chat-input');
-            const text = input.value.trim();
-            
-            // NEW: Проверка наличия имени перед отправкой
-            if (!userDisplayName) {
-                showNamePrompt(true);
-                window.alertMessage("Пожалуйста, сначала введите и сохраните свое имя в поле выше!");
-                return;
-            }
-            
-            if (!isFirebaseReady || !currentUserId || !text) {
-                console.warn("Чат не готов или сообщение пусто.");
-                return;
-            }
-
-            const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
-            const messagesCollectionRef = collection(db, `artifacts/${appId}/public/data/messages`);
-
-            try {
-                // Реализуем экспоненциальный откат для повторных попыток
-                for (let i = 0; i < 3; i++) {
-                    try {
-                        await addDoc(messagesCollectionRef, {
-                            userId: currentUserId,
-                            text: text,
-                            timestamp: serverTimestamp(),
-                            displayName: userDisplayName // NEW: Добавляем отображаемое имя
-                        });
-                        input.value = ''; // Очистка после успешной отправки
-                        return; // Успех, выходим из цикла
-                    } catch (error) {
-                        if (i < 2) {
-                            const delay = Math.pow(2, i) * 1000;
-                            await new Promise(resolve => setTimeout(resolve, delay));
-                        } else {
-                            throw error; // Бросаем ошибку после последней попытки
-                        }
-                    }
-                }
-            } catch (e) {
-                console.error("Error sending message:", e);
-                window.alertMessage('Не удалось отправить сообщение. Проверьте подключение.');
-            }
-        }
-
-        // --- Инициализация при загрузке страницы ---
-        document.addEventListener('DOMContentLoaded', () => {
-            renderSchedule();
-            window.showSection('home');
-            initFirebase(); // Теперь асинхронный вызов
-
-            // Добавляем слушатель Enter для чата
-            const chatInput = document.getElementById('chat-input');
-            if (chatInput) {
-                chatInput.addEventListener('keypress', function (e) {
-                    if (e.key === 'Enter' && !document.getElementById('send-btn').disabled) {
-                        window.sendMessage();
-                    }
-                });
-            }
+        // Объект для рендеринга Markdown
+        const md = window.markdownit({
+            html: false,
+            linkify: true,
+            typographer: true
         });
 
-        // --- Управление разделами ---
-        window.showSection = function(sectionId) {
-            document.querySelectorAll('section[id^="section-"]').forEach(section => {
-                section.classList.add('hidden');
+        // Функция рендеринга с поддержкой LaTeX и Markdown
+        function renderMarkdown(markdownText) {
+            // Замена одинарных $...$ на span.katex-inline для inline формул
+            let html = markdownText.replace(/\$(.*?)\$/g, (match, p1) => {
+                try {
+                    return katex.renderToString(p1, { throwOnError: false });
+                } catch (e) {
+                    return match; // Возвращаем исходный текст, если ошибка
+                }
             });
-            document.getElementById(`section-${sectionId}`).classList.remove('hidden');
-            window.scrollTo({ top: 0, behavior: 'smooth' });
-            
-            // Специальная инициализация для викторины
-            if (sectionId === 'games') {
-                document.getElementById('start-quiz-btn').classList.remove('hidden');
-                document.getElementById('quiz-question').innerHTML = '';
-                document.getElementById('quiz-options').innerHTML = '';
-                document.getElementById('quiz-feedback').innerHTML = 'Нажми "Начать!" для старта Викторины!';
-            }
-        }
-        
-        // --- Расписание: Генерация и подсветка ---
-        function renderSchedule() {
-            const tbody = document.getElementById('schedule-table').querySelector('tbody');
-            tbody.innerHTML = '';
-            
-            const todayIndex = new Date().getDay(); // 0=Вс, 1=Пн, ..., 6=Сб
-            
-            scheduleData.forEach((item, index) => {
-                const dayIndex = index + 1; // Пн=1, Вт=2, ...
-                const isToday = dayIndex === todayIndex;
-                
-                const row = document.createElement('tr');
-                row.className = `text-gray-800 text-sm md:text-base ${isToday ? 'bg-yellow-200 font-extrabold shadow-inner' : 'bg-white hover:bg-gray-100 transition duration-150'}`;
-                
-                let rowHtml = `<td class="p-3 rounded-l-lg">${item.day}</td>`;
-                item.lessons.forEach((lesson, lessonIndex) => {
-                    const isLastLesson = lessonIndex === item.lessons.length - 1;
-                    const lessonText = lesson || ''; // Если урока нет, показываем пустое место
-                    rowHtml += `<td class="p-3 ${isLastLesson ? 'rounded-r-lg' : ''}">${lessonText}</td>`;
-                });
-                row.innerHTML = rowHtml;
-                tbody.appendChild(row);
+
+            // Замена двойных $$...$$ на div.katex-display для блочных формул
+            html = html.replace(/\$\$(.*?)\$\$/gs, (match, p1) => {
+                try {
+                    return katex.renderToString(p1, { displayMode: true, throwOnError: false });
+                } catch (e) {
+                    return match;
+                }
             });
-        }
-        
-        // --- Фото: Имитация загрузки ---
-        window.handlePhotoUpload = function(event) {
-            const file = event.target.files[0];
-            const status = document.getElementById('upload-status');
-            
-            if (file) {
-                console.log('Файл готов к загрузке:', file.name);
-                status.textContent = `🎉 Файл '${file.name}' успешно загружен (имитация)! Спасибо!`;
-                status.classList.remove('hidden');
-                
-                const newPhotoUrl = URL.createObjectURL(file);
-                const grid = document.getElementById('photo-grid');
-                const newPhotoDiv = document.createElement('div');
-                newPhotoDiv.className = 'aspect-square rounded-xl overflow-hidden shadow-lg transition duration-200 hover:shadow-2xl hover:scale-[1.03]';
-                newPhotoDiv.innerHTML = `<img src="${newPhotoUrl}" alt="Загруженное фото" class="w-full h-full object-cover">`;
-                grid.prepend(newPhotoDiv); 
-            }
-            event.target.value = null;
+
+            // Рендеринг остального Markdown
+            return md.render(html);
         }
 
-        // --- Игры: Викторина ---
-        window.startQuiz = function() {
-            currentQuizIndex = 0;
-            score = 0;
-            document.getElementById('start-quiz-btn').classList.add('hidden');
-            document.getElementById('quiz-question').innerHTML = '';
-            document.getElementById('quiz-options').innerHTML = '';
-            document.getElementById('quiz-feedback').innerHTML = 'Нажми "Начать!" для старта Викторины!';
-            showQuestion();
+        const SUBJECTS = [
+            { id: 'GEOGRAPHY', name: 'География', icon: '🌍' },
+            { id: 'RUSSIAN', name: 'Русский Язык', icon: '📝' },
+            { id: 'MATH', name: 'Математика', icon: '📐' },
+            { id: 'HISTORY', name: 'История', icon: '📜' },
+            { id: 'SCIENCE', name: 'Естествознание', icon: '🔬' },
+            { id: 'BIOLOGY', name: 'Биология', icon: '🌿' },
+            { id: 'LITERATURE', name: 'Литература', icon: '📚' },
+            { id: 'ENGLISH', name: 'Английский Язык', icon: '🇬🇧' },
+        ];
+
+        // --- Логика LocalStorage (без изменений) ---
+
+        function loadUsername() {
+            return localStorage.getItem('paom_username');
         }
-        
-        function showQuestion() {
-            if (currentQuizIndex >= quizQuestions.length) {
-                document.getElementById('quiz-question').textContent = `Викторина окончена! Твой результат: ${score} из ${quizQuestions.length}!`;
-                document.getElementById('quiz-options').innerHTML = '';
-                document.getElementById('quiz-feedback').textContent = score === quizQuestions.length ? 'Супер! Ты — гений!' : 'Неплохо! Попробуй еще раз!';
-                document.getElementById('start-quiz-btn').textContent = 'Сыграть еще раз';
-                document.getElementById('start-quiz-btn').classList.remove('hidden');
+
+        function saveUsername(name) {
+            localStorage.setItem('paom_username', name);
+        }
+
+        function loadHistory(subjectId) {
+            const key = `paom_history_${subjectId}`;
+            try {
+                const history = localStorage.getItem(key);
+                // Источники (sources) теперь могут быть пустым массивом, так как Grounding отключен
+                return history ? JSON.parse(history) : [];
+            } catch (e) {
+                console.error("Ошибка при загрузке истории:", e);
+                return [];
+            }
+        }
+
+        function saveHistory(subjectId, history) {
+            const key = `paom_history_${subjectId}`;
+            try {
+                localStorage.setItem(key, JSON.stringify(history));
+            } catch (e) {
+                console.error("Ошибка при сохранении истории:", e);
+            }
+        }
+
+        function addHistoryEntry(subjectId, userQuestion, aiResponse) {
+            const history = loadHistory(subjectId);
+            // Сохраняем пустой массив источников, чтобы не ломать структуру
+            history.push({ user: userQuestion, ai: aiResponse, sources: [] });
+            saveHistory(subjectId, history);
+        }
+
+        // --- Логика Gemini API (Без Grounding) ---
+
+        function getSystemInstruction(subjectId) {
+            const subjectName = SUBJECTS.find(s => s.id === subjectId)?.name || 'школьный предмет';
+            const extraInstruction = {
+                'MATH': "Обязательно используй LaTeX для всех формул и математических выражений: $inline$ для встроенных и $$block$$ для блочных. Будь максимально точным.",
+                'RUSSIAN': "Обрати особое внимание на орфографию, грамматику и пунктуацию. Разъясняй правила четко и с примерами.",
+                'HISTORY': "Обязательно указывай даты и имена, а также исторический контекст. Отвечай подробно и структурированно.",
+                'SCIENCE': "Для физики и химии используй LaTeX для формул и обозначений. Объясняй сложные концепции простым языком. Если необходимо, добавь в конце ответа тег  для визуализации.",
+                'BIOLOGY': "Объясняй биологические процессы, термины и классификацию. Если необходимо, добавь в конце ответа тег  для визуализации.",
+                'LITERATURE': "Анализируй произведения, давай характеристики героям и объясняй литературные термины (жанры, тропы).",
+                'ENGLISH': "Давай ответы на русском языке, но объясняй грамматику и лексику на английском языке с примерами, используя тег `code`."
+            }[subjectId] || "Отвечай по существу, используя факты и точные данные.";
+
+            return `
+                Ты — ИИ-помощник PAOM Учёба, высококвалифицированный преподаватель и эксперт по предмету "${subjectName}".
+                Твоя задача — дать максимально точный, образовательный и дружелюбный ответ на вопрос ученика.
+                Твой тон: поддерживающий, академичный, но доступный.
+                ${extraInstruction}
+                Ответы должны быть полными, но не слишком длинными (не более 4-5 абзацев).
+            `;
+        }
+
+        /**
+         * Выполняет API-запрос к Gemini без Google Search Grounding.
+         * @param {string} userQuery Вопрос пользователя.
+         * @param {string} systemInstruction Системная инструкция для модели.
+         * @returns {Promise<{text: string}>} Ответ модели.
+         */
+        async function fetchAiResponse(userQuery, systemInstruction) {
+            // Если API_KEY пуст при локальном запуске, это всегда приведет к ошибке 403.
+            if (API_KEY === "") {
+                // Это предотвратит лишние сетевые запросы с пустым ключом
+                console.error("API Key is empty. If running locally, please insert your key.");
+            }
+            
+            const payload = {
+                contents: [{ parts: [{ text: userQuery }] }],
+                // ИСКЛЮЧАЕМ tools: [{ "google_search": {} }]
+                systemInstruction: {
+                    parts: [{ text: systemInstruction }]
+                },
+            };
+
+            const maxRetries = 5;
+            let delay = 1000;
+            let lastError = null;
+
+            for (let i = 0; i < maxRetries; i++) {
+                try {
+                    const response = await fetch(API_URL, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(payload)
+                    });
+
+                    if (!response.ok) {
+                        // Обработка 403 (Forbidden) и 429 (Rate Limit)
+                        if (response.status === 403) {
+                             // Обновленное сообщение для большей ясности при локальном запуске
+                            throw new Error(`403: Доступ запрещен. Если вы запускаете файл локально, вам необходимо вставить личный API-ключ в переменную 'const API_KEY'.`);
+                        }
+                        if (response.status === 429 && i < maxRetries - 1) {
+                            await new Promise(resolve => setTimeout(resolve, delay));
+                            delay *= 2;
+                            continue;
+                        }
+                        throw new Error(`HTTP error! status: ${response.status}`);
+                    }
+
+                    const result = await response.json();
+                    const candidate = result.candidates?.[0];
+
+                    if (candidate && candidate.content?.parts?.[0]?.text) {
+                        return { text: candidate.content.parts[0].text }; // Возвращаем только текст
+
+                    } else {
+                        return { text: "Извините, я не смог сгенерировать ответ. Попробуйте другой вопрос." };
+                    }
+                } catch (error) {
+                    lastError = error;
+                    if (error.message.includes('403') || i === maxRetries - 1) {
+                        throw new Error(`Ошибка API после ${i + 1} попыток: ${lastError.message}`);
+                    }
+                    await new Promise(resolve => setTimeout(resolve, delay));
+                    delay *= 2;
+                }
+            }
+            throw new Error("Не удалось получить ответ от ИИ.");
+        }
+
+
+        // --- Функции Рендеринга Представлений (SPA Routing) ---
+
+        function transitionView(content, callback = () => {}) {
+            APP_CONTENT.classList.remove('visible');
+            APP_CONTENT.classList.add('opacity-0', 'translate-y-5');
+
+            setTimeout(() => {
+                APP_CONTENT.innerHTML = content;
+                window.scrollTo(0, 0);
+
+                APP_CONTENT.classList.add('visible');
+                APP_CONTENT.classList.remove('opacity-0', 'translate-y-5');
+
+                callback();
+            }, 500);
+        }
+
+        function renderStartScreen() {
+            const username = loadUsername();
+
+            const content = `
+                <div class="text-center">
+                    <div class="text-paom-dark mb-4">
+                        <!-- Логотип PAOM -->
+                        <svg class="w-16 h-16 mx-auto" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <circle cx="12" cy="12" r="10" fill="#4CAF50"/>
+                            <path d="M12 4C8.686 4 6 6.686 6 10C6 11.536 6.545 12.98 7.472 14.155L14.155 7.472C12.98 6.545 11.536 6 10 6C8.5 6 7.11 6.5 6 7.37V4H4V12H12V10C12 7.79 10.21 6 8 6C6.72 6 5.56 6.53 4.71 7.37L12 14.65V18H18V12H14.65L18 8.65V18H14V14.65L7.37 8C7.47 7.9 7.6 7.8 7.7 7.7L14.65 14.65L18 11.3V4H16V7.37L9 14.37V10C9 8.34 10.34 7 12 7V4H9V12H15V8.37L18 11.3V18H12V14.65L8.37 18.28C9.55 19.34 10.99 20 12.5 20C15.814 20 18.5 17.314 18.5 14V10C18.5 6.686 15.814 4 12.5 4H12Z" fill="white"/>
+                        </svg>
+                        <h1 class="text-3xl font-extrabold mt-2">PAOM Учёба</h1>
+                    </div>
+                    <h2 class="text-2xl font-semibold text-paom-dark mb-6">Добро пожаловать в PAOM Учёба!</h2>
+
+                    <p class="text-gray-600 mb-6">Ваш персональный ИИ-помощник по школьным предметам, теперь на базе Gemini.</p>
+
+                    <div class="space-y-3 mb-8 text-left max-w-sm mx-auto">
+                        <p class="flex items-start text-paom-dark">
+                            <span class="text-xl mr-3">✅</span>
+                            Удобный и простой интерфейс
+                        </p>
+                        <p class="flex items-start text-paom-dark">
+                            <span class="text-xl mr-3">🧠</span>
+                            Высококачественные ответы от Gemini
+                        </p>
+                        <p class="flex items-start text-paom-dark">
+                            <span class="text-xl mr-3">⚡</span>
+                            Ответы с формулами (LaTeX)
+                        </p>
+                        <p class="flex items-start text-paom-dark">
+                            <span class="text-xl mr-3">💾</span>
+                            Данные сохраняются локально
+                        </p>
+                    </div>
+
+                    <div class="space-y-4">
+                        <input
+                            id="username-input"
+                            type="text"
+                            placeholder="Введите ваше имя"
+                            value="${username || ''}"
+                            class="w-full px-4 py-3 border border-paom-light rounded-lg focus:ring-2 focus:ring-paom-main focus:border-paom-main outline-none text-lg"
+                        />
+                        <button
+                            id="start-button"
+                            onclick="handleStartLearning()"
+                            class="paom-button w-full bg-paom-main text-white font-bold py-3 rounded-xl shadow-lg shadow-paom-light hover:bg-paom-dark"
+                        >
+                            Начать обучение
+                        </button>
+                    </div>
+                </div>
+            `;
+            transitionView(content, () => {
+                const input = document.getElementById('username-input');
+                document.getElementById('start-button').addEventListener('click', handleStartLearning);
+                input.addEventListener('keypress', (e) => {
+                    if (e.key === 'Enter') handleStartLearning();
+                });
+                if (!username) input.focus();
+            });
+        }
+
+        function handleStartLearning() {
+            const input = document.getElementById('username-input');
+            const username = input.value.trim();
+
+            if (username.length > 1) {
+                saveUsername(username);
+                renderMainMenu();
+            } else {
+                input.focus();
+                input.classList.add('border-red-500', 'ring-red-500');
+                setTimeout(() => input.classList.remove('border-red-500', 'ring-red-500'), 1500);
+            }
+        }
+
+        function logoutUser() {
+            localStorage.removeItem('paom_username');
+            renderStartScreen();
+        }
+
+        function renderMainMenu() {
+            const username = loadUsername();
+            if (!username) {
+                renderStartScreen();
                 return;
             }
-            
-            const q = quizQuestions[currentQuizIndex];
-            document.getElementById('quiz-question').textContent = `Вопрос ${currentQuizIndex + 1}: ${q.question}`;
-            const optionsDiv = document.getElementById('quiz-options');
-            optionsDiv.innerHTML = '';
-            
-            q.options.forEach(option => {
-                const btn = document.createElement('button');
-                btn.textContent = option;
-                btn.className = 'w-full text-left bg-secondary-teal/80 text-white py-2 px-4 rounded-lg font-semibold transition hover:bg-secondary-teal hover:scale-[1.02] active:scale-[0.98]';
-                btn.onclick = () => checkAnswer(option, q.answer);
-                optionsDiv.appendChild(btn);
+
+            const subjectButtons = SUBJECTS.map(subj => `
+                <button
+                    onclick="renderSubjectScreen('${subj.id}')"
+                    class="paom-button flex items-center justify-between p-4 bg-paom-light text-paom-dark font-semibold rounded-xl hover:bg-paom-main hover:text-white shadow-md w-full text-left"
+                >
+                    <span class="text-2xl mr-3">${subj.icon}</span>
+                    <span class="flex-grow text-lg">${subj.name}</span>
+                    <span class="text-xl font-bold">→</span>
+                </button>
+            `).join('');
+
+            const content = `
+                <header class="mb-8 text-center">
+                    <h1 class="text-3xl font-bold text-paom-dark">Привет, ${username}! 👋</h1>
+                    <p class="text-gray-600 mt-2">Выберите предмет, чтобы начать обучение с ИИ-помощником.</p>
+                </header>
+                <div class="space-y-4">
+                    ${subjectButtons}
+                </div>
+                <button
+                    onclick="logoutUser()"
+                    class="paom-button mt-8 w-full bg-gray-200 text-gray-700 font-medium py-2 rounded-xl hover:bg-gray-300"
+                >
+                    Сменить пользователя
+                </button>
+            `;
+            transitionView(content);
+        }
+
+        function renderSubjectScreen(subjectId) {
+            const subject = SUBJECTS.find(s => s.id === subjectId);
+            if (!subject) {
+                renderMainMenu();
+                return;
+            }
+
+            const username = loadUsername();
+            const history = loadHistory(subjectId);
+
+            const renderHistory = (history) => history.map(entry => `
+                <div class="mb-4 space-y-2">
+                    <!-- Запрос пользователя -->
+                    <div class="flex justify-end">
+                        <div class="message-user p-3 max-w-[85%] sm:max-w-[70%] text-gray-800 shadow-sm">
+                            <p class="font-medium text-sm text-paom-dark mb-1">Вы:</p>
+                            <p>${entry.user}</p>
+                        </div>
+                    </div>
+                    <!-- Ответ ИИ -->
+                    <div class="flex justify-start">
+                        <div class="message-ai p-3 max-w-[85%] sm:max-w-[70%] text-gray-800 shadow-sm">
+                            <p class="font-medium text-sm text-paom-dark mb-1">ИИ-Помощник:</p>
+                            <div class="markdown-content">
+                                ${renderMarkdown(entry.ai)}
+                            </div>
+                            <!-- Цитаты убраны, так как Grounding отключен -->
+                        </div>
+                    </div>
+                </div>
+            `).join('');
+
+            const content = `
+                <button
+                    onclick="renderMainMenu()"
+                    class="paom-button flex items-center text-paom-main hover:text-paom-dark font-medium mb-6 p-2 rounded-lg -ml-2"
+                >
+                    <span class="text-xl mr-2">←</span>
+                    Вернуться в меню
+                </button>
+
+                <h1 class="text-2xl font-bold text-paom-dark mb-2">${subject.icon} ${subject.name}</h1>
+                <p class="text-gray-600 mb-6">Задайте свой вопрос по ${subject.name.toLowerCase()} ниже, ${username}.</p>
+
+                <!-- Область вывода истории -->
+                <div id="history-output" class="mb-8 w-full h-96 overflow-y-auto border border-paom-light p-4 rounded-xl bg-paom-bg space-y-4">
+                    ${history.length > 0 ? renderHistory(history) : '<p class="text-gray-500 text-center py-10">История пуста. Задайте свой первый вопрос!</p>'}
+                </div>
+
+                <!-- Область ввода вопроса -->
+                <div class="flex flex-col sm:flex-row w-full space-y-3 sm:space-y-0 sm:space-x-3">
+                    <textarea
+                        id="question-input"
+                        rows="2"
+                        placeholder="Введите ваш вопрос..."
+                        class="flex-grow w-full sm:w-auto px-4 py-2 border border-paom-light rounded-lg focus:ring-2 focus:ring-paom-main focus:border-paom-main outline-none resize-none"
+                    ></textarea>
+                    <button
+                        id="submit-question"
+                        onclick="handleSubmitQuestion('${subjectId}')"
+                        class="paom-button bg-paom-main text-white font-bold py-2 px-6 rounded-xl shadow-md shadow-paom-light hover:bg-paom-dark flex-shrink-0"
+                    >
+                        Получить ответ
+                    </button>
+                </div>
+
+                <!-- Индикатор загрузки -->
+                <div id="loading-indicator" class="hidden mt-4 text-paom-dark font-medium">
+                    ИИ думает... 🧠
+                </div>
+                <!-- Модальное окно ошибки (скрыто) -->
+                <div id="error-modal" class="fixed inset-0 bg-black bg-opacity-50 hidden items-center justify-center p-4 z-50">
+                    <div class="bg-white p-6 rounded-lg shadow-xl max-w-sm w-full text-center">
+                        <h3 class="text-xl font-bold text-red-600 mb-3">Ошибка!</h3>
+                        <p id="error-message" class="text-gray-700 mb-4"></p>
+                        <button onclick="document.getElementById('error-modal').classList.add('hidden')" class="paom-button bg-red-500 text-white py-2 px-4 rounded-lg hover:bg-red-600">
+                            Закрыть
+                        </button>
+                    </div>
+                </div>
+            `;
+
+            transitionView(content, () => {
+                const input = document.getElementById('question-input');
+                input.addEventListener('keypress', (e) => {
+                    if (e.key === 'Enter' && !e.shiftKey) {
+                        e.preventDefault();
+                        handleSubmitQuestion(subjectId);
+                    }
+                });
+                const historyDiv = document.getElementById('history-output');
+                historyDiv.scrollTop = historyDiv.scrollHeight;
+                input.focus();
             });
         }
-        
-        function checkAnswer(selected, correct) {
-            const feedback = document.getElementById('quiz-feedback');
-            document.getElementById('quiz-options').querySelectorAll('button').forEach(btn => btn.disabled = true);
+
+        async function handleSubmitQuestion(subjectId) {
+            const input = document.getElementById('question-input');
+            const button = document.getElementById('submit-question');
+            const loading = document.getElementById('loading-indicator');
+            const historyOutput = document.getElementById('history-output');
+            const errorModal = document.getElementById('error-modal');
+            const errorMessageDiv = document.getElementById('error-message');
+
+            const userQuestion = input.value.trim();
+            if (!userQuestion) return;
+
+            // 1. Блокировка интерфейса и показ загрузки
+            input.disabled = true;
+            button.disabled = true;
+            button.classList.add('opacity-70');
+            loading.classList.remove('hidden');
+
+            // 2. Добавление "сообщения пользователя" и плейсхолдера ИИ в UI
+            const newEntryHTML = `
+                <div class="mb-4 space-y-2 current-query">
+                    <div class="flex justify-end">
+                        <div class="message-user p-3 max-w-[85%] sm:max-w-[70%] text-gray-800 shadow-sm">
+                            <p class="font-medium text-sm text-paom-dark mb-1">Вы:</p>
+                            <p>${userQuestion}</p>
+                        </div>
+                    </div>
+                    <div class="flex justify-start ai-placeholder">
+                        <div class="p-3 max-w-[85%] sm:max-w-[70%] text-gray-500">
+                             <span class="animate-pulse">...</span>
+                        </div>
+                    </div>
+                </div>
+            `;
+            historyOutput.innerHTML = historyOutput.innerHTML.replace(
+                '<p class="text-gray-500 text-center py-10">История пуста. Задайте свой первый вопрос!</p>',
+                ''
+            ) + newEntryHTML;
             
-            if (selected === correct) {
-                feedback.textContent = 'Правильно! Молодец! 🎉';
-                feedback.className = 'mt-4 font-bold text-center text-green-600';
-                score++;
-            } else {
-                feedback.textContent = `Ошибка. Правильный ответ: ${correct} 😟`;
-                feedback.className = 'mt-4 font-bold text-center text-red-600';
+            historyOutput.scrollTop = historyOutput.scrollHeight;
+            input.value = '';
+
+            try {
+                // 3. Генерация системной инструкции и вызов API
+                const systemInstruction = getSystemInstruction(subjectId);
+                // Запрос теперь возвращает только text
+                const { text: aiResponse } = await fetchAiResponse(userQuestion, systemInstruction);
+
+                // 4. Обновление UI с реальным ответом
+                const currentQuery = historyOutput.querySelector('.current-query');
+                const placeholder = currentQuery ? currentQuery.querySelector('.ai-placeholder') : null;
+
+                if (placeholder) {
+                    placeholder.outerHTML = `
+                        <div class="flex justify-start">
+                            <div class="message-ai p-3 max-w-[85%] sm:max-w-[70%] text-gray-800 shadow-sm">
+                                <p class="font-medium text-sm text-paom-dark mb-1">ИИ-Помощник:</p>
+                                <div class="markdown-content">
+                                    ${renderMarkdown(aiResponse)}
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                }
+                if (currentQuery) {
+                    currentQuery.classList.remove('current-query');
+                }
+
+                // 5. Сохранение в localStorage (без источников)
+                addHistoryEntry(subjectId, userQuestion, aiResponse);
+
+            } catch (error) {
+                console.error("Ошибка при получении ответа ИИ:", error);
+                
+                let userFriendlyError;
+                if (error.message.includes('403')) {
+                    // Обновленное сообщение для локального пользователя
+                    userFriendlyError = "Доступ запрещен. Если вы запускаете файл локально, вам необходимо вставить личный API-ключ в переменную 'const API_KEY'.";
+                } else if (error.message.includes('429')) {
+                    userFriendlyError = "Превышен лимит запросов. Пожалуйста, подождите немного и попробуйте снова.";
+                } else {
+                    userFriendlyError = `Не удалось получить ответ. Пожалуйста, проверьте подключение к интернету. Детали: ${error.message}`;
+                }
+
+                // Показ модального окна с ошибкой
+                errorMessageDiv.textContent = userFriendlyError;
+                errorModal.classList.remove('hidden');
+                errorModal.classList.add('flex');
+
+                // Замена плейсхолдера сообщением об ошибке в чате
+                const placeholder = historyOutput.querySelector('.ai-placeholder');
+                if (placeholder) {
+                    placeholder.innerHTML = `<div class="p-3 text-red-500">❌ Ошибка: ${userFriendlyError}</div>`;
+                }
+
+            } finally {
+                // 6. Разблокировка интерфейса и скрытие загрузки
+                input.disabled = false;
+                button.disabled = false;
+                button.classList.remove('opacity-70');
+                loading.classList.add('hidden');
+                input.focus();
+                historyOutput.scrollTop = historyOutput.scrollHeight; // Финальная прокрутка
             }
-            
-            currentQuizIndex++;
-            
-            // Задержка перед следующим вопросом
-            setTimeout(() => {
-                showQuestion();
-            }, 1500);
         }
 
-        // --- Управление модальным окном (вместо alert) ---
-        window.alertMessage = function(text) {
-            document.getElementById('modal-text').textContent = text;
-            const modal = document.getElementById('message-modal');
-            modal.classList.remove('hidden');
-            modal.classList.add('flex');
-            // Анимация появления
-            setTimeout(() => {
-                modal.querySelector('div').classList.remove('scale-0');
-                modal.querySelector('div').classList.add('scale-100');
-            }, 10);
-        }
-
-        window.closeAlertMessage = function() {
-            const modal = document.getElementById('message-modal');
-            modal.querySelector('div').classList.remove('scale-100');
-            modal.querySelector('div').classList.add('scale-0');
-            // Анимация исчезновения
-            setTimeout(() => {
-                modal.classList.add('hidden');
-                modal.classList.remove('flex');
-            }, 300);
-        }
+        // --- Главная точка входа ---
+        window.onload = function() {
+            // Проверяем, есть ли имя пользователя, и рендерим соответствующий экран
+            const username = loadUsername();
+            if (username) {
+                renderMainMenu();
+            } else {
+                renderStartScreen();
+            }
+            // Делаем карточку видимой после первой загрузки контента
+            APP_CONTENT.classList.add('visible');
+        };
     </script>
 </body>
 </html>
