@@ -31,7 +31,7 @@
         /* Рабочий стол */
         .desktop {
             background: var(--desktop-bg);
-            height: 100vh;
+            height: calc(100vh - 50px);
             position: relative;
             overflow: hidden;
         }
@@ -78,6 +78,119 @@
             font-size: 12px;
             text-shadow: 1px 1px 2px black;
             font-weight: bold;
+        }
+
+        /* Контекстное меню */
+        .context-menu {
+            position: absolute;
+            background: linear-gradient(to bottom, #d4b896 0%, #b08c6e 50%, #8b5a2b 100%);
+            border: 2px solid #a67c52;
+            border-radius: 8px;
+            box-shadow: 5px 5px 15px rgba(0, 0, 0, 0.5);
+            display: none;
+            z-index: 10000;
+            min-width: 200px;
+        }
+
+        .context-menu-item {
+            padding: 12px 15px;
+            cursor: pointer;
+            border-bottom: 1px solid #a67c52;
+            color: #4d2e19;
+            font-size: 14px;
+            transition: all 0.2s ease;
+        }
+
+        .context-menu-item:hover {
+            background: linear-gradient(to bottom, #e6c9a8 0%, #d4b896 100%);
+        }
+
+        .context-menu-item:last-child {
+            border-bottom: none;
+        }
+
+        /* Виджеты */
+        .widget {
+            position: absolute;
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            border: 2px solid rgba(255, 255, 255, 0.2);
+            border-radius: 15px;
+            padding: 20px;
+            color: white;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+        }
+
+        .clock-widget {
+            width: 150px;
+            height: 150px;
+            top: 50px;
+            right: 50px;
+        }
+
+        .battery-widget {
+            width: 120px;
+            height: 80px;
+            top: 220px;
+            right: 50px;
+        }
+
+        .slideshow-widget {
+            width: 200px;
+            height: 150px;
+            bottom: 100px;
+            right: 50px;
+            overflow: hidden;
+        }
+
+        .clock-face {
+            width: 100%;
+            height: 100%;
+            position: relative;
+            border: 3px solid #ffd700;
+            border-radius: 50%;
+            background: rgba(0, 0, 0, 0.3);
+        }
+
+        .clock-hand {
+            position: absolute;
+            background: #ffd700;
+            transform-origin: bottom center;
+            left: 50%;
+            bottom: 50%;
+            transform: translateX(-50%);
+        }
+
+        .hour-hand {
+            width: 4px;
+            height: 30px;
+        }
+
+        .minute-hand {
+            width: 3px;
+            height: 40px;
+        }
+
+        .second-hand {
+            width: 2px;
+            height: 45px;
+            background: #ff4444;
+        }
+
+        .battery-level {
+            width: 100%;
+            height: 30px;
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 15px;
+            margin-top: 10px;
+            overflow: hidden;
+        }
+
+        .battery-fill {
+            height: 100%;
+            background: linear-gradient(to right, #4CAF50, #8BC34A);
+            border-radius: 15px;
+            transition: width 0.5s ease;
         }
 
         /* Панель задач */
@@ -191,6 +304,17 @@
             min-width: 400px;
             min-height: 300px;
             display: none;
+            resize: both;
+            overflow: auto;
+        }
+
+        .window.maximized {
+            top: 0 !important;
+            left: 0 !important;
+            width: 100% !important;
+            height: calc(100vh - 50px) !important;
+            border-radius: 0;
+            resize: none;
         }
 
         .window-header {
@@ -202,6 +326,7 @@
             align-items: center;
             cursor: move;
             border-radius: 5px 5px 0 0;
+            user-select: none;
         }
 
         .window-title {
@@ -248,604 +373,321 @@
             overflow: auto;
         }
 
-        /* Стили для калькулятора */
-        .calculator {
-            display: grid;
-            grid-template-columns: repeat(4, 1fr);
-            gap: 8px;
-            max-width: 250px;
-            margin: 0 auto;
-        }
-
-        .calc-display {
-            grid-column: 1 / -1;
-            background: #2f1b14;
-            color: #00ff00;
-            padding: 10px;
-            font-family: 'Courier New', monospace;
-            font-size: 18px;
-            text-align: right;
-            border: 2px inset #666;
-            margin-bottom: 10px;
-            border-radius: 4px;
-        }
-
-        .calc-btn {
-            background: linear-gradient(to bottom, #d4b896 0%, #8b7355 100%);
-            border: 2px outset #a67c52;
-            padding: 15px;
-            font-size: 16px;
-            font-weight: bold;
-            color: #4d2e19;
-            cursor: pointer;
-            border-radius: 4px;
-            text-align: center;
-        }
-
-        .calc-btn:active {
-            border-style: inset;
-            background: linear-gradient(to bottom, #8b7355 0%, #d4b896 100%);
-        }
-
-        /* Стили для блокнота */
-        .notepad-container {
+        /* Стили для настроек с вкладками */
+        .settings-tabs {
             display: flex;
-            height: 400px;
-            background: #fffacd;
-            border: 2px solid #deb887;
-            border-radius: 8px;
-            overflow: hidden;
-            box-shadow: inset 0 0 10px rgba(139, 69, 19, 0.2);
-        }
-
-        .notes-sidebar {
-            width: 200px;
-            background: linear-gradient(to bottom, #f5e6c9 0%, #e6c9a8 100%);
-            border-right: 2px solid #deb887;
-            padding: 10px;
-            overflow-y: auto;
-        }
-
-        .notes-list {
-            display: flex;
-            flex-direction: column;
-            gap: 5px;
-        }
-
-        .note-item {
-            padding: 10px;
-            background: #fffacd;
-            border: 1px solid #deb887;
-            border-radius: 4px;
-            cursor: pointer;
-            font-size: 12px;
-            transition: all 0.2s ease;
-        }
-
-        .note-item:hover {
-            background: #ffe4b5;
-        }
-
-        .note-item.active {
-            background: #ffd700;
-            border-color: #ff8c00;
-        }
-
-        .note-editor {
-            flex: 1;
-            display: flex;
-            flex-direction: column;
-            padding: 10px;
-        }
-
-        .note-title {
-            background: #fffacd;
-            border: 1px solid #deb887;
-            border-radius: 4px;
-            padding: 8px;
-            margin-bottom: 10px;
-            font-size: 14px;
-            font-weight: bold;
-        }
-
-        .note-content {
-            flex: 1;
-            background: #fffacd;
-            border: 1px solid #deb887;
-            border-radius: 4px;
-            padding: 10px;
-            resize: none;
-            font-family: 'Courier New', monospace;
-            font-size: 12px;
-        }
-
-        .note-actions {
-            margin-top: 10px;
-            display: flex;
-            gap: 10px;
-            justify-content: flex-end;
-        }
-
-        /* Стили для браузера */
-        .browser-container {
-            height: 400px;
-            display: flex;
-            flex-direction: column;
-        }
-
-        .browser-url-bar {
-            display: flex;
-            gap: 10px;
-            margin-bottom: 10px;
-        }
-
-        .url-input {
-            flex: 1;
-            padding: 8px;
-            border: 2px inset #a67c52;
-            border-radius: 4px;
-            background: #fffff0;
-        }
-
-        .browser-iframe {
-            flex: 1;
-            border: 2px inset #a67c52;
-            border-radius: 4px;
-            background: white;
-        }
-
-        /* Стили для проигрывателя */
-        .player-container {
-            text-align: center;
-        }
-
-        .player-controls {
-            display: flex;
-            justify-content: center;
-            gap: 20px;
-            margin: 20px 0;
-        }
-
-        .player-btn {
-            width: 40px;
-            height: 40px;
-            border-radius: 50%;
-            background: linear-gradient(to bottom, #d4b896 0%, #8b7355 100%);
-            border: 2px outset #a67c52;
-            cursor: pointer;
-            font-size: 16px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-        }
-
-        .player-btn:active {
-            border-style: inset;
-        }
-
-        .playlist {
-            max-height: 200px;
-            overflow-y: auto;
-            border: 1px solid #deb887;
-            border-radius: 4px;
-            padding: 10px;
-            background: #fffacd;
-        }
-
-        .playlist-item {
-            padding: 8px;
-            border-bottom: 1px solid #deb887;
-            cursor: pointer;
-            font-size: 12px;
-            display: flex;
-            justify-content: between;
-            align-items: center;
-        }
-
-        .playlist-item:hover {
-            background: #ffe4b5;
-        }
-
-        .playlist-item.playing {
-            background: #ffd700;
-            font-weight: bold;
-        }
-
-        /* Стили для проводника */
-        .explorer-container {
-            height: 400px;
-            display: flex;
-        }
-
-        .explorer-sidebar {
-            width: 150px;
-            background: linear-gradient(to bottom, #f5e6c9 0%, #e6c9a8 100%);
-            border-right: 2px solid #deb887;
-            padding: 10px;
-        }
-
-        .explorer-folders {
-            display: flex;
-            flex-direction: column;
-            gap: 5px;
-        }
-
-        .folder-item {
-            padding: 8px;
-            background: #fffacd;
-            border: 1px solid #deb887;
-            border-radius: 4px;
-            cursor: pointer;
-            font-size: 12px;
-            display: flex;
-            align-items: center;
-            gap: 5px;
-        }
-
-        .folder-item:hover {
-            background: #ffe4b5;
-        }
-
-        .explorer-content {
-            flex: 1;
-            padding: 10px;
-            background: #fffacd;
-            overflow-y: auto;
-        }
-
-        .file-item {
-            padding: 8px;
-            margin: 5px 0;
-            background: #fffacd;
-            border: 1px solid #deb887;
-            border-radius: 4px;
-            cursor: pointer;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-        }
-
-        .file-item:hover {
-            background: #ffe4b5;
-        }
-
-        /* Стили для настроек */
-        .settings-container {
-            max-height: 400px;
-            overflow-y: auto;
-        }
-
-        .setting-item {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: 10px;
-            border-bottom: 1px solid #deb887;
-        }
-
-        .toggle-switch {
-            position: relative;
-            width: 50px;
-            height: 24px;
-        }
-
-        .toggle-slider {
-            position: absolute;
-            cursor: pointer;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            background-color: #ccc;
-            transition: .4s;
-            border-radius: 24px;
-        }
-
-        .toggle-slider:before {
-            position: absolute;
-            content: "";
-            height: 16px;
-            width: 16px;
-            left: 4px;
-            bottom: 4px;
-            background-color: white;
-            transition: .4s;
-            border-radius: 50%;
-        }
-
-        input:checked + .toggle-slider {
-            background-color: #2196F3;
-        }
-
-        input:checked + .toggle-slider:before {
-            transform: translateX(26px);
-        }
-
-        /* Стили для установщика */
-        .installer-form {
-            display: flex;
-            flex-direction: column;
-            gap: 10px;
-            margin-bottom: 20px;
-        }
-
-        .form-group {
-            display: flex;
-            flex-direction: column;
-            gap: 5px;
-        }
-
-        .form-input {
-            padding: 8px;
-            border: 2px inset #a67c52;
-            border-radius: 4px;
-            background: #fffff0;
-        }
-
-        .icon-grid {
-            display: grid;
-            grid-template-columns: repeat(4, 1fr);
-            gap: 10px;
-            margin: 10px 0;
-        }
-
-        .icon-option {
-            padding: 10px;
-            border: 2px solid #deb887;
-            border-radius: 4px;
-            cursor: pointer;
-            text-align: center;
-            background: #fffacd;
-        }
-
-        .icon-option.selected {
-            border-color: #ff8c00;
-            background: #ffe4b5;
-        }
-
-        /* Стили для тем */
-        .theme-grid {
-            display: grid;
-            grid-template-columns: repeat(2, 1fr);
-            gap: 10px;
-            margin-bottom: 20px;
-        }
-
-        .theme-option {
-            padding: 20px;
-            border: 2px solid #deb887;
-            border-radius: 8px;
-            cursor: pointer;
-            text-align: center;
-            background: #fffacd;
-        }
-
-        .theme-option.selected {
-            border-color: #ff8c00;
-            background: #ffe4b5;
-        }
-
-        .custom-theme-upload {
-            margin-top: 20px;
-            padding: 15px;
-            border: 2px dashed #deb887;
-            border-radius: 8px;
-            text-align: center;
-            background: #fffacd;
-        }
-
-        /* Стили для окон установленных приложений */
-        .app-window {
-            position: absolute;
-            background: var(--window-bg);
-            border: 3px solid #8b7355;
-            border-radius: 8px;
-            box-shadow: 
-                5px 5px 15px rgba(0, 0, 0, 0.5),
-                inset 0 1px 2px rgba(255, 255, 255, 0.5);
-            min-width: 600px;
-            min-height: 400px;
-            display: none;
-        }
-
-        .app-iframe {
-            width: 100%;
-            height: calc(100% - 40px);
-            border: none;
-            border-radius: 0 0 5px 5px;
-        }
-
-        /* Меню Пуск */
-        .start-menu {
-            position: absolute;
-            bottom: 50px;
-            left: 10px;
-            width: 300px;
-            background: linear-gradient(to bottom, #d4b896 0%, #b08c6e 50%, #8b5a2b 100%);
-            border: 3px solid #a67c52;
-            border-radius: 8px;
-            box-shadow: 5px 5px 15px rgba(0, 0, 0, 0.5);
-            display: none;
-            z-index: 1000;
-        }
-
-        .start-menu-header {
-            background: linear-gradient(to bottom, #8b5a2b 0%, #6d4c3d 100%);
-            padding: 15px;
-            color: var(--accent-color);
-            font-weight: bold;
-            font-size: 18px;
-            text-align: center;
+            background: linear-gradient(to bottom, #8b7355 0%, #6d5742 100%);
             border-bottom: 2px solid #a67c52;
         }
 
-        .start-menu-items {
-            padding: 10px;
-        }
-
-        .start-menu-item {
-            padding: 10px;
-            margin: 5px 0;
-            background: linear-gradient(to bottom, #e6c9a8 0%, #d4b896 100%);
-            border: 1px solid #a67c52;
-            border-radius: 4px;
+        .settings-tab {
+            padding: 10px 20px;
             cursor: pointer;
-            display: flex;
-            align-items: center;
-            gap: 10px;
+            color: #ffd700;
+            border-right: 1px solid #a67c52;
             transition: all 0.2s ease;
         }
 
-        .start-menu-item:hover {
-            background: linear-gradient(to bottom, #f5e6c9 0%, #e6c9a8 100%);
-            transform: translateX(5px);
+        .settings-tab.active {
+            background: linear-gradient(to bottom, #6d5742 0%, #5d4730 100%);
+            border-bottom: 2px solid #ffd700;
         }
 
-        /* Стили для кнопок */
-        .skeuomorphic-btn {
-            background: linear-gradient(to bottom, #d4b896 0%, #8b7355 100%);
-            border: 2px outset #a67c52;
-            padding: 8px 16px;
-            border-radius: 4px;
-            cursor: pointer;
-            font-weight: bold;
-            color: #4d2e19;
+        .settings-tab:hover {
+            background: linear-gradient(to bottom, #7d6752 0%, #6d5742 100%);
+        }
+
+        .settings-content {
+            padding: 20px;
+        }
+
+        .settings-panel {
+            display: none;
+        }
+
+        .settings-panel.active {
+            display: block;
+        }
+
+        .update-panel {
             text-align: center;
         }
 
-        .skeuomorphic-btn:active {
-            border-style: inset;
-            background: linear-gradient(to bottom, #8b7355 0%, #d4b896 100%);
-        }
-
-        .danger-btn {
-            background: linear-gradient(to bottom, #ff6b6b 0%, #cc5555 100%);
-            border: 2px outset #cc3333;
+        .update-success {
+            background: linear-gradient(to bottom, #4CAF50, #45a049);
             color: white;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            font-weight: bold;
         }
 
-        .danger-btn:active {
-            background: linear-gradient(to bottom, #cc5555 0%, #ff6b6b 100%);
+        .update-version {
+            background: var(--window-bg);
+            border: 2px solid #8b7355;
+            border-radius: 8px;
+            padding: 30px;
+            margin: 20px 0;
+            font-size: 18px;
+            color: #4d2e19;
         }
 
-        /* Анимации */
-        @keyframes fadeIn {
-            from { opacity: 0; transform: scale(0.9); }
-            to { opacity: 1; transform: scale(1); }
+        /* Стили для галереи */
+        .gallery-container {
+            height: 500px;
+            display: flex;
+            flex-direction: column;
         }
 
-        .window, .start-menu, .app-window {
-            animation: fadeIn 0.2s ease-out;
+        .gallery-toolbar {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 15px;
         }
 
-        /* Скрытый input для загрузки файлов */
-        .hidden-file-input {
-            display: none;
+        .gallery-content {
+            display: flex;
+            flex: 1;
+            gap: 15px;
         }
+
+        .gallery-sidebar {
+            width: 200px;
+            background: linear-gradient(to bottom, #f5e6c9 0%, #e6c9a8 100%);
+            border: 2px solid #deb887;
+            border-radius: 8px;
+            padding: 10px;
+            overflow-y: auto;
+        }
+
+        .gallery-viewer {
+            flex: 1;
+            background: #fffacd;
+            border: 2px solid #deb887;
+            border-radius: 8px;
+            padding: 15px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .gallery-image {
+            max-width: 100%;
+            max-height: 300px;
+            border: 2px solid #deb887;
+            border-radius: 8px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+        }
+
+        .thumbnail-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 10px;
+            margin-top: 10px;
+        }
+
+        .thumbnail {
+            width: 60px;
+            height: 60px;
+            object-fit: cover;
+            border: 2px solid #deb887;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .thumbnail:hover {
+            transform: scale(1.1);
+            border-color: #ff8c00;
+        }
+
+        .thumbnail.active {
+            border-color: #ff8c00;
+            box-shadow: 0 0 8px #ff8c00;
+        }
+
+        /* Остальные стили */
+        .calculator { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; max-width: 250px; margin: 0 auto; }
+        .calc-display { grid-column: 1 / -1; background: #2f1b14; color: #00ff00; padding: 10px; font-family: 'Courier New', monospace; font-size: 18px; text-align: right; border: 2px inset #666; margin-bottom: 10px; border-radius: 4px; }
+        .calc-btn { background: linear-gradient(to bottom, #d4b896 0%, #8b7355 100%); border: 2px outset #a67c52; padding: 15px; font-size: 16px; font-weight: bold; color: #4d2e19; cursor: pointer; border-radius: 4px; text-align: center; }
+        .calc-btn:active { border-style: inset; background: linear-gradient(to bottom, #8b7355 0%, #d4b896 100%); }
+
+        .notepad-container { display: flex; height: 400px; background: #fffacd; border: 2px solid #deb887; border-radius: 8px; overflow: hidden; box-shadow: inset 0 0 10px rgba(139, 69, 19, 0.2); }
+        .notes-sidebar { width: 200px; background: linear-gradient(to bottom, #f5e6c9 0%, #e6c9a8 100%); border-right: 2px solid #deb887; padding: 10px; overflow-y: auto; }
+        .notes-list { display: flex; flex-direction: column; gap: 5px; }
+        .note-item { padding: 10px; background: #fffacd; border: 1px solid #deb887; border-radius: 4px; cursor: pointer; font-size: 12px; transition: all 0.2s ease; }
+        .note-item:hover { background: #ffe4b5; }
+        .note-item.active { background: #ffd700; border-color: #ff8c00; }
+        .note-editor { flex: 1; display: flex; flex-direction: column; padding: 10px; }
+        .note-title { background: #fffacd; border: 1px solid #deb887; border-radius: 4px; padding: 8px; margin-bottom: 10px; font-size: 14px; font-weight: bold; }
+        .note-content { flex: 1; background: #fffacd; border: 1px solid #deb887; border-radius: 4px; padding: 10px; resize: none; font-family: 'Courier New', monospace; font-size: 12px; }
+        .note-actions { margin-top: 10px; display: flex; gap: 10px; justify-content: flex-end; }
+
+        .browser-container { height: 400px; display: flex; flex-direction: column; }
+        .browser-url-bar { display: flex; gap: 10px; margin-bottom: 10px; }
+        .url-input { flex: 1; padding: 8px; border: 2px inset #a67c52; border-radius: 4px; background: #fffff0; }
+        .browser-iframe { flex: 1; border: 2px inset #a67c52; border-radius: 4px; background: white; }
+
+        .player-container { text-align: center; }
+        .player-controls { display: flex; justify-content: center; gap: 20px; margin: 20px 0; }
+        .player-btn { width: 40px; height: 40px; border-radius: 50%; background: linear-gradient(to bottom, #d4b896 0%, #8b7355 100%); border: 2px outset #a67c52; cursor: pointer; font-size: 16px; display: flex; align-items: center; justify-content: center; }
+        .player-btn:active { border-style: inset; }
+        .playlist { max-height: 200px; overflow-y: auto; border: 1px solid #deb887; border-radius: 4px; padding: 10px; background: #fffacd; }
+        .playlist-item { padding: 8px; border-bottom: 1px solid #deb887; cursor: pointer; font-size: 12px; display: flex; justify-content: between; align-items: center; }
+        .playlist-item:hover { background: #ffe4b5; }
+        .playlist-item.playing { background: #ffd700; font-weight: bold; }
+
+        .explorer-container { height: 400px; display: flex; }
+        .explorer-sidebar { width: 150px; background: linear-gradient(to bottom, #f5e6c9 0%, #e6c9a8 100%); border-right: 2px solid #deb887; padding: 10px; }
+        .explorer-folders { display: flex; flex-direction: column; gap: 5px; }
+        .folder-item { padding: 8px; background: #fffacd; border: 1px solid #deb887; border-radius: 4px; cursor: pointer; font-size: 12px; display: flex; align-items: center; gap: 5px; }
+        .folder-item:hover { background: #ffe4b5; }
+        .explorer-content { flex: 1; padding: 10px; background: #fffacd; overflow-y: auto; }
+        .file-item { padding: 8px; margin: 5px 0; background: #fffacd; border: 1px solid #deb887; border-radius: 4px; cursor: pointer; display: flex; align-items: center; gap: 8px; }
+        .file-item:hover { background: #ffe4b5; }
+
+        .installer-form { display: flex; flex-direction: column; gap: 10px; margin-bottom: 20px; }
+        .form-group { display: flex; flex-direction: column; gap: 5px; }
+        .form-input { padding: 8px; border: 2px inset #a67c52; border-radius: 4px; background: #fffff0; }
+        .icon-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin: 10px 0; }
+        .icon-option { padding: 10px; border: 2px solid #deb887; border-radius: 4px; cursor: pointer; text-align: center; background: #fffacd; }
+        .icon-option.selected { border-color: #ff8c00; background: #ffe4b5; }
+
+        .theme-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; margin-bottom: 20px; }
+        .theme-option { padding: 20px; border: 2px solid #deb887; border-radius: 8px; cursor: pointer; text-align: center; background: #fffacd; }
+        .theme-option.selected { border-color: #ff8c00; background: #ffe4b5; }
+        .custom-theme-upload { margin-top: 20px; padding: 15px; border: 2px dashed #deb887; border-radius: 8px; text-align: center; background: #fffacd; }
+
+        .app-window { position: absolute; background: var(--window-bg); border: 3px solid #8b7355; border-radius: 8px; box-shadow: 5px 5px 15px rgba(0, 0, 0, 0.5), inset 0 1px 2px rgba(255, 255, 255, 0.5); min-width: 600px; min-height: 400px; display: none; resize: both; overflow: auto; }
+        .app-window.maximized { top: 0 !important; left: 0 !important; width: 100% !important; height: calc(100vh - 50px) !important; border-radius: 0; resize: none; }
+        .app-iframe { width: 100%; height: calc(100% - 40px); border: none; border-radius: 0 0 5px 5px; }
+
+        .start-menu { position: absolute; bottom: 50px; left: 10px; width: 300px; background: linear-gradient(to bottom, #d4b896 0%, #b08c6e 50%, #8b5a2b 100%); border: 3px solid #a67c52; border-radius: 8px; box-shadow: 5px 5px 15px rgba(0, 0, 0, 0.5); display: none; z-index: 1000; }
+        .start-menu-header { background: linear-gradient(to bottom, #8b5a2b 0%, #6d4c3d 100%); padding: 15px; color: var(--accent-color); font-weight: bold; font-size: 18px; text-align: center; border-bottom: 2px solid #a67c52; }
+        .start-menu-items { padding: 10px; }
+        .start-menu-item { padding: 10px; margin: 5px 0; background: linear-gradient(to bottom, #e6c9a8 0%, #d4b896 100%); border: 1px solid #a67c52; border-radius: 4px; cursor: pointer; display: flex; align-items: center; gap: 10px; transition: all 0.2s ease; }
+        .start-menu-item:hover { background: linear-gradient(to bottom, #f5e6c9 0%, #e6c9a8 100%); transform: translateX(5px); }
+
+        .skeuomorphic-btn { background: linear-gradient(to bottom, #d4b896 0%, #8b7355 100%); border: 2px outset #a67c52; padding: 8px 16px; border-radius: 4px; cursor: pointer; font-weight: bold; color: #4d2e19; text-align: center; }
+        .skeuomorphic-btn:active { border-style: inset; background: linear-gradient(to bottom, #8b7355 0%, #d4b896 100%); }
+        .danger-btn { background: linear-gradient(to bottom, #ff6b6b 0%, #cc5555 100%); border: 2px outset #cc3333; color: white; }
+        .danger-btn:active { background: linear-gradient(to bottom, #cc5555 0%, #ff6b6b 100%); }
+
+        .toggle-switch { position: relative; width: 50px; height: 24px; }
+        .toggle-slider { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: #ccc; transition: .4s; border-radius: 24px; }
+        .toggle-slider:before { position: absolute; content: ""; height: 16px; width: 16px; left: 4px; bottom: 4px; background-color: white; transition: .4s; border-radius: 50%; }
+        input:checked + .toggle-slider { background-color: #2196F3; }
+        input:checked + .toggle-slider:before { transform: translateX(26px); }
+
+        .setting-item { display: flex; justify-content: space-between; align-items: center; padding: 10px; border-bottom: 1px solid #deb887; }
+
+        @keyframes fadeIn { from { opacity: 0; transform: scale(0.9); } to { opacity: 1; transform: scale(1); } }
+        .window, .start-menu, .app-window { animation: fadeIn 0.2s ease-out; }
+
+        .hidden-file-input { display: none; }
     </style>
 </head>
 <body>
-    <div class="desktop">
+    <div class="desktop" id="desktop" oncontextmenu="showContextMenu(event); return false;">
         <!-- Значки рабочего стола -->
         <div class="desktop-icons" id="desktopIcons">
-            <!-- Стандартные значки -->
-            <div class="desktop-icon" onclick="openApp('notepad')">
-                <div class="icon-image">📝</div>
-                <div class="icon-label">Блокнот</div>
-            </div>
-            <div class="desktop-icon" onclick="openApp('calculator')">
-                <div class="icon-image">🧮</div>
-                <div class="icon-label">Калькулятор</div>
-            </div>
-            <div class="desktop-icon" onclick="openApp('browser')">
-                <div class="icon-image">🌐</div>
-                <div class="icon-label">Браузер</div>
-            </div>
-            <div class="desktop-icon" onclick="openApp('player')">
-                <div class="icon-image">🎵</div>
-                <div class="icon-label">Проигрыватель</div>
-            </div>
-            <div class="desktop-icon" onclick="openApp('explorer')">
-                <div class="icon-image">📁</div>
-                <div class="icon-label">Проводник</div>
-            </div>
-            <div class="desktop-icon" onclick="openApp('settings')">
-                <div class="icon-image">⚙️</div>
-                <div class="icon-label">Настройки</div>
-            </div>
-            <div class="desktop-icon" onclick="openApp('themes')">
-                <div class="icon-image">🎨</div>
-                <div class="icon-label">Темы</div>
-            </div>
-            <div class="desktop-icon" onclick="openApp('installer')">
-                <div class="icon-image">📦</div>
-                <div class="icon-label">Установщик</div>
-            </div>
-            <!-- Установленные программы будут добавляться здесь -->
+            <!-- Значки будут добавляться здесь -->
         </div>
 
-        <!-- Панель задач -->
-        <div class="taskbar">
-            <div class="start-button" onclick="toggleStartMenu()">
-                ПУСК
-            </div>
-            <div class="taskbar-apps" id="taskbarApps">
-                <!-- Запущенные приложения будут добавляться здесь -->
-            </div>
-            <div class="system-tray">
-                <div class="tray-item">
-                    <span class="tray-icon">🔊</span>
-                    <span>85%</span>
-                </div>
-                <div class="tray-item">
-                    <span class="tray-icon">🔋</span>
-                    <span>100%</span>
-                </div>
-                <div class="tray-item" id="clock">
-                    14:25
-                </div>
+        <!-- Виджеты -->
+        <div class="widget clock-widget" id="clockWidget" style="display: none;">
+            <div class="clock-face">
+                <div class="clock-hand hour-hand" id="hourHand"></div>
+                <div class="clock-hand minute-hand" id="minuteHand"></div>
+                <div class="clock-hand second-hand" id="secondHand"></div>
             </div>
         </div>
 
-        <!-- Меню Пуск -->
-        <div class="start-menu" id="startMenu">
-            <div class="start-menu-header">
-                Nostalgia OS
+        <div class="widget battery-widget" id="batteryWidget" style="display: none;">
+            <div>🔋 Заряд батареи</div>
+            <div class="battery-level">
+                <div class="battery-fill" id="batteryFill" style="width: 85%;"></div>
             </div>
-            <div class="start-menu-items">
-                <div class="start-menu-item" onclick="openApp('notepad')">
-                    <span>📝</span> Блокнот
-                </div>
-                <div class="start-menu-item" onclick="openApp('calculator')">
-                    <span>🧮</span> Калькулятор
-                </div>
-                <div class="start-menu-item" onclick="openApp('browser')">
-                    <span>🌐</span> Веб-браузер
-                </div>
-                <div class="start-menu-item" onclick="openApp('player')">
-                    <span>🎵</span> Проигрыватель
-                </div>
-                <div class="start-menu-item" onclick="openApp('explorer')">
-                    <span>📁</span> Проводник
-                </div>
-                <div class="start-menu-item" onclick="openApp('settings')">
-                    <span>⚙️</span> Настройки
-                </div>
-                <div class="start-menu-item" onclick="openApp('themes')">
-                    <span>🎨</span> Темы
-                </div>
-                <div class="start-menu-item" onclick="openApp('installer')">
-                    <span>📦</span> Установщик
-                </div>
-                <div class="start-menu-item" onclick="shutdown()">
-                    <span>⭕</span> Выключение
-                </div>
+        </div>
+
+        <div class="widget slideshow-widget" id="slideshowWidget" style="display: none;">
+            <div>🖼️ Слайд-шоу</div>
+            <img id="slideshowImage" src="" style="width: 100%; height: 100px; object-fit: cover; border-radius: 8px; margin-top: 5px;">
+        </div>
+    </div>
+
+    <!-- Контекстное меню -->
+    <div class="context-menu" id="contextMenu">
+        <div class="context-menu-item" onclick="openApp('settings'); hideContextMenu()">⚙️ Параметры</div>
+        <div class="context-menu-item" onclick="toggleWidgets(); hideContextMenu()">📊 Виджеты</div>
+    </div>
+
+    <!-- Панель задач -->
+    <div class="taskbar">
+        <div class="start-button" onclick="toggleStartMenu()">
+            ПУСК
+        </div>
+        <div class="taskbar-apps" id="taskbarApps">
+            <!-- Запущенные приложения будут добавляться здесь -->
+        </div>
+        <div class="system-tray">
+            <div class="tray-item">
+                <span class="tray-icon">🔊</span>
+                <span>85%</span>
+            </div>
+            <div class="tray-item">
+                <span class="tray-icon">🔋</span>
+                <span>100%</span>
+            </div>
+            <div class="tray-item" id="clock">
+                14:25
             </div>
         </div>
     </div>
 
-    <!-- Скрытый input для загрузки файлов -->
+    <!-- Меню Пуск -->
+    <div class="start-menu" id="startMenu">
+        <div class="start-menu-header">
+            Nostalgia OS
+        </div>
+        <div class="start-menu-items">
+            <div class="start-menu-item" onclick="openApp('notepad')">
+                <span>📝</span> Блокнот
+            </div>
+            <div class="start-menu-item" onclick="openApp('calculator')">
+                <span>🧮</span> Калькулятор
+            </div>
+            <div class="start-menu-item" onclick="openApp('browser')">
+                <span>🌐</span> Веб-браузер
+            </div>
+            <div class="start-menu-item" onclick="openApp('player')">
+                <span>🎵</span> Проигрыватель
+            </div>
+            <div class="start-menu-item" onclick="openApp('gallery')">
+                <span>🖼️</span> Галерея
+            </div>
+            <div class="start-menu-item" onclick="openApp('explorer')">
+                <span>📁</span> Проводник
+            </div>
+            <div class="start-menu-item" onclick="openApp('settings')">
+                <span>⚙️</span> Настройки
+            </div>
+            <div class="start-menu-item" onclick="openApp('themes')">
+                <span>🎨</span> Темы
+            </div>
+            <div class="start-menu-item" onclick="openApp('installer')">
+                <span>📦</span> Установщик
+            </div>
+            <div class="start-menu-item" onclick="shutdown()">
+                <span>⭕</span> Выключение
+            </div>
+        </div>
+    </div>
+
+    <!-- Скрытые input для загрузки файлов -->
     <input type="file" id="musicFileInput" class="hidden-file-input" accept="audio/*" multiple>
+    <input type="file" id="imageFileInput" class="hidden-file-input" accept="image/*" multiple>
     <input type="file" id="wallpaperFileInput" class="hidden-file-input" accept="image/*">
 
     <!-- Окно блокнота -->
@@ -854,6 +696,7 @@
             <div class="window-title">📝 Блокнот Nostalgia</div>
             <div class="window-controls">
                 <div class="window-control" onclick="minimizeWindow('notepad')">_</div>
+                <div class="window-control" onclick="toggleMaximize('notepad')">□</div>
                 <div class="window-control" onclick="closeWindow('notepad')">×</div>
             </div>
         </div>
@@ -861,9 +704,7 @@
             <div class="notepad-container">
                 <div class="notes-sidebar">
                     <div class="skeuomorphic-btn" onclick="createNewNote()" style="margin-bottom: 10px;">+ Новая заметка</div>
-                    <div class="notes-list" id="notesList">
-                        <!-- Список заметок будет здесь -->
-                    </div>
+                    <div class="notes-list" id="notesList"></div>
                 </div>
                 <div class="note-editor">
                     <input type="text" class="note-title" id="noteTitle" placeholder="Название заметки">
@@ -883,6 +724,7 @@
             <div class="window-title">🧮 Калькулятор</div>
             <div class="window-controls">
                 <div class="window-control" onclick="minimizeWindow('calculator')">_</div>
+                <div class="window-control" onclick="toggleMaximize('calculator')">□</div>
                 <div class="window-control" onclick="closeWindow('calculator')">×</div>
             </div>
         </div>
@@ -916,6 +758,7 @@
             <div class="window-title">🌐 Nostalgia Browser</div>
             <div class="window-controls">
                 <div class="window-control" onclick="minimizeWindow('browser')">_</div>
+                <div class="window-control" onclick="toggleMaximize('browser')">□</div>
                 <div class="window-control" onclick="closeWindow('browser')">×</div>
             </div>
         </div>
@@ -936,6 +779,7 @@
             <div class="window-title">🎵 Nostalgia Player</div>
             <div class="window-controls">
                 <div class="window-control" onclick="minimizeWindow('player')">_</div>
+                <div class="window-control" onclick="toggleMaximize('player')">□</div>
                 <div class="window-control" onclick="closeWindow('player')">×</div>
             </div>
         </div>
@@ -953,8 +797,40 @@
                 </div>
 
                 <h4>Плейлист:</h4>
-                <div class="playlist" id="playlist">
-                    <!-- Плейлист будет здесь -->
+                <div class="playlist" id="playlist"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Окно галереи -->
+    <div class="window" id="galleryWindow" style="top: 100px; left: 200px; width: 800px; height: 600px;">
+        <div class="window-header">
+            <div class="window-title">🖼️ Галерея</div>
+            <div class="window-controls">
+                <div class="window-control" onclick="minimizeWindow('gallery')">_</div>
+                <div class="window-control" onclick="toggleMaximize('gallery')">□</div>
+                <div class="window-control" onclick="closeWindow('gallery')">×</div>
+            </div>
+        </div>
+        <div class="window-content">
+            <div class="gallery-container">
+                <div class="gallery-toolbar">
+                    <div class="skeuomorphic-btn" onclick="loadImageFiles()">📁 Загрузить фото</div>
+                    <div class="skeuomorphic-btn" onclick="startSlideshow()">▶️ Слайд-шоу</div>
+                    <div class="skeuomorphic-btn" onclick="stopSlideshow()">⏹️ Стоп</div>
+                </div>
+                <div class="gallery-content">
+                    <div class="gallery-sidebar">
+                        <h4>Фотографии:</h4>
+                        <div class="thumbnail-grid" id="thumbnailGrid"></div>
+                    </div>
+                    <div class="gallery-viewer">
+                        <img id="galleryImage" class="gallery-image" src="" style="display: none;">
+                        <div id="galleryPlaceholder" style="text-align: center; color: #666;">
+                            <div style="font-size: 48px; margin-bottom: 20px;">🖼️</div>
+                            <div>Выберите фотографию для просмотра</div>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
@@ -966,6 +842,7 @@
             <div class="window-title">📁 Проводник</div>
             <div class="window-controls">
                 <div class="window-control" onclick="minimizeWindow('explorer')">_</div>
+                <div class="window-control" onclick="toggleMaximize('explorer')">□</div>
                 <div class="window-control" onclick="closeWindow('explorer')">×</div>
             </div>
         </div>
@@ -979,114 +856,114 @@
                     </div>
                 </div>
                 <div class="explorer-content" id="explorerContent">
-                    <!-- Содержимое папки будет здесь -->
+                    <!-- Содержимое будет загружаться здесь -->
                 </div>
             </div>
         </div>
     </div>
 
     <!-- Окно настроек -->
-    <div class="window" id="settingsWindow" style="top: 150px; left: 300px; width: 500px; height: 450px;">
+    <div class="window" id="settingsWindow" style="top: 150px; left: 300px; width: 600px; height: 500px;">
         <div class="window-header">
             <div class="window-title">⚙️ Настройки системы</div>
             <div class="window-controls">
                 <div class="window-control" onclick="minimizeWindow('settings')">_</div>
+                <div class="window-control" onclick="toggleMaximize('settings')">□</div>
                 <div class="window-control" onclick="closeWindow('settings')">×</div>
             </div>
         </div>
         <div class="window-content">
-            <div class="settings-container">
-                <div class="setting-item">
-                    <span>Показывать секунды в часах</span>
-                    <label class="toggle-switch">
-                        <input type="checkbox" id="showSeconds" onchange="toggleSeconds()">
-                        <span class="toggle-slider"></span>
-                    </label>
+            <div class="settings-tabs">
+                <div class="settings-tab active" onclick="switchSettingsTab('system')">Система</div>
+                <div class="settings-tab" onclick="switchSettingsTab('update')">Обновление ПО</div>
+            </div>
+            <div class="settings-content">
+                <div class="settings-panel active" id="systemPanel">
+                    <div class="settings-container">
+                        <div class="setting-item">
+                            <span>Показывать секунды в часах</span>
+                            <label class="toggle-switch">
+                                <input type="checkbox" id="showSeconds" onchange="toggleSeconds()">
+                                <span class="toggle-slider"></span>
+                            </label>
+                        </div>
+                        <div class="setting-item">
+                            <span>Включить автообновление</span>
+                            <label class="toggle-switch">
+                                <input type="checkbox" id="autoRefresh" onchange="toggleAutoRefresh()">
+                                <span class="toggle-slider"></span>
+                            </label>
+                        </div>
+                        <div class="setting-item">
+                            <span>Сброс системы</span>
+                            <div class="skeuomorphic-btn danger-btn" onclick="resetSystem()">
+                                🔄 Сбросить всё
+                            </div>
+                        </div>
+                    </div>
                 </div>
-                <div class="setting-item">
-                    <span>Включить автообновление</span>
-                    <label class="toggle-switch">
-                        <input type="checkbox" id="autoRefresh" onchange="toggleAutoRefresh()">
-                        <span class="toggle-slider"></span>
-                    </label>
-                </div>
-                <div class="setting-item">
-                    <span>Сброс системы</span>
-                    <div class="skeuomorphic-btn danger-btn" onclick="resetSystem()">
-                        🔄 Сбросить всё
+                <div class="settings-panel" id="updatePanel">
+                    <div class="update-panel">
+                        <div class="update-success">
+                            ✅ Обновление прошло успешно!
+                        </div>
+                        <div class="update-version">
+                            Nostalgia OS
+                        </div>
+                        <div style="font-size: 16px; color: #4d2e19; margin-top: 20px;">
+                            Версия 1.1
+                        </div>
+                        <div style="margin-top: 30px; font-size: 14px; color: #666;">
+                            Ваша система обновлена до последней версии
+                        </div>
                     </div>
                 </div>
             </div>
         </div>
     </div>
 
-    <!-- Окно тем -->
+    <!-- Остальные окна -->
     <div class="window" id="themesWindow" style="top: 200px; left: 400px; width: 500px; height: 500px;">
         <div class="window-header">
             <div class="window-title">🎨 Темы оформления</div>
             <div class="window-controls">
                 <div class="window-control" onclick="minimizeWindow('themes')">_</div>
+                <div class="window-control" onclick="toggleMaximize('themes')">□</div>
                 <div class="window-control" onclick="closeWindow('themes')">×</div>
             </div>
         </div>
         <div class="window-content">
             <div class="theme-grid">
-                <div class="theme-option" onclick="changeTheme('classic')">
-                    🏛️ Классическая
-                </div>
-                <div class="theme-option" onclick="changeTheme('dark')">
-                    🌙 Тёмная
-                </div>
-                <div class="theme-option" onclick="changeTheme('blue')">
-                    🔵 Синяя
-                </div>
-                <div class="theme-option" onclick="changeTheme('green')">
-                    🟢 Зелёная
-                </div>
+                <div class="theme-option" onclick="changeTheme('classic')">🏛️ Классическая</div>
+                <div class="theme-option" onclick="changeTheme('dark')">🌙 Тёмная</div>
+                <div class="theme-option" onclick="changeTheme('blue')">🔵 Синяя</div>
+                <div class="theme-option" onclick="changeTheme('green')">🟢 Зелёная</div>
             </div>
-            
             <div class="custom-theme-upload">
                 <h4>💫 Пользовательские обои</h4>
-                <div class="skeuomorphic-btn" onclick="document.getElementById('wallpaperFileInput').click()">
-                    📁 Загрузить обои
-                </div>
-                <div style="margin-top: 10px; font-size: 12px; color: #666;">
-                    Поддерживаются: JPG, PNG, GIF
-                </div>
+                <div class="skeuomorphic-btn" onclick="document.getElementById('wallpaperFileInput').click()">📁 Загрузить обои</div>
+                <div style="margin-top: 10px; font-size: 12px; color: #666;">Поддерживаются: JPG, PNG, GIF</div>
             </div>
         </div>
     </div>
 
-    <!-- Окно установщика -->
     <div class="window" id="installerWindow" style="top: 250px; left: 500px; width: 600px; height: 500px;">
         <div class="window-header">
             <div class="window-title">📦 Установщик программ</div>
             <div class="window-controls">
                 <div class="window-control" onclick="minimizeWindow('installer')">_</div>
+                <div class="window-control" onclick="toggleMaximize('installer')">□</div>
                 <div class="window-control" onclick="closeWindow('installer')">×</div>
             </div>
         </div>
         <div class="window-content">
             <div class="installer-form">
-                <div class="form-group">
-                    <label>Название программы:</label>
-                    <input type="text" class="form-input" id="appName" placeholder="Введите название">
-                </div>
-                <div class="form-group">
-                    <label>URL программы:</label>
-                    <input type="text" class="form-input" id="appUrl" placeholder="https://example.com">
-                </div>
-                <div class="form-group">
-                    <label>Выберите иконку:</label>
-                    <div class="icon-grid" id="iconGrid">
-                        <!-- Иконки будут здесь -->
-                    </div>
-                </div>
+                <div class="form-group"><label>Название программы:</label><input type="text" class="form-input" id="appName" placeholder="Введите название"></div>
+                <div class="form-group"><label>URL программы:</label><input type="text" class="form-input" id="appUrl" placeholder="https://example.com"></div>
+                <div class="form-group"><label>Выберите иконку:</label><div class="icon-grid" id="iconGrid"></div></div>
                 <div class="skeuomorphic-btn" onclick="installApp()">Установить</div>
             </div>
-            <div id="installedApps">
-                <!-- Установленные программы будут здесь -->
-            </div>
+            <div id="installedApps"></div>
         </div>
     </div>
 
@@ -1094,27 +971,26 @@
     <div id="appWindowsContainer"></div>
 
     <script>
-        // Переменные для управления приложениями
+        // Основные переменные
         let openApps = {};
         let zIndex = 1000;
         let currentNoteId = null;
         let musicFiles = JSON.parse(localStorage.getItem('musicFiles')) || [];
+        let imageFiles = JSON.parse(localStorage.getItem('imageFiles')) || [];
         let currentTrack = 0;
+        let currentImage = 0;
         let isPlaying = false;
+        let isSlideshowPlaying = false;
+        let slideshowInterval = null;
         let audioPlayer = null;
         let installedApps = [];
+        let widgetsEnabled = JSON.parse(localStorage.getItem('widgetsEnabled')) || false;
 
-        // Загрузка данных из LocalStorage
+        // Загрузка данных
         function loadFromLocalStorage() {
-            // Заметки
             const savedNotes = localStorage.getItem('notes');
-            if (savedNotes) {
-                notes = JSON.parse(savedNotes);
-            } else {
-                notes = [];
-            }
+            notes = savedNotes ? JSON.parse(savedNotes) : [];
 
-            // Настройки
             const savedSettings = localStorage.getItem('systemSettings');
             if (savedSettings) {
                 const settings = JSON.parse(savedSettings);
@@ -1122,35 +998,32 @@
                 document.getElementById('autoRefresh').checked = settings.autoRefresh || false;
             }
 
-            // Тема
             const savedTheme = localStorage.getItem('currentTheme');
-            if (savedTheme) {
-                changeTheme(savedTheme, false);
-            }
+            if (savedTheme) changeTheme(savedTheme, false);
 
-            // Установленные программы
             const savedApps = localStorage.getItem('installedApps');
-            if (savedApps) {
-                installedApps = JSON.parse(savedApps);
-                renderInstalledAppsOnDesktop();
-            } else {
-                installedApps = [];
-            }
+            installedApps = savedApps ? JSON.parse(savedApps) : [];
+            renderDesktopIcons();
 
-            // Обои
             const savedWallpaper = localStorage.getItem('customWallpaper');
             if (savedWallpaper) {
                 document.body.style.backgroundImage = `url(${savedWallpaper})`;
                 document.body.style.backgroundSize = 'cover';
                 document.body.style.backgroundPosition = 'center';
             }
+
+            if (widgetsEnabled) {
+                showWidgets();
+            }
         }
 
-        // Сохранение в LocalStorage
+        // Сохранение данных
         function saveToLocalStorage() {
             localStorage.setItem('notes', JSON.stringify(notes));
             localStorage.setItem('musicFiles', JSON.stringify(musicFiles));
+            localStorage.setItem('imageFiles', JSON.stringify(imageFiles));
             localStorage.setItem('installedApps', JSON.stringify(installedApps));
+            localStorage.setItem('widgetsEnabled', JSON.stringify(widgetsEnabled));
             
             const settings = {
                 showSeconds: document.getElementById('showSeconds').checked,
@@ -1159,178 +1032,241 @@
             localStorage.setItem('systemSettings', JSON.stringify(settings));
         }
 
-        // Обновление времени
-        function updateClock() {
-            const now = new Date();
-            const showSeconds = document.getElementById('showSeconds').checked;
-            let timeString = now.getHours().toString().padStart(2, '0') + ':' + 
-                           now.getMinutes().toString().padStart(2, '0');
-            
-            if (showSeconds) {
-                timeString += ':' + now.getSeconds().toString().padStart(2, '0');
-            }
-            
-            document.getElementById('clock').textContent = timeString;
+        // Рабочий стол без столбиков
+        function renderDesktopIcons() {
+            const desktopIcons = document.getElementById('desktopIcons');
+            desktopIcons.innerHTML = '';
+
+            const systemIcons = [
+                { name: 'Блокнот', icon: '📝', app: 'notepad' },
+                { name: 'Калькулятор', icon: '🧮', app: 'calculator' },
+                { name: 'Браузер', icon: '🌐', app: 'browser' },
+                { name: 'Проигрыватель', icon: '🎵', app: 'player' },
+                { name: 'Галерея', icon: '🖼️', app: 'gallery' },
+                { name: 'Проводник', icon: '📁', app: 'explorer' },
+                { name: 'Настройки', icon: '⚙️', app: 'settings' },
+                { name: 'Темы', icon: '🎨', app: 'themes' },
+                { name: 'Установщик', icon: '📦', app: 'installer' }
+            ];
+
+            systemIcons.forEach(item => {
+                const icon = createDesktopIcon(item.name, item.icon, () => openApp(item.app));
+                desktopIcons.appendChild(icon);
+            });
+
+            installedApps.forEach(app => {
+                const icon = createDesktopIcon(app.name, app.icon, () => openInstalledApp(app.id));
+                desktopIcons.appendChild(icon);
+            });
         }
 
-        setInterval(updateClock, 1000);
-        updateClock();
-
-        // Управление меню Пуск
-        function toggleStartMenu() {
-            const menu = document.getElementById('startMenu');
-            menu.style.display = menu.style.display === 'block' ? 'none' : 'block';
+        function createDesktopIcon(name, icon, onClick) {
+            const div = document.createElement('div');
+            div.className = 'desktop-icon';
+            div.onclick = onClick;
+            div.innerHTML = `
+                <div class="icon-image">${icon}</div>
+                <div class="icon-label">${name}</div>
+            `;
+            return div;
         }
 
-        // Закрытие меню Пуск при клике вне его
-        document.addEventListener('click', (e) => {
-            if (!e.target.closest('.start-button') && !e.target.closest('.start-menu')) {
-                document.getElementById('startMenu').style.display = 'none';
-            }
-        });
-
-        // Функции для работы с приложениями
-        function openApp(appName) {
-            const window = document.getElementById(appName + 'Window');
-            if (window) {
-                window.style.display = 'block';
-                window.style.zIndex = zIndex++;
-                openApps[appName] = true;
-                addToTaskbar(appName);
-                document.getElementById('startMenu').style.display = 'none';
-                
-                // Инициализация приложения при открытии
-                if (appName === 'notepad') initNotepad();
-                if (appName === 'explorer') openFolder('system');
-                if (appName === 'installer') initInstaller();
-                if (appName === 'player') initPlayer();
-            }
+        // Контекстное меню
+        function showContextMenu(event) {
+            event.preventDefault();
+            const menu = document.getElementById('contextMenu');
+            menu.style.display = 'block';
+            menu.style.left = event.clientX + 'px';
+            menu.style.top = event.clientY + 'px';
         }
 
-        function openInstalledApp(appId) {
-            const app = installedApps.find(a => a.id === appId);
-            if (!app) return;
+        function hideContextMenu() {
+            document.getElementById('contextMenu').style.display = 'none';
+        }
 
-            // Создаем окно для приложения
-            const appWindowId = `appWindow_${appId}`;
-            let appWindow = document.getElementById(appWindowId);
-            
-            if (!appWindow) {
-                appWindow = document.createElement('div');
-                appWindow.className = 'app-window';
-                appWindow.id = appWindowId;
-                appWindow.style.top = '100px';
-                appWindow.style.left = '100px';
-                appWindow.style.width = '800px';
-                appWindow.style.height = '600px';
-                appWindow.style.display = 'block';
-                appWindow.style.zIndex = zIndex++;
-
-                appWindow.innerHTML = `
-                    <div class="window-header">
-                        <div class="window-title">${app.icon} ${app.name}</div>
-                        <div class="window-controls">
-                            <div class="window-control" onclick="minimizeAppWindow('${appId}')">_</div>
-                            <div class="window-control" onclick="closeAppWindow('${appId}')">×</div>
-                        </div>
-                    </div>
-                    <iframe class="app-iframe" src="${app.url}" sandbox="allow-scripts allow-same-origin allow-forms allow-popups"></iframe>
-                `;
-
-                document.getElementById('appWindowsContainer').appendChild(appWindow);
-                makeWindowDraggable(appWindowId);
+        // Виджеты
+        function toggleWidgets() {
+            widgetsEnabled = !widgetsEnabled;
+            if (widgetsEnabled) {
+                showWidgets();
             } else {
-                appWindow.style.display = 'block';
-                appWindow.style.zIndex = zIndex++;
+                hideWidgets();
             }
-
-            openApps[appId] = true;
-            addToTaskbar(appId, app.name);
-            document.getElementById('startMenu').style.display = 'none';
+            saveToLocalStorage();
         }
 
-        function closeAppWindow(appId) {
-            const appWindow = document.getElementById(`appWindow_${appId}`);
-            if (appWindow) {
-                appWindow.style.display = 'none';
-                delete openApps[appId];
-                removeFromTaskbar(appId);
+        function showWidgets() {
+            document.getElementById('clockWidget').style.display = 'block';
+            document.getElementById('batteryWidget').style.display = 'block';
+            document.getElementById('slideshowWidget').style.display = 'block';
+            updateClockWidget();
+            updateSlideshow();
+        }
+
+        function hideWidgets() {
+            document.getElementById('clockWidget').style.display = 'none';
+            document.getElementById('batteryWidget').style.display = 'none';
+            document.getElementById('slideshowWidget').style.display = 'none';
+        }
+
+        function updateClockWidget() {
+            const now = new Date();
+            const hours = now.getHours() % 12;
+            const minutes = now.getMinutes();
+            const seconds = now.getSeconds();
+            
+            document.getElementById('hourHand').style.transform = `translateX(-50%) rotate(${hours * 30 + minutes * 0.5}deg)`;
+            document.getElementById('minuteHand').style.transform = `translateX(-50%) rotate(${minutes * 6}deg)`;
+            document.getElementById('secondHand').style.transform = `translateX(-50%) rotate(${seconds * 6}deg)`;
+        }
+
+        function updateSlideshow() {
+            if (imageFiles.length > 0) {
+                const img = document.getElementById('slideshowImage');
+                img.src = imageFiles[currentImage].url;
+                currentImage = (currentImage + 1) % imageFiles.length;
             }
         }
 
-        function minimizeAppWindow(appId) {
-            const appWindow = document.getElementById(`appWindow_${appId}`);
-            if (appWindow) {
-                appWindow.style.display = 'none';
-            }
-        }
-
-        function closeWindow(appName) {
+        // Управление окнами
+        function toggleMaximize(appName) {
             const window = document.getElementById(appName + 'Window');
             if (window) {
-                window.style.display = 'none';
-                delete openApps[appName];
-                removeFromTaskbar(appName);
+                window.classList.toggle('maximized');
+                const maxBtn = window.querySelector('.window-controls .window-control:nth-child(2)');
+                maxBtn.textContent = window.classList.contains('maximized') ? '❐' : '□';
             }
         }
 
-        function minimizeWindow(appName) {
-            const window = document.getElementById(appName + 'Window');
-            if (window) {
-                window.style.display = 'none';
+        // Галерея
+        function loadImageFiles() {
+            document.getElementById('imageFileInput').click();
+        }
+
+        function handleImageFiles(event) {
+            const files = event.target.files;
+            for (let file of files) {
+                if (file.type.startsWith('image/')) {
+                    const url = URL.createObjectURL(file);
+                    imageFiles.push({
+                        name: file.name,
+                        url: url,
+                        file: file
+                    });
+                }
+            }
+            saveToLocalStorage();
+            renderThumbnails();
+        }
+
+        function renderThumbnails() {
+            const grid = document.getElementById('thumbnailGrid');
+            grid.innerHTML = '';
+            
+            imageFiles.forEach((image, index) => {
+                const thumbnail = document.createElement('img');
+                thumbnail.className = 'thumbnail';
+                thumbnail.src = image.url;
+                thumbnail.onclick = () => showImage(index);
+                grid.appendChild(thumbnail);
+            });
+        }
+
+        function showImage(index) {
+            const image = imageFiles[index];
+            const img = document.getElementById('galleryImage');
+            const placeholder = document.getElementById('galleryPlaceholder');
+            
+            img.src = image.url;
+            img.style.display = 'block';
+            placeholder.style.display = 'none';
+            
+            // Обновляем активную миниатюру
+            document.querySelectorAll('.thumbnail').forEach((thumb, i) => {
+                thumb.classList.toggle('active', i === index);
+            });
+            
+            currentImage = index;
+        }
+
+        function startSlideshow() {
+            if (imageFiles.length === 0) return;
+            stopSlideshow();
+            isSlideshowPlaying = true;
+            let index = currentImage;
+            
+            slideshowInterval = setInterval(() => {
+                showImage(index);
+                index = (index + 1) % imageFiles.length;
+            }, 3000);
+        }
+
+        function stopSlideshow() {
+            isSlideshowPlaying = false;
+            if (slideshowInterval) {
+                clearInterval(slideshowInterval);
+                slideshowInterval = null;
             }
         }
 
-        function addToTaskbar(appName, customName = null) {
-            const taskbarApps = document.getElementById('taskbarApps');
-            const appNames = {
-                'notepad': 'Блокнот',
-                'calculator': 'Калькулятор',
-                'browser': 'Браузер',
-                'player': 'Проигрыватель',
-                'explorer': 'Проводник',
-                'settings': 'Настройки',
-                'themes': 'Темы',
-                'installer': 'Установщик'
-            };
-
-            if (!document.getElementById('taskbar-' + appName)) {
-                const appElement = document.createElement('div');
-                appElement.className = 'taskbar-app';
-                appElement.id = 'taskbar-' + appName;
-                appElement.textContent = customName || appNames[appName];
-                appElement.onclick = () => {
-                    if (appName.startsWith('app_')) {
-                        const appWindow = document.getElementById(`appWindow_${appName}`);
-                        if (appWindow) {
-                            if (appWindow.style.display === 'none') {
-                                appWindow.style.display = 'block';
-                                appWindow.style.zIndex = zIndex++;
-                            } else {
-                                appWindow.style.display = 'none';
-                            }
-                        }
-                    } else {
-                        const window = document.getElementById(appName + 'Window');
-                        if (window) {
-                            if (window.style.display === 'none') {
-                                window.style.display = 'block';
-                                window.style.zIndex = zIndex++;
-                            } else {
-                                window.style.display = 'none';
-                            }
-                        }
-                    }
-                };
-                taskbarApps.appendChild(appElement);
+        // Проводник
+        function openFolder(folderName) {
+            const content = document.getElementById('explorerContent');
+            
+            if (folderName === 'system') {
+                content.innerHTML = `
+                    <div class="folder-item" onclick="openFolder('music')"><span>🎵</span> Музыка 🎶</div>
+                    <div class="folder-item" onclick="openFolder('gallery')"><span>🖼️</span> Галерея 🖼️</div>
+                    <div class="folder-item" onclick="openSystemFiles()"><span>💿</span> Системные файлы 💿</div>
+                `;
+            } else if (folderName === 'music') {
+                content.innerHTML = `
+                    <h3>Папка "Музыка 🎶"</h3>
+                    <div class="skeuomorphic-btn" onclick="loadMusicFiles()">🎵 Загрузить музыку</div>
+                    ${musicFiles.length > 0 ? `
+                        <div style="margin-top: 15px;"><h4>Загруженные файлы:</h4>
+                        ${musicFiles.map((file, index) => `
+                            <div class="file-item" onclick="playTrack(${index})"><span>🎵</span> ${file.name}</div>
+                        `).join('')}</div>
+                    ` : ''}
+                `;
+            } else if (folderName === 'gallery') {
+                content.innerHTML = `
+                    <h3>Папка "Галерея 🖼️"</h3>
+                    <div class="skeuomorphic-btn" onclick="loadImageFiles()">🖼️ Загрузить фото</div>
+                    ${imageFiles.length > 0 ? `
+                        <div style="margin-top: 15px;"><h4>Загруженные файлы:</h4>
+                        ${imageFiles.map((file, index) => `
+                            <div class="file-item" onclick="showImageInGallery(${index})"><span>🖼️</span> ${file.name}</div>
+                        `).join('')}</div>
+                    ` : ''}
+                `;
             }
         }
 
-        function removeFromTaskbar(appName) {
-            const appElement = document.getElementById('taskbar-' + appName);
-            if (appElement) {
-                appElement.remove();
-            }
+        function showImageInGallery(index) {
+            openApp('gallery');
+            setTimeout(() => showImage(index), 100);
+        }
+
+        function openSystemFiles() {
+            const content = document.getElementById('explorerContent');
+            content.innerHTML = `
+                <div style="text-align: center; padding: 50px; color: #8b0000;">
+                    <h2>⚠️ Ой!</h2>
+                    <p>Системные файлы открыть нельзя :(</p>
+                    <p style="font-size: 12px; margin-top: 20px;">Эта папка содержит важные системные файлы.<br>Их изменение может нарушить работу системы.</p>
+                </div>
+            `;
+        }
+
+        // Настройки с вкладками
+        function switchSettingsTab(tabName) {
+            document.querySelectorAll('.settings-tab').forEach(tab => tab.classList.remove('active'));
+            document.querySelectorAll('.settings-panel').forEach(panel => panel.classList.remove('active'));
+            
+            document.querySelector(`.settings-tab:nth-child(${tabName === 'system' ? 1 : 2})`).classList.add('active');
+            document.getElementById(tabName + 'Panel').classList.add('active');
         }
 
         // Блокнот
@@ -1553,65 +1489,6 @@
             renderPlaylist();
         }
 
-        // Проводник
-        function openFolder(folderName) {
-            const content = document.getElementById('explorerContent');
-            
-            if (folderName === 'system') {
-                content.innerHTML = `
-                    <div class="folder-item" onclick="openFolder('music')">
-                        <span>🎵</span> Музыка 🎶
-                    </div>
-                    <div class="folder-item" onclick="openSystemFiles()">
-                        <span>💿</span> Системные файлы 💿
-                    </div>
-                `;
-            } else if (folderName === 'music') {
-                content.innerHTML = `
-                    <h3>Папка "Музыка 🎶"</h3>
-                    <div class="skeuomorphic-btn" onclick="loadMusicFiles()">🎵 Загрузить музыку</div>
-                    ${musicFiles.length > 0 ? `
-                        <div style="margin-top: 15px;">
-                            <h4>Загруженные файлы:</h4>
-                            ${musicFiles.map((file, index) => `
-                                <div class="file-item" onclick="playTrack(${index})">
-                                    <span>🎵</span> ${file.name}
-                                </div>
-                            `).join('')}
-                        </div>
-                    ` : ''}
-                `;
-            }
-        }
-
-        function openSystemFiles() {
-            const content = document.getElementById('explorerContent');
-            content.innerHTML = `
-                <div style="text-align: center; padding: 50px; color: #8b0000;">
-                    <h2>⚠️ Ой!</h2>
-                    <p>Системные файлы открыть нельзя :(</p>
-                    <p style="font-size: 12px; margin-top: 20px;">Эта папка содержит важные системные файлы.<br>Их изменение может нарушить работу системы.</p>
-                </div>
-            `;
-        }
-
-        // Настройки
-        function toggleSeconds() {
-            saveToLocalStorage();
-            updateClock();
-        }
-
-        function toggleAutoRefresh() {
-            saveToLocalStorage();
-        }
-
-        function resetSystem() {
-            if (confirm('Вы уверены, что хотите сбросить всю систему? Это удалит все ваши данные!')) {
-                localStorage.clear();
-                location.reload();
-            }
-        }
-
         // Темы
         function changeTheme(themeName, save = true) {
             const root = document.documentElement;
@@ -1715,7 +1592,7 @@
             installedApps.push(newApp);
             saveToLocalStorage();
             renderInstalledApps();
-            addAppToDesktop(newApp);
+            renderDesktopIcons();
             
             // Очистка формы
             document.getElementById('appName').value = '';
@@ -1723,24 +1600,6 @@
             selectedIcon.classList.remove('selected');
             
             alert(`Программа "${name}" успешно установлена на рабочий стол!`);
-        }
-
-        function addAppToDesktop(app) {
-            const desktopIcons = document.getElementById('desktopIcons');
-            const appIcon = document.createElement('div');
-            appIcon.className = 'desktop-icon';
-            appIcon.onclick = () => openInstalledApp(app.id);
-            appIcon.innerHTML = `
-                <div class="icon-image">${app.icon}</div>
-                <div class="icon-label">${app.name}</div>
-            `;
-            desktopIcons.appendChild(appIcon);
-        }
-
-        function renderInstalledAppsOnDesktop() {
-            installedApps.forEach(app => {
-                addAppToDesktop(app);
-            });
         }
 
         function renderInstalledApps() {
@@ -1769,16 +1628,6 @@
         function uninstallApp(index) {
             const app = installedApps[index];
             if (confirm(`Вы уверены, что хотите удалить программу "${app.name}"?`)) {
-                // Удаляем значок с рабочего стола
-                const desktopIcons = document.getElementById('desktopIcons');
-                const icons = desktopIcons.getElementsByClassName('desktop-icon');
-                for (let i = 0; i < icons.length; i++) {
-                    if (icons[i].querySelector('.icon-label').textContent === app.name) {
-                        desktopIcons.removeChild(icons[i]);
-                        break;
-                    }
-                }
-                
                 // Закрываем окно приложения если оно открыто
                 closeAppWindow(app.id);
                 
@@ -1786,10 +1635,173 @@
                 installedApps.splice(index, 1);
                 saveToLocalStorage();
                 renderInstalledApps();
+                renderDesktopIcons();
             }
         }
 
-        // Функция выключения
+        // Управление приложениями
+        function openApp(appName) {
+            const window = document.getElementById(appName + 'Window');
+            if (window) {
+                window.style.display = 'block';
+                window.style.zIndex = zIndex++;
+                openApps[appName] = true;
+                addToTaskbar(appName);
+                document.getElementById('startMenu').style.display = 'none';
+                
+                // Инициализация приложения при открытии
+                if (appName === 'notepad') initNotepad();
+                if (appName === 'explorer') openFolder('system');
+                if (appName === 'installer') initInstaller();
+                if (appName === 'player') initPlayer();
+                if (appName === 'gallery') renderThumbnails();
+            }
+        }
+
+        function openInstalledApp(appId) {
+            const app = installedApps.find(a => a.id === appId);
+            if (!app) return;
+
+            // Создаем окно для приложения
+            const appWindowId = `appWindow_${appId}`;
+            let appWindow = document.getElementById(appWindowId);
+            
+            if (!appWindow) {
+                appWindow = document.createElement('div');
+                appWindow.className = 'app-window';
+                appWindow.id = appWindowId;
+                appWindow.style.top = '100px';
+                appWindow.style.left = '100px';
+                appWindow.style.width = '800px';
+                appWindow.style.height = '600px';
+                appWindow.style.display = 'block';
+                appWindow.style.zIndex = zIndex++;
+
+                appWindow.innerHTML = `
+                    <div class="window-header">
+                        <div class="window-title">${app.icon} ${app.name}</div>
+                        <div class="window-controls">
+                            <div class="window-control" onclick="minimizeAppWindow('${appId}')">_</div>
+                            <div class="window-control" onclick="toggleMaximizeApp('${appId}')">□</div>
+                            <div class="window-control" onclick="closeAppWindow('${appId}')">×</div>
+                        </div>
+                    </div>
+                    <iframe class="app-iframe" src="${app.url}" sandbox="allow-scripts allow-same-origin allow-forms allow-popups"></iframe>
+                `;
+
+                document.getElementById('appWindowsContainer').appendChild(appWindow);
+                makeWindowDraggable(appWindowId);
+            } else {
+                appWindow.style.display = 'block';
+                appWindow.style.zIndex = zIndex++;
+            }
+
+            openApps[appId] = true;
+            addToTaskbar(appId, app.name);
+            document.getElementById('startMenu').style.display = 'none';
+        }
+
+        function toggleMaximizeApp(appId) {
+            const appWindow = document.getElementById(`appWindow_${appId}`);
+            if (appWindow) {
+                appWindow.classList.toggle('maximized');
+                const maxBtn = appWindow.querySelector('.window-controls .window-control:nth-child(2)');
+                maxBtn.textContent = appWindow.classList.contains('maximized') ? '❐' : '□';
+            }
+        }
+
+        function closeAppWindow(appId) {
+            const appWindow = document.getElementById(`appWindow_${appId}`);
+            if (appWindow) {
+                appWindow.style.display = 'none';
+                delete openApps[appId];
+                removeFromTaskbar(appId);
+            }
+        }
+
+        function minimizeAppWindow(appId) {
+            const appWindow = document.getElementById(`appWindow_${appId}`);
+            if (appWindow) {
+                appWindow.style.display = 'none';
+            }
+        }
+
+        function closeWindow(appName) {
+            const window = document.getElementById(appName + 'Window');
+            if (window) {
+                window.style.display = 'none';
+                delete openApps[appName];
+                removeFromTaskbar(appName);
+            }
+        }
+
+        function minimizeWindow(appName) {
+            const window = document.getElementById(appName + 'Window');
+            if (window) {
+                window.style.display = 'none';
+            }
+        }
+
+        function addToTaskbar(appName, customName = null) {
+            const taskbarApps = document.getElementById('taskbarApps');
+            const appNames = {
+                'notepad': 'Блокнот',
+                'calculator': 'Калькулятор',
+                'browser': 'Браузер',
+                'player': 'Проигрыватель',
+                'gallery': 'Галерея',
+                'explorer': 'Проводник',
+                'settings': 'Настройки',
+                'themes': 'Темы',
+                'installer': 'Установщик'
+            };
+
+            if (!document.getElementById('taskbar-' + appName)) {
+                const appElement = document.createElement('div');
+                appElement.className = 'taskbar-app';
+                appElement.id = 'taskbar-' + appName;
+                appElement.textContent = customName || appNames[appName];
+                appElement.onclick = () => {
+                    if (appName.startsWith('app_')) {
+                        const appWindow = document.getElementById(`appWindow_${appName}`);
+                        if (appWindow) {
+                            if (appWindow.style.display === 'none') {
+                                appWindow.style.display = 'block';
+                                appWindow.style.zIndex = zIndex++;
+                            } else {
+                                appWindow.style.display = 'none';
+                            }
+                        }
+                    } else {
+                        const window = document.getElementById(appName + 'Window');
+                        if (window) {
+                            if (window.style.display === 'none') {
+                                window.style.display = 'block';
+                                window.style.zIndex = zIndex++;
+                            } else {
+                                window.style.display = 'none';
+                            }
+                        }
+                    }
+                };
+                taskbarApps.appendChild(appElement);
+            }
+        }
+
+        function removeFromTaskbar(appName) {
+            const appElement = document.getElementById('taskbar-' + appName);
+            if (appElement) {
+                appElement.remove();
+            }
+        }
+
+        // Меню Пуск
+        function toggleStartMenu() {
+            const menu = document.getElementById('startMenu');
+            menu.style.display = menu.style.display === 'block' ? 'none' : 'block';
+        }
+
+        // Выключение
         function shutdown() {
             if (confirm('Вы уверены, что хотите выключить Nostalgia OS?')) {
                 document.body.innerHTML = `
@@ -1814,11 +1826,38 @@
             }
         }
 
-        // Обработчики событий для загрузки файлов
-        document.getElementById('musicFileInput').addEventListener('change', handleMusicFiles);
-        document.getElementById('wallpaperFileInput').addEventListener('change', handleWallpaperUpload);
+        // Настройки
+        function toggleSeconds() {
+            saveToLocalStorage();
+            updateClock();
+        }
 
-        // Добавляем возможность перетаскивания окон
+        function toggleAutoRefresh() {
+            saveToLocalStorage();
+        }
+
+        function resetSystem() {
+            if (confirm('Вы уверены, что хотите сбросить всю систему? Это удалит все ваши данные!')) {
+                localStorage.clear();
+                location.reload();
+            }
+        }
+
+        // Обновление времени
+        function updateClock() {
+            const now = new Date();
+            const showSeconds = document.getElementById('showSeconds').checked;
+            let timeString = now.getHours().toString().padStart(2, '0') + ':' + 
+                           now.getMinutes().toString().padStart(2, '0');
+            
+            if (showSeconds) {
+                timeString += ':' + now.getSeconds().toString().padStart(2, '0');
+            }
+            
+            document.getElementById('clock').textContent = timeString;
+        }
+
+        // Перетаскивание окон
         function makeWindowDraggable(windowId) {
             const window = document.getElementById(windowId);
             if (!window) return;
@@ -1857,14 +1896,27 @@
             }
         }
 
-        // Инициализация перетаскивания для всех окон
-        ['notepadWindow', 'calculatorWindow', 'browserWindow', 'playerWindow', 
-         'explorerWindow', 'settingsWindow', 'themesWindow', 'installerWindow'].forEach(makeWindowDraggable);
+        // Инициализация
+        document.addEventListener('click', hideContextMenu);
+        document.getElementById('musicFileInput').addEventListener('change', handleMusicFiles);
+        document.getElementById('imageFileInput').addEventListener('change', handleImageFiles);
+        document.getElementById('wallpaperFileInput').addEventListener('change', handleWallpaperUpload);
 
-        // Инициализация при загрузке
+        setInterval(updateClock, 1000);
+        setInterval(updateClockWidget, 1000);
+        setInterval(() => {
+            if (widgetsEnabled) {
+                updateSlideshow();
+            }
+        }, 5000);
+
+        // Запуск системы
         loadFromLocalStorage();
         updateCalcDisplay();
         updateClock();
+        
+        // Делаем окна перетаскиваемыми
+        ['notepadWindow', 'calculatorWindow', 'browserWindow', 'playerWindow', 'galleryWindow', 'explorerWindow', 'settingsWindow', 'themesWindow', 'installerWindow'].forEach(makeWindowDraggable);
     </script>
 </body>
 </html>
