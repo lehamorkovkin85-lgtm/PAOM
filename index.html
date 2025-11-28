@@ -3,651 +3,1868 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>PAOM Учёба - ИИ-Помощник (API)</title>
-    <!-- Подключение Tailwind CSS -->
-    <script src="https://cdn.tailwindcss.com"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/markdown-it/12.3.2/markdown-it.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/katex@0.13.18/dist/katex.min.js"></script>
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.13.18/dist/katex.min.css" crossorigin="anonymous">
-    
-    <!-- Конфигурация Tailwind для зеленых цветов и шрифта Inter -->
-    <script>
-        tailwind.config = {
-            theme: {
-                extend: {
-                    colors: {
-                        'paom-dark': '#2E7D32', // Темный зеленый (#2E7D32)
-                        'paom-main': '#4CAF50', // Основной зеленый (#4CAF50)
-                        'paom-light': '#81C784', // Светлый зеленый (#81C784)
-                        'paom-bg': '#F0FFF0', // Очень светлый фон
-                        'citation-color': '#007BFF', // Синий для цитат
-                    },
-                    fontFamily: {
-                        sans: ['Inter', 'sans-serif'],
-                    }
-                }
-            }
-        }
-    </script>
+    <title>Nostalgia OS - Скевоморфизм</title>
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@100..900&display=swap');
-        /* Базовые стили для адаптивности и центрирования */
-        html, body {
-            height: 100%;
+        * {
             margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
         }
-        #app-container {
-            min-height: 100vh;
+
+        :root {
+            --primary-color: #8b6b4d;
+            --secondary-color: #6d4c3d;
+            --accent-color: #ffd700;
+            --window-bg: linear-gradient(to bottom, #f5f5dc 0%, #e6e6c9 50%, #d2d2a8 100%);
+            --taskbar-bg: linear-gradient(to bottom, #a67c52 0%, #8b5a2b 50%, #6d4c3d 100%);
+            --desktop-bg: radial-gradient(circle at 20% 80%, rgba(139, 107, 77, 0.7) 0%, rgba(109, 76, 61, 0.9) 100%);
+        }
+
+        body {
+            background: var(--desktop-bg);
+            height: 100vh;
+            overflow: hidden;
+            user-select: none;
+        }
+
+        /* Рабочий стол */
+        .desktop {
+            background: var(--desktop-bg);
+            height: 100vh;
+            position: relative;
+            overflow: hidden;
+        }
+
+        /* Значки на рабочем столе */
+        .desktop-icons {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 25px;
+        }
+
+        .desktop-icon {
             display: flex;
             flex-direction: column;
             align-items: center;
-            justify-content: flex-start;
-            padding: 2rem 1rem;
-            background-color: var(--tw-colors-paom-bg);
-            box-sizing: border-box;
-        }
-        @media (min-width: 768px) {
-            #app-container {
-                justify-content: center;
-            }
-        }
-        .paom-card {
-            background-color: white;
-            padding: 2rem;
-            border-radius: 1.5rem;
-            box-shadow: 0 10px 30px rgba(46, 125, 50, 0.2);
-            width: 100%;
-            max-width: 650px;
-            transition: all 0.5s ease-in-out;
-            opacity: 0;
-            transform: translateY(20px);
-        }
-        .paom-card.visible {
-            opacity: 1;
-            transform: translateY(0);
-        }
-        .paom-button {
-            transition: background-color 0.2s, transform 0.1s, box-shadow 0.2s;
+            width: 80px;
+            padding: 10px;
+            border-radius: 8px;
             cursor: pointer;
+            transition: all 0.2s ease;
+            text-align: center;
         }
-        .paom-button:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 5px 15px rgba(46, 125, 50, 0.4);
+
+        .desktop-icon:hover {
+            background: rgba(255, 255, 255, 0.1);
         }
-        .paom-button:active {
-            transform: translateY(0);
-            box-shadow: 0 2px 10px rgba(46, 125, 50, 0.3);
+
+        .desktop-icon:active {
+            transform: scale(0.95);
         }
-        /* Стиль для сообщений истории */
-        .message-user {
-            background-color: #e6f7e6; /* Очень светлый зеленый для пользователя */
-            border-radius: 0.75rem 0.75rem 0.1rem 0.75rem;
+
+        .icon-image {
+            width: 48px;
+            height: 48px;
+            margin-bottom: 8px;
+            filter: drop-shadow(2px 2px 4px rgba(0, 0, 0, 0.5));
         }
-        .message-ai {
-            background-color: #d1e7d1; /* Светлый зеленый для ИИ */
-            border-radius: 0.75rem 0.75rem 0.75rem 0.1rem;
+
+        .icon-label {
+            color: white;
+            font-size: 12px;
+            text-shadow: 1px 1px 2px black;
+            font-weight: bold;
         }
-        /* Специальный класс для формул KaTeX */
-        .katex-display {
-            margin-top: 0.5em;
-            margin-bottom: 0.5em;
-            overflow-x: auto;
-            overflow-y: hidden;
-            padding: 0.5em 0;
-            background-color: #f7fdf7;
-            border-radius: 0.5rem;
+
+        /* Панель задач */
+        .taskbar {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            height: 50px;
+            background: var(--taskbar-bg);
+            border-top: 2px solid #d4b896;
+            box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.5);
+            display: flex;
+            align-items: center;
+            padding: 0 10px;
+            gap: 10px;
         }
-        /* Убираем стили цитат, так как Grounding отключен */
-        .citations {
+
+        /* Кнопка Пуск */
+        .start-button {
+            background: linear-gradient(to bottom, var(--accent-color) 0%, #ffa500 50%, #ff8c00 100%);
+            border: 2px solid #ff8c00;
+            border-radius: 8px;
+            padding: 8px 16px;
+            color: #8b4513;
+            font-weight: bold;
+            font-size: 14px;
+            cursor: pointer;
+            box-shadow: 
+                inset 0 2px 4px rgba(255, 255, 255, 0.5),
+                inset 0 -2px 4px rgba(139, 69, 19, 0.5),
+                0 2px 4px rgba(0, 0, 0, 0.3);
+            transition: all 0.1s ease;
+            min-width: 80px;
+            text-align: center;
+        }
+
+        .start-button:hover {
+            background: linear-gradient(to bottom, #ffe44d 0%, #ffb347 50%, #ff9d33 100%);
+        }
+
+        .start-button:active {
+            box-shadow: 
+                inset 0 2px 8px rgba(139, 69, 19, 0.5),
+                0 1px 2px rgba(0, 0, 0, 0.2);
+            transform: translateY(1px);
+        }
+
+        /* Область запущенных приложений */
+        .taskbar-apps {
+            display: flex;
+            gap: 5px;
+            flex: 1;
+        }
+
+        .taskbar-app {
+            background: linear-gradient(to bottom, #d4b896 0%, #b08c6e 50%, #8b5a2b 100%);
+            border: 1px solid #a67c52;
+            border-radius: 4px;
+            padding: 6px 12px;
+            color: #4d2e19;
+            font-size: 12px;
+            cursor: pointer;
+            box-shadow: 
+                inset 0 1px 2px rgba(255, 255, 255, 0.3),
+                inset 0 -1px 2px rgba(0, 0, 0, 0.2);
+            white-space: nowrap;
+            max-width: 150px;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        /* Системный трэй */
+        .system-tray {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            padding: 0 15px;
+            background: linear-gradient(to bottom, #8b5a2b 0%, #6d4c3d 100%);
+            border: 1px solid #a67c52;
+            border-radius: 6px;
+            height: 35px;
+            box-shadow: 
+                inset 0 1px 2px rgba(255, 255, 255, 0.2),
+                inset 0 -1px 2px rgba(0, 0, 0, 0.3);
+        }
+
+        .tray-item {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            color: var(--accent-color);
+            font-size: 12px;
+        }
+
+        .tray-icon {
+            width: 16px;
+            height: 16px;
+            filter: drop-shadow(1px 1px 1px rgba(0, 0, 0, 0.5));
+        }
+
+        /* Окна приложений */
+        .window {
+            position: absolute;
+            background: var(--window-bg);
+            border: 3px solid #8b7355;
+            border-radius: 8px;
+            box-shadow: 
+                5px 5px 15px rgba(0, 0, 0, 0.5),
+                inset 0 1px 2px rgba(255, 255, 255, 0.5);
+            min-width: 400px;
+            min-height: 300px;
+            display: none;
+        }
+
+        .window-header {
+            background: linear-gradient(to bottom, #8b7355 0%, #6d5742 50%, #5d4730 100%);
+            padding: 8px 12px;
+            border-bottom: 2px solid #a67c52;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            cursor: move;
+            border-radius: 5px 5px 0 0;
+        }
+
+        .window-title {
+            color: var(--accent-color);
+            font-weight: bold;
+            font-size: 14px;
+            text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.5);
+        }
+
+        .window-controls {
+            display: flex;
+            gap: 5px;
+        }
+
+        .window-control {
+            width: 20px;
+            height: 20px;
+            border: 1px solid #a67c52;
+            border-radius: 3px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            font-size: 12px;
+            font-weight: bold;
+            color: #4d2e19;
+            background: linear-gradient(to bottom, #d4b896 0%, #b08c6e 100%);
+            box-shadow: 
+                inset 0 1px 2px rgba(255, 255, 255, 0.3),
+                inset 0 -1px 2px rgba(0, 0, 0, 0.2);
+        }
+
+        .window-control:hover {
+            background: linear-gradient(to bottom, #e6c9a8 0%, #c9a87e 100%);
+        }
+
+        .window-control:active {
+            box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.3);
+        }
+
+        .window-content {
+            padding: 20px;
+            height: calc(100% - 40px);
+            overflow: auto;
+        }
+
+        /* Стили для калькулятора */
+        .calculator {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 8px;
+            max-width: 250px;
+            margin: 0 auto;
+        }
+
+        .calc-display {
+            grid-column: 1 / -1;
+            background: #2f1b14;
+            color: #00ff00;
+            padding: 10px;
+            font-family: 'Courier New', monospace;
+            font-size: 18px;
+            text-align: right;
+            border: 2px inset #666;
+            margin-bottom: 10px;
+            border-radius: 4px;
+        }
+
+        .calc-btn {
+            background: linear-gradient(to bottom, #d4b896 0%, #8b7355 100%);
+            border: 2px outset #a67c52;
+            padding: 15px;
+            font-size: 16px;
+            font-weight: bold;
+            color: #4d2e19;
+            cursor: pointer;
+            border-radius: 4px;
+            text-align: center;
+        }
+
+        .calc-btn:active {
+            border-style: inset;
+            background: linear-gradient(to bottom, #8b7355 0%, #d4b896 100%);
+        }
+
+        /* Стили для блокнота */
+        .notepad-container {
+            display: flex;
+            height: 400px;
+            background: #fffacd;
+            border: 2px solid #deb887;
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: inset 0 0 10px rgba(139, 69, 19, 0.2);
+        }
+
+        .notes-sidebar {
+            width: 200px;
+            background: linear-gradient(to bottom, #f5e6c9 0%, #e6c9a8 100%);
+            border-right: 2px solid #deb887;
+            padding: 10px;
+            overflow-y: auto;
+        }
+
+        .notes-list {
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+        }
+
+        .note-item {
+            padding: 10px;
+            background: #fffacd;
+            border: 1px solid #deb887;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 12px;
+            transition: all 0.2s ease;
+        }
+
+        .note-item:hover {
+            background: #ffe4b5;
+        }
+
+        .note-item.active {
+            background: #ffd700;
+            border-color: #ff8c00;
+        }
+
+        .note-editor {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            padding: 10px;
+        }
+
+        .note-title {
+            background: #fffacd;
+            border: 1px solid #deb887;
+            border-radius: 4px;
+            padding: 8px;
+            margin-bottom: 10px;
+            font-size: 14px;
+            font-weight: bold;
+        }
+
+        .note-content {
+            flex: 1;
+            background: #fffacd;
+            border: 1px solid #deb887;
+            border-radius: 4px;
+            padding: 10px;
+            resize: none;
+            font-family: 'Courier New', monospace;
+            font-size: 12px;
+        }
+
+        .note-actions {
+            margin-top: 10px;
+            display: flex;
+            gap: 10px;
+            justify-content: flex-end;
+        }
+
+        /* Стили для браузера */
+        .browser-container {
+            height: 400px;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .browser-url-bar {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 10px;
+        }
+
+        .url-input {
+            flex: 1;
+            padding: 8px;
+            border: 2px inset #a67c52;
+            border-radius: 4px;
+            background: #fffff0;
+        }
+
+        .browser-iframe {
+            flex: 1;
+            border: 2px inset #a67c52;
+            border-radius: 4px;
+            background: white;
+        }
+
+        /* Стили для проигрывателя */
+        .player-container {
+            text-align: center;
+        }
+
+        .player-controls {
+            display: flex;
+            justify-content: center;
+            gap: 20px;
+            margin: 20px 0;
+        }
+
+        .player-btn {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: linear-gradient(to bottom, #d4b896 0%, #8b7355 100%);
+            border: 2px outset #a67c52;
+            cursor: pointer;
+            font-size: 16px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .player-btn:active {
+            border-style: inset;
+        }
+
+        .playlist {
+            max-height: 200px;
+            overflow-y: auto;
+            border: 1px solid #deb887;
+            border-radius: 4px;
+            padding: 10px;
+            background: #fffacd;
+        }
+
+        .playlist-item {
+            padding: 8px;
+            border-bottom: 1px solid #deb887;
+            cursor: pointer;
+            font-size: 12px;
+            display: flex;
+            justify-content: between;
+            align-items: center;
+        }
+
+        .playlist-item:hover {
+            background: #ffe4b5;
+        }
+
+        .playlist-item.playing {
+            background: #ffd700;
+            font-weight: bold;
+        }
+
+        /* Стили для проводника */
+        .explorer-container {
+            height: 400px;
+            display: flex;
+        }
+
+        .explorer-sidebar {
+            width: 150px;
+            background: linear-gradient(to bottom, #f5e6c9 0%, #e6c9a8 100%);
+            border-right: 2px solid #deb887;
+            padding: 10px;
+        }
+
+        .explorer-folders {
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+        }
+
+        .folder-item {
+            padding: 8px;
+            background: #fffacd;
+            border: 1px solid #deb887;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 12px;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .folder-item:hover {
+            background: #ffe4b5;
+        }
+
+        .explorer-content {
+            flex: 1;
+            padding: 10px;
+            background: #fffacd;
+            overflow-y: auto;
+        }
+
+        .file-item {
+            padding: 8px;
+            margin: 5px 0;
+            background: #fffacd;
+            border: 1px solid #deb887;
+            border-radius: 4px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .file-item:hover {
+            background: #ffe4b5;
+        }
+
+        /* Стили для настроек */
+        .settings-container {
+            max-height: 400px;
+            overflow-y: auto;
+        }
+
+        .setting-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px;
+            border-bottom: 1px solid #deb887;
+        }
+
+        .toggle-switch {
+            position: relative;
+            width: 50px;
+            height: 24px;
+        }
+
+        .toggle-slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: #ccc;
+            transition: .4s;
+            border-radius: 24px;
+        }
+
+        .toggle-slider:before {
+            position: absolute;
+            content: "";
+            height: 16px;
+            width: 16px;
+            left: 4px;
+            bottom: 4px;
+            background-color: white;
+            transition: .4s;
+            border-radius: 50%;
+        }
+
+        input:checked + .toggle-slider {
+            background-color: #2196F3;
+        }
+
+        input:checked + .toggle-slider:before {
+            transform: translateX(26px);
+        }
+
+        /* Стили для установщика */
+        .installer-form {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+
+        .form-group {
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+        }
+
+        .form-input {
+            padding: 8px;
+            border: 2px inset #a67c52;
+            border-radius: 4px;
+            background: #fffff0;
+        }
+
+        .icon-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 10px;
+            margin: 10px 0;
+        }
+
+        .icon-option {
+            padding: 10px;
+            border: 2px solid #deb887;
+            border-radius: 4px;
+            cursor: pointer;
+            text-align: center;
+            background: #fffacd;
+        }
+
+        .icon-option.selected {
+            border-color: #ff8c00;
+            background: #ffe4b5;
+        }
+
+        /* Стили для тем */
+        .theme-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+
+        .theme-option {
+            padding: 20px;
+            border: 2px solid #deb887;
+            border-radius: 8px;
+            cursor: pointer;
+            text-align: center;
+            background: #fffacd;
+        }
+
+        .theme-option.selected {
+            border-color: #ff8c00;
+            background: #ffe4b5;
+        }
+
+        .custom-theme-upload {
+            margin-top: 20px;
+            padding: 15px;
+            border: 2px dashed #deb887;
+            border-radius: 8px;
+            text-align: center;
+            background: #fffacd;
+        }
+
+        /* Стили для окон установленных приложений */
+        .app-window {
+            position: absolute;
+            background: var(--window-bg);
+            border: 3px solid #8b7355;
+            border-radius: 8px;
+            box-shadow: 
+                5px 5px 15px rgba(0, 0, 0, 0.5),
+                inset 0 1px 2px rgba(255, 255, 255, 0.5);
+            min-width: 600px;
+            min-height: 400px;
+            display: none;
+        }
+
+        .app-iframe {
+            width: 100%;
+            height: calc(100% - 40px);
+            border: none;
+            border-radius: 0 0 5px 5px;
+        }
+
+        /* Меню Пуск */
+        .start-menu {
+            position: absolute;
+            bottom: 50px;
+            left: 10px;
+            width: 300px;
+            background: linear-gradient(to bottom, #d4b896 0%, #b08c6e 50%, #8b5a2b 100%);
+            border: 3px solid #a67c52;
+            border-radius: 8px;
+            box-shadow: 5px 5px 15px rgba(0, 0, 0, 0.5);
+            display: none;
+            z-index: 1000;
+        }
+
+        .start-menu-header {
+            background: linear-gradient(to bottom, #8b5a2b 0%, #6d4c3d 100%);
+            padding: 15px;
+            color: var(--accent-color);
+            font-weight: bold;
+            font-size: 18px;
+            text-align: center;
+            border-bottom: 2px solid #a67c52;
+        }
+
+        .start-menu-items {
+            padding: 10px;
+        }
+
+        .start-menu-item {
+            padding: 10px;
+            margin: 5px 0;
+            background: linear-gradient(to bottom, #e6c9a8 0%, #d4b896 100%);
+            border: 1px solid #a67c52;
+            border-radius: 4px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            transition: all 0.2s ease;
+        }
+
+        .start-menu-item:hover {
+            background: linear-gradient(to bottom, #f5e6c9 0%, #e6c9a8 100%);
+            transform: translateX(5px);
+        }
+
+        /* Стили для кнопок */
+        .skeuomorphic-btn {
+            background: linear-gradient(to bottom, #d4b896 0%, #8b7355 100%);
+            border: 2px outset #a67c52;
+            padding: 8px 16px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-weight: bold;
+            color: #4d2e19;
+            text-align: center;
+        }
+
+        .skeuomorphic-btn:active {
+            border-style: inset;
+            background: linear-gradient(to bottom, #8b7355 0%, #d4b896 100%);
+        }
+
+        .danger-btn {
+            background: linear-gradient(to bottom, #ff6b6b 0%, #cc5555 100%);
+            border: 2px outset #cc3333;
+            color: white;
+        }
+
+        .danger-btn:active {
+            background: linear-gradient(to bottom, #cc5555 0%, #ff6b6b 100%);
+        }
+
+        /* Анимации */
+        @keyframes fadeIn {
+            from { opacity: 0; transform: scale(0.9); }
+            to { opacity: 1; transform: scale(1); }
+        }
+
+        .window, .start-menu, .app-window {
+            animation: fadeIn 0.2s ease-out;
+        }
+
+        /* Скрытый input для загрузки файлов */
+        .hidden-file-input {
             display: none;
         }
     </style>
 </head>
 <body>
-    <div id="app-container">
-        <div id="app-content" class="paom-card">
-            <!-- Контент будет загружаться здесь JS -->
+    <div class="desktop">
+        <!-- Значки рабочего стола -->
+        <div class="desktop-icons" id="desktopIcons">
+            <!-- Стандартные значки -->
+            <div class="desktop-icon" onclick="openApp('notepad')">
+                <div class="icon-image">📝</div>
+                <div class="icon-label">Блокнот</div>
+            </div>
+            <div class="desktop-icon" onclick="openApp('calculator')">
+                <div class="icon-image">🧮</div>
+                <div class="icon-label">Калькулятор</div>
+            </div>
+            <div class="desktop-icon" onclick="openApp('browser')">
+                <div class="icon-image">🌐</div>
+                <div class="icon-label">Браузер</div>
+            </div>
+            <div class="desktop-icon" onclick="openApp('player')">
+                <div class="icon-image">🎵</div>
+                <div class="icon-label">Проигрыватель</div>
+            </div>
+            <div class="desktop-icon" onclick="openApp('explorer')">
+                <div class="icon-image">📁</div>
+                <div class="icon-label">Проводник</div>
+            </div>
+            <div class="desktop-icon" onclick="openApp('settings')">
+                <div class="icon-image">⚙️</div>
+                <div class="icon-label">Настройки</div>
+            </div>
+            <div class="desktop-icon" onclick="openApp('themes')">
+                <div class="icon-image">🎨</div>
+                <div class="icon-label">Темы</div>
+            </div>
+            <div class="desktop-icon" onclick="openApp('installer')">
+                <div class="icon-image">📦</div>
+                <div class="icon-label">Установщик</div>
+            </div>
+            <!-- Установленные программы будут добавляться здесь -->
+        </div>
+
+        <!-- Панель задач -->
+        <div class="taskbar">
+            <div class="start-button" onclick="toggleStartMenu()">
+                ПУСК
+            </div>
+            <div class="taskbar-apps" id="taskbarApps">
+                <!-- Запущенные приложения будут добавляться здесь -->
+            </div>
+            <div class="system-tray">
+                <div class="tray-item">
+                    <span class="tray-icon">🔊</span>
+                    <span>85%</span>
+                </div>
+                <div class="tray-item">
+                    <span class="tray-icon">🔋</span>
+                    <span>100%</span>
+                </div>
+                <div class="tray-item" id="clock">
+                    14:25
+                </div>
+            </div>
+        </div>
+
+        <!-- Меню Пуск -->
+        <div class="start-menu" id="startMenu">
+            <div class="start-menu-header">
+                Nostalgia OS
+            </div>
+            <div class="start-menu-items">
+                <div class="start-menu-item" onclick="openApp('notepad')">
+                    <span>📝</span> Блокнот
+                </div>
+                <div class="start-menu-item" onclick="openApp('calculator')">
+                    <span>🧮</span> Калькулятор
+                </div>
+                <div class="start-menu-item" onclick="openApp('browser')">
+                    <span>🌐</span> Веб-браузер
+                </div>
+                <div class="start-menu-item" onclick="openApp('player')">
+                    <span>🎵</span> Проигрыватель
+                </div>
+                <div class="start-menu-item" onclick="openApp('explorer')">
+                    <span>📁</span> Проводник
+                </div>
+                <div class="start-menu-item" onclick="openApp('settings')">
+                    <span>⚙️</span> Настройки
+                </div>
+                <div class="start-menu-item" onclick="openApp('themes')">
+                    <span>🎨</span> Темы
+                </div>
+                <div class="start-menu-item" onclick="openApp('installer')">
+                    <span>📦</span> Установщик
+                </div>
+                <div class="start-menu-item" onclick="shutdown()">
+                    <span>⭕</span> Выключение
+                </div>
+            </div>
         </div>
     </div>
 
-    <script>
-        // --- Константы и Инициализация ---
-        const APP_CONTENT = document.getElementById('app-content');
-        
-        // ВНИМАНИЕ: Если вы запускаете этот файл ЛОКАЛЬНО на своем ПК, 
-        // ВАМ НЕОБХОДИМО получить персональный API ключ (Gemini API)
-        // и вставить его ЗДЕСЬ, заменив пустые кавычки. 
-        // Получить ключ можно в Google AI Studio.
-        // Пример: const API_KEY = "YOUR_ACTUAL_API_KEY_HERE";
-        const API_KEY = "AIzaSyDC5DYIJdEDnRurYnj0eDgoVwITXGhsBEw"; 
-        
-        // В среде Canvas этот ключ предоставляется автоматически.
-        // Если вы видите ошибку 403 при локальном запуске, вставьте сюда свой ключ.
+    <!-- Скрытый input для загрузки файлов -->
+    <input type="file" id="musicFileInput" class="hidden-file-input" accept="audio/*" multiple>
+    <input type="file" id="wallpaperFileInput" class="hidden-file-input" accept="image/*">
 
-        const MODEL_NAME = 'gemini-2.5-flash-preview-09-2025';
-        const API_URL = `https://generativelanguage.googleapis.com/v1beta/models/${MODEL_NAME}:generateContent?key=${API_KEY}`;
-        
-        // Объект для рендеринга Markdown
-        const md = window.markdownit({
-            html: false,
-            linkify: true,
-            typographer: true
+    <!-- Окно блокнота -->
+    <div class="window" id="notepadWindow" style="top: 100px; left: 200px; width: 700px; height: 500px;">
+        <div class="window-header">
+            <div class="window-title">📝 Блокнот Nostalgia</div>
+            <div class="window-controls">
+                <div class="window-control" onclick="minimizeWindow('notepad')">_</div>
+                <div class="window-control" onclick="closeWindow('notepad')">×</div>
+            </div>
+        </div>
+        <div class="window-content">
+            <div class="notepad-container">
+                <div class="notes-sidebar">
+                    <div class="skeuomorphic-btn" onclick="createNewNote()" style="margin-bottom: 10px;">+ Новая заметка</div>
+                    <div class="notes-list" id="notesList">
+                        <!-- Список заметок будет здесь -->
+                    </div>
+                </div>
+                <div class="note-editor">
+                    <input type="text" class="note-title" id="noteTitle" placeholder="Название заметки">
+                    <textarea class="note-content" id="noteContent" placeholder="Начните писать здесь..."></textarea>
+                    <div class="note-actions">
+                        <div class="skeuomorphic-btn" onclick="saveNote()">💾 Сохранить</div>
+                        <div class="skeuomorphic-btn" onclick="deleteNote()">🗑️ Удалить</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Окно калькулятора -->
+    <div class="window" id="calculatorWindow" style="top: 150px; left: 300px;">
+        <div class="window-header">
+            <div class="window-title">🧮 Калькулятор</div>
+            <div class="window-controls">
+                <div class="window-control" onclick="minimizeWindow('calculator')">_</div>
+                <div class="window-control" onclick="closeWindow('calculator')">×</div>
+            </div>
+        </div>
+        <div class="window-content">
+            <div class="calculator">
+                <div class="calc-display" id="calcDisplay">0</div>
+                <div class="calc-btn" onclick="clearCalc()">C</div>
+                <div class="calc-btn" onclick="appendToCalc('/')">/</div>
+                <div class="calc-btn" onclick="appendToCalc('*')">×</div>
+                <div class="calc-btn" onclick="appendToCalc('-')">-</div>
+                <div class="calc-btn" onclick="appendToCalc('7')">7</div>
+                <div class="calc-btn" onclick="appendToCalc('8')">8</div>
+                <div class="calc-btn" onclick="appendToCalc('9')">9</div>
+                <div class="calc-btn" onclick="appendToCalc('+')" style="grid-row: span 2">+</div>
+                <div class="calc-btn" onclick="appendToCalc('4')">4</div>
+                <div class="calc-btn" onclick="appendToCalc('5')">5</div>
+                <div class="calc-btn" onclick="appendToCalc('6')">6</div>
+                <div class="calc-btn" onclick="appendToCalc('1')">1</div>
+                <div class="calc-btn" onclick="appendToCalc('2')">2</div>
+                <div class="calc-btn" onclick="appendToCalc('3')">3</div>
+                <div class="calc-btn" onclick="calculate()" style="grid-row: span 2">=</div>
+                <div class="calc-btn" onclick="appendToCalc('0')" style="grid-column: span 2">0</div>
+                <div class="calc-btn" onclick="appendToCalc('.')">.</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Окно браузера -->
+    <div class="window" id="browserWindow" style="top: 200px; left: 400px; width: 800px; height: 600px;">
+        <div class="window-header">
+            <div class="window-title">🌐 Nostalgia Browser</div>
+            <div class="window-controls">
+                <div class="window-control" onclick="minimizeWindow('browser')">_</div>
+                <div class="window-control" onclick="closeWindow('browser')">×</div>
+            </div>
+        </div>
+        <div class="window-content">
+            <div class="browser-container">
+                <div class="browser-url-bar">
+                    <input type="text" class="url-input" id="urlInput" placeholder="Введите URL (например: https://google.com)" value="https://google.com">
+                    <div class="skeuomorphic-btn" onclick="browseToUrl()">Перейти</div>
+                </div>
+                <iframe class="browser-iframe" id="browserIframe" src="https://google.com"></iframe>
+            </div>
+        </div>
+    </div>
+
+    <!-- Окно проигрывателя -->
+    <div class="window" id="playerWindow" style="top: 250px; left: 500px; width: 400px; height: 500px;">
+        <div class="window-header">
+            <div class="window-title">🎵 Nostalgia Player</div>
+            <div class="window-controls">
+                <div class="window-control" onclick="minimizeWindow('player')">_</div>
+                <div class="window-control" onclick="closeWindow('player')">×</div>
+            </div>
+        </div>
+        <div class="window-content">
+            <div class="player-container">
+                <h3>Сейчас играет:</h3>
+                <div id="nowPlaying">Не выбрано</div>
+                
+                <audio id="audioPlayer" controls style="width: 100%; margin: 10px 0;"></audio>
+
+                <div class="player-controls">
+                    <div class="player-btn" onclick="playPrevious()">⏮️</div>
+                    <div class="player-btn" onclick="togglePlay()" id="playBtn">▶️</div>
+                    <div class="player-btn" onclick="playNext()">⏭️</div>
+                </div>
+
+                <h4>Плейлист:</h4>
+                <div class="playlist" id="playlist">
+                    <!-- Плейлист будет здесь -->
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Окно проводника -->
+    <div class="window" id="explorerWindow" style="top: 100px; left: 200px; width: 600px; height: 500px;">
+        <div class="window-header">
+            <div class="window-title">📁 Проводник</div>
+            <div class="window-controls">
+                <div class="window-control" onclick="minimizeWindow('explorer')">_</div>
+                <div class="window-control" onclick="closeWindow('explorer')">×</div>
+            </div>
+        </div>
+        <div class="window-content">
+            <div class="explorer-container">
+                <div class="explorer-sidebar">
+                    <div class="explorer-folders">
+                        <div class="folder-item" onclick="openFolder('system')">
+                            <span>💻</span> Система
+                        </div>
+                    </div>
+                </div>
+                <div class="explorer-content" id="explorerContent">
+                    <!-- Содержимое папки будет здесь -->
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Окно настроек -->
+    <div class="window" id="settingsWindow" style="top: 150px; left: 300px; width: 500px; height: 450px;">
+        <div class="window-header">
+            <div class="window-title">⚙️ Настройки системы</div>
+            <div class="window-controls">
+                <div class="window-control" onclick="minimizeWindow('settings')">_</div>
+                <div class="window-control" onclick="closeWindow('settings')">×</div>
+            </div>
+        </div>
+        <div class="window-content">
+            <div class="settings-container">
+                <div class="setting-item">
+                    <span>Показывать секунды в часах</span>
+                    <label class="toggle-switch">
+                        <input type="checkbox" id="showSeconds" onchange="toggleSeconds()">
+                        <span class="toggle-slider"></span>
+                    </label>
+                </div>
+                <div class="setting-item">
+                    <span>Включить автообновление</span>
+                    <label class="toggle-switch">
+                        <input type="checkbox" id="autoRefresh" onchange="toggleAutoRefresh()">
+                        <span class="toggle-slider"></span>
+                    </label>
+                </div>
+                <div class="setting-item">
+                    <span>Сброс системы</span>
+                    <div class="skeuomorphic-btn danger-btn" onclick="resetSystem()">
+                        🔄 Сбросить всё
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Окно тем -->
+    <div class="window" id="themesWindow" style="top: 200px; left: 400px; width: 500px; height: 500px;">
+        <div class="window-header">
+            <div class="window-title">🎨 Темы оформления</div>
+            <div class="window-controls">
+                <div class="window-control" onclick="minimizeWindow('themes')">_</div>
+                <div class="window-control" onclick="closeWindow('themes')">×</div>
+            </div>
+        </div>
+        <div class="window-content">
+            <div class="theme-grid">
+                <div class="theme-option" onclick="changeTheme('classic')">
+                    🏛️ Классическая
+                </div>
+                <div class="theme-option" onclick="changeTheme('dark')">
+                    🌙 Тёмная
+                </div>
+                <div class="theme-option" onclick="changeTheme('blue')">
+                    🔵 Синяя
+                </div>
+                <div class="theme-option" onclick="changeTheme('green')">
+                    🟢 Зелёная
+                </div>
+            </div>
+            
+            <div class="custom-theme-upload">
+                <h4>💫 Пользовательские обои</h4>
+                <div class="skeuomorphic-btn" onclick="document.getElementById('wallpaperFileInput').click()">
+                    📁 Загрузить обои
+                </div>
+                <div style="margin-top: 10px; font-size: 12px; color: #666;">
+                    Поддерживаются: JPG, PNG, GIF
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Окно установщика -->
+    <div class="window" id="installerWindow" style="top: 250px; left: 500px; width: 600px; height: 500px;">
+        <div class="window-header">
+            <div class="window-title">📦 Установщик программ</div>
+            <div class="window-controls">
+                <div class="window-control" onclick="minimizeWindow('installer')">_</div>
+                <div class="window-control" onclick="closeWindow('installer')">×</div>
+            </div>
+        </div>
+        <div class="window-content">
+            <div class="installer-form">
+                <div class="form-group">
+                    <label>Название программы:</label>
+                    <input type="text" class="form-input" id="appName" placeholder="Введите название">
+                </div>
+                <div class="form-group">
+                    <label>URL программы:</label>
+                    <input type="text" class="form-input" id="appUrl" placeholder="https://example.com">
+                </div>
+                <div class="form-group">
+                    <label>Выберите иконку:</label>
+                    <div class="icon-grid" id="iconGrid">
+                        <!-- Иконки будут здесь -->
+                    </div>
+                </div>
+                <div class="skeuomorphic-btn" onclick="installApp()">Установить</div>
+            </div>
+            <div id="installedApps">
+                <!-- Установленные программы будут здесь -->
+            </div>
+        </div>
+    </div>
+
+    <!-- Контейнер для окон установленных приложений -->
+    <div id="appWindowsContainer"></div>
+
+    <script>
+        // Переменные для управления приложениями
+        let openApps = {};
+        let zIndex = 1000;
+        let currentNoteId = null;
+        let musicFiles = JSON.parse(localStorage.getItem('musicFiles')) || [];
+        let currentTrack = 0;
+        let isPlaying = false;
+        let audioPlayer = null;
+        let installedApps = [];
+
+        // Загрузка данных из LocalStorage
+        function loadFromLocalStorage() {
+            // Заметки
+            const savedNotes = localStorage.getItem('notes');
+            if (savedNotes) {
+                notes = JSON.parse(savedNotes);
+            } else {
+                notes = [];
+            }
+
+            // Настройки
+            const savedSettings = localStorage.getItem('systemSettings');
+            if (savedSettings) {
+                const settings = JSON.parse(savedSettings);
+                document.getElementById('showSeconds').checked = settings.showSeconds || false;
+                document.getElementById('autoRefresh').checked = settings.autoRefresh || false;
+            }
+
+            // Тема
+            const savedTheme = localStorage.getItem('currentTheme');
+            if (savedTheme) {
+                changeTheme(savedTheme, false);
+            }
+
+            // Установленные программы
+            const savedApps = localStorage.getItem('installedApps');
+            if (savedApps) {
+                installedApps = JSON.parse(savedApps);
+                renderInstalledAppsOnDesktop();
+            } else {
+                installedApps = [];
+            }
+
+            // Обои
+            const savedWallpaper = localStorage.getItem('customWallpaper');
+            if (savedWallpaper) {
+                document.body.style.backgroundImage = `url(${savedWallpaper})`;
+                document.body.style.backgroundSize = 'cover';
+                document.body.style.backgroundPosition = 'center';
+            }
+        }
+
+        // Сохранение в LocalStorage
+        function saveToLocalStorage() {
+            localStorage.setItem('notes', JSON.stringify(notes));
+            localStorage.setItem('musicFiles', JSON.stringify(musicFiles));
+            localStorage.setItem('installedApps', JSON.stringify(installedApps));
+            
+            const settings = {
+                showSeconds: document.getElementById('showSeconds').checked,
+                autoRefresh: document.getElementById('autoRefresh').checked
+            };
+            localStorage.setItem('systemSettings', JSON.stringify(settings));
+        }
+
+        // Обновление времени
+        function updateClock() {
+            const now = new Date();
+            const showSeconds = document.getElementById('showSeconds').checked;
+            let timeString = now.getHours().toString().padStart(2, '0') + ':' + 
+                           now.getMinutes().toString().padStart(2, '0');
+            
+            if (showSeconds) {
+                timeString += ':' + now.getSeconds().toString().padStart(2, '0');
+            }
+            
+            document.getElementById('clock').textContent = timeString;
+        }
+
+        setInterval(updateClock, 1000);
+        updateClock();
+
+        // Управление меню Пуск
+        function toggleStartMenu() {
+            const menu = document.getElementById('startMenu');
+            menu.style.display = menu.style.display === 'block' ? 'none' : 'block';
+        }
+
+        // Закрытие меню Пуск при клике вне его
+        document.addEventListener('click', (e) => {
+            if (!e.target.closest('.start-button') && !e.target.closest('.start-menu')) {
+                document.getElementById('startMenu').style.display = 'none';
+            }
         });
 
-        // Функция рендеринга с поддержкой LaTeX и Markdown
-        function renderMarkdown(markdownText) {
-            // Замена одинарных $...$ на span.katex-inline для inline формул
-            let html = markdownText.replace(/\$(.*?)\$/g, (match, p1) => {
-                try {
-                    return katex.renderToString(p1, { throwOnError: false });
-                } catch (e) {
-                    return match; // Возвращаем исходный текст, если ошибка
-                }
-            });
-
-            // Замена двойных $$...$$ на div.katex-display для блочных формул
-            html = html.replace(/\$\$(.*?)\$\$/gs, (match, p1) => {
-                try {
-                    return katex.renderToString(p1, { displayMode: true, throwOnError: false });
-                } catch (e) {
-                    return match;
-                }
-            });
-
-            // Рендеринг остального Markdown
-            return md.render(html);
-        }
-
-        const SUBJECTS = [
-            { id: 'GEOGRAPHY', name: 'География', icon: '🌍' },
-            { id: 'RUSSIAN', name: 'Русский Язык', icon: '📝' },
-            { id: 'MATH', name: 'Математика', icon: '📐' },
-            { id: 'HISTORY', name: 'История', icon: '📜' },
-            { id: 'SCIENCE', name: 'Естествознание', icon: '🔬' },
-            { id: 'BIOLOGY', name: 'Биология', icon: '🌿' },
-            { id: 'LITERATURE', name: 'Литература', icon: '📚' },
-            { id: 'ENGLISH', name: 'Английский Язык', icon: '🇬🇧' },
-        ];
-
-        // --- Логика LocalStorage (без изменений) ---
-
-        function loadUsername() {
-            return localStorage.getItem('paom_username');
-        }
-
-        function saveUsername(name) {
-            localStorage.setItem('paom_username', name);
-        }
-
-        function loadHistory(subjectId) {
-            const key = `paom_history_${subjectId}`;
-            try {
-                const history = localStorage.getItem(key);
-                // Источники (sources) теперь могут быть пустым массивом, так как Grounding отключен
-                return history ? JSON.parse(history) : [];
-            } catch (e) {
-                console.error("Ошибка при загрузке истории:", e);
-                return [];
+        // Функции для работы с приложениями
+        function openApp(appName) {
+            const window = document.getElementById(appName + 'Window');
+            if (window) {
+                window.style.display = 'block';
+                window.style.zIndex = zIndex++;
+                openApps[appName] = true;
+                addToTaskbar(appName);
+                document.getElementById('startMenu').style.display = 'none';
+                
+                // Инициализация приложения при открытии
+                if (appName === 'notepad') initNotepad();
+                if (appName === 'explorer') openFolder('system');
+                if (appName === 'installer') initInstaller();
+                if (appName === 'player') initPlayer();
             }
         }
 
-        function saveHistory(subjectId, history) {
-            const key = `paom_history_${subjectId}`;
-            try {
-                localStorage.setItem(key, JSON.stringify(history));
-            } catch (e) {
-                console.error("Ошибка при сохранении истории:", e);
-            }
-        }
+        function openInstalledApp(appId) {
+            const app = installedApps.find(a => a.id === appId);
+            if (!app) return;
 
-        function addHistoryEntry(subjectId, userQuestion, aiResponse) {
-            const history = loadHistory(subjectId);
-            // Сохраняем пустой массив источников, чтобы не ломать структуру
-            history.push({ user: userQuestion, ai: aiResponse, sources: [] });
-            saveHistory(subjectId, history);
-        }
-
-        // --- Логика Gemini API (Без Grounding) ---
-
-        function getSystemInstruction(subjectId) {
-            const subjectName = SUBJECTS.find(s => s.id === subjectId)?.name || 'школьный предмет';
-            const extraInstruction = {
-                'MATH': "Обязательно используй LaTeX для всех формул и математических выражений: $inline$ для встроенных и $$block$$ для блочных. Будь максимально точным.",
-                'RUSSIAN': "Обрати особое внимание на орфографию, грамматику и пунктуацию. Разъясняй правила четко и с примерами.",
-                'HISTORY': "Обязательно указывай даты и имена, а также исторический контекст. Отвечай подробно и структурированно.",
-                'SCIENCE': "Для физики и химии используй LaTeX для формул и обозначений. Объясняй сложные концепции простым языком. Если необходимо, добавь в конце ответа тег  для визуализации.",
-                'BIOLOGY': "Объясняй биологические процессы, термины и классификацию. Если необходимо, добавь в конце ответа тег  для визуализации.",
-                'LITERATURE': "Анализируй произведения, давай характеристики героям и объясняй литературные термины (жанры, тропы).",
-                'ENGLISH': "Давай ответы на русском языке, но объясняй грамматику и лексику на английском языке с примерами, используя тег `code`."
-            }[subjectId] || "Отвечай по существу, используя факты и точные данные.";
-
-            return `
-                Ты — ИИ-помощник PAOM Учёба, высококвалифицированный преподаватель и эксперт по предмету "${subjectName}".
-                Твоя задача — дать максимально точный, образовательный и дружелюбный ответ на вопрос ученика.
-                Твой тон: поддерживающий, академичный, но доступный.
-                ${extraInstruction}
-                Ответы должны быть полными, но не слишком длинными (не более 4-5 абзацев).
-            `;
-        }
-
-        /**
-         * Выполняет API-запрос к Gemini без Google Search Grounding.
-         * @param {string} userQuery Вопрос пользователя.
-         * @param {string} systemInstruction Системная инструкция для модели.
-         * @returns {Promise<{text: string}>} Ответ модели.
-         */
-        async function fetchAiResponse(userQuery, systemInstruction) {
-            // Если API_KEY пуст при локальном запуске, это всегда приведет к ошибке 403.
-            if (API_KEY === "") {
-                // Это предотвратит лишние сетевые запросы с пустым ключом
-                console.error("API Key is empty. If running locally, please insert your key.");
-            }
+            // Создаем окно для приложения
+            const appWindowId = `appWindow_${appId}`;
+            let appWindow = document.getElementById(appWindowId);
             
-            const payload = {
-                contents: [{ parts: [{ text: userQuery }] }],
-                // ИСКЛЮЧАЕМ tools: [{ "google_search": {} }]
-                systemInstruction: {
-                    parts: [{ text: systemInstruction }]
-                },
+            if (!appWindow) {
+                appWindow = document.createElement('div');
+                appWindow.className = 'app-window';
+                appWindow.id = appWindowId;
+                appWindow.style.top = '100px';
+                appWindow.style.left = '100px';
+                appWindow.style.width = '800px';
+                appWindow.style.height = '600px';
+                appWindow.style.display = 'block';
+                appWindow.style.zIndex = zIndex++;
+
+                appWindow.innerHTML = `
+                    <div class="window-header">
+                        <div class="window-title">${app.icon} ${app.name}</div>
+                        <div class="window-controls">
+                            <div class="window-control" onclick="minimizeAppWindow('${appId}')">_</div>
+                            <div class="window-control" onclick="closeAppWindow('${appId}')">×</div>
+                        </div>
+                    </div>
+                    <iframe class="app-iframe" src="${app.url}" sandbox="allow-scripts allow-same-origin allow-forms allow-popups"></iframe>
+                `;
+
+                document.getElementById('appWindowsContainer').appendChild(appWindow);
+                makeWindowDraggable(appWindowId);
+            } else {
+                appWindow.style.display = 'block';
+                appWindow.style.zIndex = zIndex++;
+            }
+
+            openApps[appId] = true;
+            addToTaskbar(appId, app.name);
+            document.getElementById('startMenu').style.display = 'none';
+        }
+
+        function closeAppWindow(appId) {
+            const appWindow = document.getElementById(`appWindow_${appId}`);
+            if (appWindow) {
+                appWindow.style.display = 'none';
+                delete openApps[appId];
+                removeFromTaskbar(appId);
+            }
+        }
+
+        function minimizeAppWindow(appId) {
+            const appWindow = document.getElementById(`appWindow_${appId}`);
+            if (appWindow) {
+                appWindow.style.display = 'none';
+            }
+        }
+
+        function closeWindow(appName) {
+            const window = document.getElementById(appName + 'Window');
+            if (window) {
+                window.style.display = 'none';
+                delete openApps[appName];
+                removeFromTaskbar(appName);
+            }
+        }
+
+        function minimizeWindow(appName) {
+            const window = document.getElementById(appName + 'Window');
+            if (window) {
+                window.style.display = 'none';
+            }
+        }
+
+        function addToTaskbar(appName, customName = null) {
+            const taskbarApps = document.getElementById('taskbarApps');
+            const appNames = {
+                'notepad': 'Блокнот',
+                'calculator': 'Калькулятор',
+                'browser': 'Браузер',
+                'player': 'Проигрыватель',
+                'explorer': 'Проводник',
+                'settings': 'Настройки',
+                'themes': 'Темы',
+                'installer': 'Установщик'
             };
 
-            const maxRetries = 5;
-            let delay = 1000;
-            let lastError = null;
-
-            for (let i = 0; i < maxRetries; i++) {
-                try {
-                    const response = await fetch(API_URL, {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify(payload)
-                    });
-
-                    if (!response.ok) {
-                        // Обработка 403 (Forbidden) и 429 (Rate Limit)
-                        if (response.status === 403) {
-                             // Обновленное сообщение для большей ясности при локальном запуске
-                            throw new Error(`403: Доступ запрещен. Если вы запускаете файл локально, вам необходимо вставить личный API-ключ в переменную 'const API_KEY'.`);
+            if (!document.getElementById('taskbar-' + appName)) {
+                const appElement = document.createElement('div');
+                appElement.className = 'taskbar-app';
+                appElement.id = 'taskbar-' + appName;
+                appElement.textContent = customName || appNames[appName];
+                appElement.onclick = () => {
+                    if (appName.startsWith('app_')) {
+                        const appWindow = document.getElementById(`appWindow_${appName}`);
+                        if (appWindow) {
+                            if (appWindow.style.display === 'none') {
+                                appWindow.style.display = 'block';
+                                appWindow.style.zIndex = zIndex++;
+                            } else {
+                                appWindow.style.display = 'none';
+                            }
                         }
-                        if (response.status === 429 && i < maxRetries - 1) {
-                            await new Promise(resolve => setTimeout(resolve, delay));
-                            delay *= 2;
-                            continue;
-                        }
-                        throw new Error(`HTTP error! status: ${response.status}`);
-                    }
-
-                    const result = await response.json();
-                    const candidate = result.candidates?.[0];
-
-                    if (candidate && candidate.content?.parts?.[0]?.text) {
-                        return { text: candidate.content.parts[0].text }; // Возвращаем только текст
-
                     } else {
-                        return { text: "Извините, я не смог сгенерировать ответ. Попробуйте другой вопрос." };
+                        const window = document.getElementById(appName + 'Window');
+                        if (window) {
+                            if (window.style.display === 'none') {
+                                window.style.display = 'block';
+                                window.style.zIndex = zIndex++;
+                            } else {
+                                window.style.display = 'none';
+                            }
+                        }
                     }
-                } catch (error) {
-                    lastError = error;
-                    if (error.message.includes('403') || i === maxRetries - 1) {
-                        throw new Error(`Ошибка API после ${i + 1} попыток: ${lastError.message}`);
-                    }
-                    await new Promise(resolve => setTimeout(resolve, delay));
-                    delay *= 2;
-                }
-            }
-            throw new Error("Не удалось получить ответ от ИИ.");
-        }
-
-
-        // --- Функции Рендеринга Представлений (SPA Routing) ---
-
-        function transitionView(content, callback = () => {}) {
-            APP_CONTENT.classList.remove('visible');
-            APP_CONTENT.classList.add('opacity-0', 'translate-y-5');
-
-            setTimeout(() => {
-                APP_CONTENT.innerHTML = content;
-                window.scrollTo(0, 0);
-
-                APP_CONTENT.classList.add('visible');
-                APP_CONTENT.classList.remove('opacity-0', 'translate-y-5');
-
-                callback();
-            }, 500);
-        }
-
-        function renderStartScreen() {
-            const username = loadUsername();
-
-            const content = `
-                <div class="text-center">
-                    <div class="text-paom-dark mb-4">
-                        <!-- Логотип PAOM -->
-                        <svg class="w-16 h-16 mx-auto" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                            <circle cx="12" cy="12" r="10" fill="#4CAF50"/>
-                            <path d="M12 4C8.686 4 6 6.686 6 10C6 11.536 6.545 12.98 7.472 14.155L14.155 7.472C12.98 6.545 11.536 6 10 6C8.5 6 7.11 6.5 6 7.37V4H4V12H12V10C12 7.79 10.21 6 8 6C6.72 6 5.56 6.53 4.71 7.37L12 14.65V18H18V12H14.65L18 8.65V18H14V14.65L7.37 8C7.47 7.9 7.6 7.8 7.7 7.7L14.65 14.65L18 11.3V4H16V7.37L9 14.37V10C9 8.34 10.34 7 12 7V4H9V12H15V8.37L18 11.3V18H12V14.65L8.37 18.28C9.55 19.34 10.99 20 12.5 20C15.814 20 18.5 17.314 18.5 14V10C18.5 6.686 15.814 4 12.5 4H12Z" fill="white"/>
-                        </svg>
-                        <h1 class="text-3xl font-extrabold mt-2">PAOM Учёба</h1>
-                    </div>
-                    <h2 class="text-2xl font-semibold text-paom-dark mb-6">Добро пожаловать в PAOM Учёба!</h2>
-
-                    <p class="text-gray-600 mb-6">Ваш персональный ИИ-помощник по школьным предметам, теперь на базе Gemini.</p>
-
-                    <div class="space-y-3 mb-8 text-left max-w-sm mx-auto">
-                        <p class="flex items-start text-paom-dark">
-                            <span class="text-xl mr-3">✅</span>
-                            Удобный и простой интерфейс
-                        </p>
-                        <p class="flex items-start text-paom-dark">
-                            <span class="text-xl mr-3">🧠</span>
-                            Высококачественные ответы от Gemini
-                        </p>
-                        <p class="flex items-start text-paom-dark">
-                            <span class="text-xl mr-3">⚡</span>
-                            Ответы с формулами (LaTeX)
-                        </p>
-                        <p class="flex items-start text-paom-dark">
-                            <span class="text-xl mr-3">💾</span>
-                            Данные сохраняются локально
-                        </p>
-                    </div>
-
-                    <div class="space-y-4">
-                        <input
-                            id="username-input"
-                            type="text"
-                            placeholder="Введите ваше имя"
-                            value="${username || ''}"
-                            class="w-full px-4 py-3 border border-paom-light rounded-lg focus:ring-2 focus:ring-paom-main focus:border-paom-main outline-none text-lg"
-                        />
-                        <button
-                            id="start-button"
-                            onclick="handleStartLearning()"
-                            class="paom-button w-full bg-paom-main text-white font-bold py-3 rounded-xl shadow-lg shadow-paom-light hover:bg-paom-dark"
-                        >
-                            Начать обучение
-                        </button>
-                    </div>
-                </div>
-            `;
-            transitionView(content, () => {
-                const input = document.getElementById('username-input');
-                document.getElementById('start-button').addEventListener('click', handleStartLearning);
-                input.addEventListener('keypress', (e) => {
-                    if (e.key === 'Enter') handleStartLearning();
-                });
-                if (!username) input.focus();
-            });
-        }
-
-        function handleStartLearning() {
-            const input = document.getElementById('username-input');
-            const username = input.value.trim();
-
-            if (username.length > 1) {
-                saveUsername(username);
-                renderMainMenu();
-            } else {
-                input.focus();
-                input.classList.add('border-red-500', 'ring-red-500');
-                setTimeout(() => input.classList.remove('border-red-500', 'ring-red-500'), 1500);
+                };
+                taskbarApps.appendChild(appElement);
             }
         }
 
-        function logoutUser() {
-            localStorage.removeItem('paom_username');
-            renderStartScreen();
-        }
-
-        function renderMainMenu() {
-            const username = loadUsername();
-            if (!username) {
-                renderStartScreen();
-                return;
+        function removeFromTaskbar(appName) {
+            const appElement = document.getElementById('taskbar-' + appName);
+            if (appElement) {
+                appElement.remove();
             }
-
-            const subjectButtons = SUBJECTS.map(subj => `
-                <button
-                    onclick="renderSubjectScreen('${subj.id}')"
-                    class="paom-button flex items-center justify-between p-4 bg-paom-light text-paom-dark font-semibold rounded-xl hover:bg-paom-main hover:text-white shadow-md w-full text-left"
-                >
-                    <span class="text-2xl mr-3">${subj.icon}</span>
-                    <span class="flex-grow text-lg">${subj.name}</span>
-                    <span class="text-xl font-bold">→</span>
-                </button>
-            `).join('');
-
-            const content = `
-                <header class="mb-8 text-center">
-                    <h1 class="text-3xl font-bold text-paom-dark">Привет, ${username}! 👋</h1>
-                    <p class="text-gray-600 mt-2">Выберите предмет, чтобы начать обучение с ИИ-помощником.</p>
-                </header>
-                <div class="space-y-4">
-                    ${subjectButtons}
-                </div>
-                <button
-                    onclick="logoutUser()"
-                    class="paom-button mt-8 w-full bg-gray-200 text-gray-700 font-medium py-2 rounded-xl hover:bg-gray-300"
-                >
-                    Сменить пользователя
-                </button>
-            `;
-            transitionView(content);
         }
 
-        function renderSubjectScreen(subjectId) {
-            const subject = SUBJECTS.find(s => s.id === subjectId);
-            if (!subject) {
-                renderMainMenu();
-                return;
+        // Блокнот
+        let notes = [];
+        function initNotepad() {
+            renderNotesList();
+            if (notes.length > 0) {
+                loadNote(notes[0].id);
             }
-
-            const username = loadUsername();
-            const history = loadHistory(subjectId);
-
-            const renderHistory = (history) => history.map(entry => `
-                <div class="mb-4 space-y-2">
-                    <!-- Запрос пользователя -->
-                    <div class="flex justify-end">
-                        <div class="message-user p-3 max-w-[85%] sm:max-w-[70%] text-gray-800 shadow-sm">
-                            <p class="font-medium text-sm text-paom-dark mb-1">Вы:</p>
-                            <p>${entry.user}</p>
-                        </div>
-                    </div>
-                    <!-- Ответ ИИ -->
-                    <div class="flex justify-start">
-                        <div class="message-ai p-3 max-w-[85%] sm:max-w-[70%] text-gray-800 shadow-sm">
-                            <p class="font-medium text-sm text-paom-dark mb-1">ИИ-Помощник:</p>
-                            <div class="markdown-content">
-                                ${renderMarkdown(entry.ai)}
-                            </div>
-                            <!-- Цитаты убраны, так как Grounding отключен -->
-                        </div>
-                    </div>
-                </div>
-            `).join('');
-
-            const content = `
-                <button
-                    onclick="renderMainMenu()"
-                    class="paom-button flex items-center text-paom-main hover:text-paom-dark font-medium mb-6 p-2 rounded-lg -ml-2"
-                >
-                    <span class="text-xl mr-2">←</span>
-                    Вернуться в меню
-                </button>
-
-                <h1 class="text-2xl font-bold text-paom-dark mb-2">${subject.icon} ${subject.name}</h1>
-                <p class="text-gray-600 mb-6">Задайте свой вопрос по ${subject.name.toLowerCase()} ниже, ${username}.</p>
-
-                <!-- Область вывода истории -->
-                <div id="history-output" class="mb-8 w-full h-96 overflow-y-auto border border-paom-light p-4 rounded-xl bg-paom-bg space-y-4">
-                    ${history.length > 0 ? renderHistory(history) : '<p class="text-gray-500 text-center py-10">История пуста. Задайте свой первый вопрос!</p>'}
-                </div>
-
-                <!-- Область ввода вопроса -->
-                <div class="flex flex-col sm:flex-row w-full space-y-3 sm:space-y-0 sm:space-x-3">
-                    <textarea
-                        id="question-input"
-                        rows="2"
-                        placeholder="Введите ваш вопрос..."
-                        class="flex-grow w-full sm:w-auto px-4 py-2 border border-paom-light rounded-lg focus:ring-2 focus:ring-paom-main focus:border-paom-main outline-none resize-none"
-                    ></textarea>
-                    <button
-                        id="submit-question"
-                        onclick="handleSubmitQuestion('${subjectId}')"
-                        class="paom-button bg-paom-main text-white font-bold py-2 px-6 rounded-xl shadow-md shadow-paom-light hover:bg-paom-dark flex-shrink-0"
-                    >
-                        Получить ответ
-                    </button>
-                </div>
-
-                <!-- Индикатор загрузки -->
-                <div id="loading-indicator" class="hidden mt-4 text-paom-dark font-medium">
-                    ИИ думает... 🧠
-                </div>
-                <!-- Модальное окно ошибки (скрыто) -->
-                <div id="error-modal" class="fixed inset-0 bg-black bg-opacity-50 hidden items-center justify-center p-4 z-50">
-                    <div class="bg-white p-6 rounded-lg shadow-xl max-w-sm w-full text-center">
-                        <h3 class="text-xl font-bold text-red-600 mb-3">Ошибка!</h3>
-                        <p id="error-message" class="text-gray-700 mb-4"></p>
-                        <button onclick="document.getElementById('error-modal').classList.add('hidden')" class="paom-button bg-red-500 text-white py-2 px-4 rounded-lg hover:bg-red-600">
-                            Закрыть
-                        </button>
-                    </div>
-                </div>
-            `;
-
-            transitionView(content, () => {
-                const input = document.getElementById('question-input');
-                input.addEventListener('keypress', (e) => {
-                    if (e.key === 'Enter' && !e.shiftKey) {
-                        e.preventDefault();
-                        handleSubmitQuestion(subjectId);
-                    }
-                });
-                const historyDiv = document.getElementById('history-output');
-                historyDiv.scrollTop = historyDiv.scrollHeight;
-                input.focus();
-            });
         }
 
-        async function handleSubmitQuestion(subjectId) {
-            const input = document.getElementById('question-input');
-            const button = document.getElementById('submit-question');
-            const loading = document.getElementById('loading-indicator');
-            const historyOutput = document.getElementById('history-output');
-            const errorModal = document.getElementById('error-modal');
-            const errorMessageDiv = document.getElementById('error-message');
-
-            const userQuestion = input.value.trim();
-            if (!userQuestion) return;
-
-            // 1. Блокировка интерфейса и показ загрузки
-            input.disabled = true;
-            button.disabled = true;
-            button.classList.add('opacity-70');
-            loading.classList.remove('hidden');
-
-            // 2. Добавление "сообщения пользователя" и плейсхолдера ИИ в UI
-            const newEntryHTML = `
-                <div class="mb-4 space-y-2 current-query">
-                    <div class="flex justify-end">
-                        <div class="message-user p-3 max-w-[85%] sm:max-w-[70%] text-gray-800 shadow-sm">
-                            <p class="font-medium text-sm text-paom-dark mb-1">Вы:</p>
-                            <p>${userQuestion}</p>
-                        </div>
-                    </div>
-                    <div class="flex justify-start ai-placeholder">
-                        <div class="p-3 max-w-[85%] sm:max-w-[70%] text-gray-500">
-                             <span class="animate-pulse">...</span>
-                        </div>
-                    </div>
-                </div>
-            `;
-            historyOutput.innerHTML = historyOutput.innerHTML.replace(
-                '<p class="text-gray-500 text-center py-10">История пуста. Задайте свой первый вопрос!</p>',
-                ''
-            ) + newEntryHTML;
+        function renderNotesList() {
+            const notesList = document.getElementById('notesList');
+            notesList.innerHTML = '';
             
-            historyOutput.scrollTop = historyOutput.scrollHeight;
-            input.value = '';
+            notes.forEach(note => {
+                const noteElement = document.createElement('div');
+                noteElement.className = `note-item ${note.id === currentNoteId ? 'active' : ''}`;
+                noteElement.textContent = note.title || 'Без названия';
+                noteElement.onclick = () => loadNote(note.id);
+                notesList.appendChild(noteElement);
+            });
+        }
 
-            try {
-                // 3. Генерация системной инструкции и вызов API
-                const systemInstruction = getSystemInstruction(subjectId);
-                // Запрос теперь возвращает только text
-                const { text: aiResponse } = await fetchAiResponse(userQuestion, systemInstruction);
-
-                // 4. Обновление UI с реальным ответом
-                const currentQuery = historyOutput.querySelector('.current-query');
-                const placeholder = currentQuery ? currentQuery.querySelector('.ai-placeholder') : null;
-
-                if (placeholder) {
-                    placeholder.outerHTML = `
-                        <div class="flex justify-start">
-                            <div class="message-ai p-3 max-w-[85%] sm:max-w-[70%] text-gray-800 shadow-sm">
-                                <p class="font-medium text-sm text-paom-dark mb-1">ИИ-Помощник:</p>
-                                <div class="markdown-content">
-                                    ${renderMarkdown(aiResponse)}
-                                </div>
-                            </div>
-                        </div>
-                    `;
-                }
-                if (currentQuery) {
-                    currentQuery.classList.remove('current-query');
-                }
-
-                // 5. Сохранение в localStorage (без источников)
-                addHistoryEntry(subjectId, userQuestion, aiResponse);
-
-            } catch (error) {
-                console.error("Ошибка при получении ответа ИИ:", error);
-                
-                let userFriendlyError;
-                if (error.message.includes('403')) {
-                    // Обновленное сообщение для локального пользователя
-                    userFriendlyError = "Доступ запрещен. Если вы запускаете файл локально, вам необходимо вставить личный API-ключ в переменную 'const API_KEY'.";
-                } else if (error.message.includes('429')) {
-                    userFriendlyError = "Превышен лимит запросов. Пожалуйста, подождите немного и попробуйте снова.";
-                } else {
-                    userFriendlyError = `Не удалось получить ответ. Пожалуйста, проверьте подключение к интернету. Детали: ${error.message}`;
-                }
-
-                // Показ модального окна с ошибкой
-                errorMessageDiv.textContent = userFriendlyError;
-                errorModal.classList.remove('hidden');
-                errorModal.classList.add('flex');
-
-                // Замена плейсхолдера сообщением об ошибке в чате
-                const placeholder = historyOutput.querySelector('.ai-placeholder');
-                if (placeholder) {
-                    placeholder.innerHTML = `<div class="p-3 text-red-500">❌ Ошибка: ${userFriendlyError}</div>`;
-                }
-
-            } finally {
-                // 6. Разблокировка интерфейса и скрытие загрузки
-                input.disabled = false;
-                button.disabled = false;
-                button.classList.remove('opacity-70');
-                loading.classList.add('hidden');
-                input.focus();
-                historyOutput.scrollTop = historyOutput.scrollHeight; // Финальная прокрутка
+        function loadNote(noteId) {
+            const note = notes.find(n => n.id === noteId);
+            if (note) {
+                currentNoteId = noteId;
+                document.getElementById('noteTitle').value = note.title;
+                document.getElementById('noteContent').value = note.content;
+                renderNotesList();
             }
         }
 
-        // --- Главная точка входа ---
-        window.onload = function() {
-            // Проверяем, есть ли имя пользователя, и рендерим соответствующий экран
-            const username = loadUsername();
-            if (username) {
-                renderMainMenu();
-            } else {
-                renderStartScreen();
+        function createNewNote() {
+            const newNote = {
+                id: Date.now().toString(),
+                title: 'Новая заметка',
+                content: ''
+            };
+            notes.push(newNote);
+            saveToLocalStorage();
+            loadNote(newNote.id);
+            renderNotesList();
+        }
+
+        function saveNote() {
+            if (!currentNoteId) return;
+            
+            const noteIndex = notes.findIndex(n => n.id === currentNoteId);
+            if (noteIndex !== -1) {
+                notes[noteIndex].title = document.getElementById('noteTitle').value;
+                notes[noteIndex].content = document.getElementById('noteContent').value;
+                saveToLocalStorage();
+                renderNotesList();
             }
-            // Делаем карточку видимой после первой загрузки контента
-            APP_CONTENT.classList.add('visible');
-        };
+        }
+
+        function deleteNote() {
+            if (!currentNoteId) return;
+            
+            notes = notes.filter(n => n.id !== currentNoteId);
+            saveToLocalStorage();
+            
+            if (notes.length > 0) {
+                loadNote(notes[0].id);
+            } else {
+                document.getElementById('noteTitle').value = '';
+                document.getElementById('noteContent').value = '';
+                currentNoteId = null;
+            }
+            renderNotesList();
+        }
+
+        // Калькулятор
+        let calcValue = '0';
+        let shouldResetDisplay = false;
+
+        function updateCalcDisplay() {
+            document.getElementById('calcDisplay').textContent = calcValue;
+        }
+
+        function appendToCalc(value) {
+            if (shouldResetDisplay) {
+                calcValue = '';
+                shouldResetDisplay = false;
+            }
+
+            if (calcValue === '0' && value !== '.') {
+                calcValue = value;
+            } else {
+                calcValue += value;
+            }
+            updateCalcDisplay();
+        }
+
+        function clearCalc() {
+            calcValue = '0';
+            updateCalcDisplay();
+        }
+
+        function calculate() {
+            try {
+                calcValue = eval(calcValue.replace('×', '*')).toString();
+            } catch (e) {
+                calcValue = 'Error';
+            }
+            shouldResetDisplay = true;
+            updateCalcDisplay();
+        }
+
+        // Браузер
+        function browseToUrl() {
+            const url = document.getElementById('urlInput').value;
+            const iframe = document.getElementById('browserIframe');
+            
+            if (!url.startsWith('http')) {
+                iframe.src = 'https://' + url;
+            } else {
+                iframe.src = url;
+            }
+        }
+
+        // Проигрыватель
+        function initPlayer() {
+            audioPlayer = document.getElementById('audioPlayer');
+            renderPlaylist();
+        }
+
+        function loadMusicFiles() {
+            document.getElementById('musicFileInput').click();
+        }
+
+        function handleMusicFiles(event) {
+            const files = event.target.files;
+            for (let file of files) {
+                if (file.type.startsWith('audio/')) {
+                    const url = URL.createObjectURL(file);
+                    musicFiles.push({
+                        name: file.name,
+                        url: url,
+                        file: file
+                    });
+                }
+            }
+            saveToLocalStorage();
+            renderPlaylist();
+        }
+
+        function renderPlaylist() {
+            const playlist = document.getElementById('playlist');
+            playlist.innerHTML = '';
+            
+            if (musicFiles.length === 0) {
+                playlist.innerHTML = '<div style="text-align: center; color: #666; padding: 20px;">Нет загруженной музыки</div>';
+                return;
+            }
+            
+            musicFiles.forEach((track, index) => {
+                const trackElement = document.createElement('div');
+                trackElement.className = `playlist-item ${index === currentTrack ? 'playing' : ''}`;
+                trackElement.innerHTML = `
+                    <span>🎵</span>
+                    <span style="flex: 1;">${track.name}</span>
+                    <span style="font-size: 10px; color: #666;" onclick="event.stopPropagation(); removeTrack(${index})">🗑️</span>
+                `;
+                trackElement.onclick = () => playTrack(index);
+                playlist.appendChild(trackElement);
+            });
+        }
+
+        function playTrack(index) {
+            if (musicFiles.length === 0) return;
+            
+            currentTrack = index;
+            const track = musicFiles[index];
+            document.getElementById('nowPlaying').textContent = track.name;
+            audioPlayer.src = track.url;
+            audioPlayer.play();
+            isPlaying = true;
+            document.getElementById('playBtn').textContent = '⏸️';
+            renderPlaylist();
+        }
+
+        function togglePlay() {
+            if (!audioPlayer.src) return;
+            
+            if (isPlaying) {
+                audioPlayer.pause();
+                document.getElementById('playBtn').textContent = '▶️';
+            } else {
+                audioPlayer.play();
+                document.getElementById('playBtn').textContent = '⏸️';
+            }
+            isPlaying = !isPlaying;
+        }
+
+        function playNext() {
+            if (musicFiles.length === 0) return;
+            currentTrack = (currentTrack + 1) % musicFiles.length;
+            playTrack(currentTrack);
+        }
+
+        function playPrevious() {
+            if (musicFiles.length === 0) return;
+            currentTrack = (currentTrack - 1 + musicFiles.length) % musicFiles.length;
+            playTrack(currentTrack);
+        }
+
+        function removeTrack(index) {
+            if (currentTrack === index) {
+                audioPlayer.pause();
+                audioPlayer.src = '';
+                document.getElementById('nowPlaying').textContent = 'Не выбрано';
+                document.getElementById('playBtn').textContent = '▶️';
+                isPlaying = false;
+            }
+            musicFiles.splice(index, 1);
+            saveToLocalStorage();
+            renderPlaylist();
+        }
+
+        // Проводник
+        function openFolder(folderName) {
+            const content = document.getElementById('explorerContent');
+            
+            if (folderName === 'system') {
+                content.innerHTML = `
+                    <div class="folder-item" onclick="openFolder('music')">
+                        <span>🎵</span> Музыка 🎶
+                    </div>
+                    <div class="folder-item" onclick="openSystemFiles()">
+                        <span>💿</span> Системные файлы 💿
+                    </div>
+                `;
+            } else if (folderName === 'music') {
+                content.innerHTML = `
+                    <h3>Папка "Музыка 🎶"</h3>
+                    <div class="skeuomorphic-btn" onclick="loadMusicFiles()">🎵 Загрузить музыку</div>
+                    ${musicFiles.length > 0 ? `
+                        <div style="margin-top: 15px;">
+                            <h4>Загруженные файлы:</h4>
+                            ${musicFiles.map((file, index) => `
+                                <div class="file-item" onclick="playTrack(${index})">
+                                    <span>🎵</span> ${file.name}
+                                </div>
+                            `).join('')}
+                        </div>
+                    ` : ''}
+                `;
+            }
+        }
+
+        function openSystemFiles() {
+            const content = document.getElementById('explorerContent');
+            content.innerHTML = `
+                <div style="text-align: center; padding: 50px; color: #8b0000;">
+                    <h2>⚠️ Ой!</h2>
+                    <p>Системные файлы открыть нельзя :(</p>
+                    <p style="font-size: 12px; margin-top: 20px;">Эта папка содержит важные системные файлы.<br>Их изменение может нарушить работу системы.</p>
+                </div>
+            `;
+        }
+
+        // Настройки
+        function toggleSeconds() {
+            saveToLocalStorage();
+            updateClock();
+        }
+
+        function toggleAutoRefresh() {
+            saveToLocalStorage();
+        }
+
+        function resetSystem() {
+            if (confirm('Вы уверены, что хотите сбросить всю систему? Это удалит все ваши данные!')) {
+                localStorage.clear();
+                location.reload();
+            }
+        }
+
+        // Темы
+        function changeTheme(themeName, save = true) {
+            const root = document.documentElement;
+            
+            switch(themeName) {
+                case 'dark':
+                    root.style.setProperty('--primary-color', '#2d2d2d');
+                    root.style.setProperty('--secondary-color', '#1a1a1a');
+                    root.style.setProperty('--accent-color', '#ff6b6b');
+                    root.style.setProperty('--window-bg', 'linear-gradient(to bottom, #3d3d3d 0%, #2d2d2d 50%, #1d1d1d 100%)');
+                    root.style.setProperty('--taskbar-bg', 'linear-gradient(to bottom, #4d4d4d 0%, #3d3d3d 50%, #2d2d2d 100%)');
+                    root.style.setProperty('--desktop-bg', 'radial-gradient(circle at 20% 80%, rgba(45, 45, 45, 0.7) 0%, rgba(26, 26, 26, 0.9) 100%)');
+                    break;
+                case 'blue':
+                    root.style.setProperty('--primary-color', '#4a6b8b');
+                    root.style.setProperty('--secondary-color', '#2d4a6b');
+                    root.style.setProperty('--accent-color', '#4dabf7');
+                    root.style.setProperty('--window-bg', 'linear-gradient(to bottom, #5b8bb4 0%, #4a6b8b 50%, #3d5a7b 100%)');
+                    root.style.setProperty('--taskbar-bg', 'linear-gradient(to bottom, #6b8bab 0%, #5b7b9b 50%, #4a6b8b 100%)');
+                    root.style.setProperty('--desktop-bg', 'radial-gradient(circle at 20% 80%, rgba(74, 107, 139, 0.7) 0%, rgba(45, 74, 107, 0.9) 100%)');
+                    break;
+                case 'green':
+                    root.style.setProperty('--primary-color', '#4b6b4d');
+                    root.style.setProperty('--secondary-color', '#2d4a2d');
+                    root.style.setProperty('--accent-color', '#51cf66');
+                    root.style.setProperty('--window-bg', 'linear-gradient(to bottom, #5b8b5d 0%, #4b6b4d 50%, #3d5a3d 100%)');
+                    root.style.setProperty('--taskbar-bg', 'linear-gradient(to bottom, #6b9b6d 0%, #5b8b5d 50%, #4b6b4d 100%)');
+                    root.style.setProperty('--desktop-bg', 'radial-gradient(circle at 20% 80%, rgba(75, 107, 77, 0.7) 0%, rgba(45, 74, 45, 0.9) 100%)');
+                    break;
+                default: // classic
+                    root.style.setProperty('--primary-color', '#8b6b4d');
+                    root.style.setProperty('--secondary-color', '#6d4c3d');
+                    root.style.setProperty('--accent-color', '#ffd700');
+                    root.style.setProperty('--window-bg', 'linear-gradient(to bottom, #f5f5dc 0%, #e6e6c9 50%, #d2d2a8 100%)');
+                    root.style.setProperty('--taskbar-bg', 'linear-gradient(to bottom, #a67c52 0%, #8b5a2b 50%, #6d4c3d 100%)');
+                    root.style.setProperty('--desktop-bg', 'radial-gradient(circle at 20% 80%, rgba(139, 107, 77, 0.7) 0%, rgba(109, 76, 61, 0.9) 100%)');
+            }
+            
+            if (save) {
+                localStorage.setItem('currentTheme', themeName);
+            }
+        }
+
+        function handleWallpaperUpload(event) {
+            const file = event.target.files[0];
+            if (file && file.type.startsWith('image/')) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    const imageUrl = e.target.result;
+                    document.body.style.backgroundImage = `url(${imageUrl})`;
+                    document.body.style.backgroundSize = 'cover';
+                    document.body.style.backgroundPosition = 'center';
+                    localStorage.setItem('customWallpaper', imageUrl);
+                };
+                reader.readAsDataURL(file);
+            }
+        }
+
+        // Установщик
+        function initInstaller() {
+            const iconGrid = document.getElementById('iconGrid');
+            const icons = ['📝', '🧮', '🌐', '🎵', '📁', '⚙️', '🎨', '📦'];
+            
+            iconGrid.innerHTML = '';
+            icons.forEach(icon => {
+                const iconElement = document.createElement('div');
+                iconElement.className = 'icon-option';
+                iconElement.textContent = icon;
+                iconElement.onclick = () => selectIcon(icon);
+                iconGrid.appendChild(iconElement);
+            });
+            
+            renderInstalledApps();
+        }
+
+        function selectIcon(icon) {
+            document.querySelectorAll('.icon-option').forEach(el => {
+                el.classList.remove('selected');
+            });
+            event.target.classList.add('selected');
+        }
+
+        function installApp() {
+            const name = document.getElementById('appName').value;
+            const url = document.getElementById('appUrl').value;
+            const selectedIcon = document.querySelector('.icon-option.selected');
+            
+            if (!name || !url || !selectedIcon) {
+                alert('Заполните все поля и выберите иконку!');
+                return;
+            }
+            
+            const appId = 'app_' + Date.now();
+            const newApp = {
+                id: appId,
+                name: name,
+                url: url,
+                icon: selectedIcon.textContent
+            };
+            
+            installedApps.push(newApp);
+            saveToLocalStorage();
+            renderInstalledApps();
+            addAppToDesktop(newApp);
+            
+            // Очистка формы
+            document.getElementById('appName').value = '';
+            document.getElementById('appUrl').value = '';
+            selectedIcon.classList.remove('selected');
+            
+            alert(`Программа "${name}" успешно установлена на рабочий стол!`);
+        }
+
+        function addAppToDesktop(app) {
+            const desktopIcons = document.getElementById('desktopIcons');
+            const appIcon = document.createElement('div');
+            appIcon.className = 'desktop-icon';
+            appIcon.onclick = () => openInstalledApp(app.id);
+            appIcon.innerHTML = `
+                <div class="icon-image">${app.icon}</div>
+                <div class="icon-label">${app.name}</div>
+            `;
+            desktopIcons.appendChild(appIcon);
+        }
+
+        function renderInstalledAppsOnDesktop() {
+            installedApps.forEach(app => {
+                addAppToDesktop(app);
+            });
+        }
+
+        function renderInstalledApps() {
+            const installedApps = JSON.parse(localStorage.getItem('installedApps')) || [];
+            const container = document.getElementById('installedApps');
+            
+            container.innerHTML = '<h3>Установленные программы:</h3>';
+            if (installedApps.length === 0) {
+                container.innerHTML += '<div style="text-align: center; color: #666; padding: 20px;">Нет установленных программ</div>';
+                return;
+            }
+            
+            installedApps.forEach((app, index) => {
+                const appElement = document.createElement('div');
+                appElement.className = 'file-item';
+                appElement.innerHTML = `
+                    <span>${app.icon}</span> 
+                    <span style="flex: 1;">${app.name}</span>
+                    <span style="font-size: 10px; color: #666;" onclick="event.stopPropagation(); uninstallApp(${index})">🗑️</span>
+                `;
+                appElement.onclick = () => openInstalledApp(app.id);
+                container.appendChild(appElement);
+            });
+        }
+
+        function uninstallApp(index) {
+            const app = installedApps[index];
+            if (confirm(`Вы уверены, что хотите удалить программу "${app.name}"?`)) {
+                // Удаляем значок с рабочего стола
+                const desktopIcons = document.getElementById('desktopIcons');
+                const icons = desktopIcons.getElementsByClassName('desktop-icon');
+                for (let i = 0; i < icons.length; i++) {
+                    if (icons[i].querySelector('.icon-label').textContent === app.name) {
+                        desktopIcons.removeChild(icons[i]);
+                        break;
+                    }
+                }
+                
+                // Закрываем окно приложения если оно открыто
+                closeAppWindow(app.id);
+                
+                // Удаляем из массива
+                installedApps.splice(index, 1);
+                saveToLocalStorage();
+                renderInstalledApps();
+            }
+        }
+
+        // Функция выключения
+        function shutdown() {
+            if (confirm('Вы уверены, что хотите выключить Nostalgia OS?')) {
+                document.body.innerHTML = `
+                    <div style="
+                        background: #000;
+                        color: #0f0;
+                        font-family: 'Courier New', monospace;
+                        height: 100vh;
+                        display: flex;
+                        flex-direction: column;
+                        justify-content: center;
+                        align-items: center;
+                        font-size: 24px;
+                    ">
+                        <div style="margin-bottom: 20px;">Nostalgia OS</div>
+                        <div style="font-size: 16px;">Завершение работы...</div>
+                        <div style="margin-top: 40px; font-size: 14px; color: #888;">
+                            Теперь компьютер можно безопасно выключить
+                        </div>
+                    </div>
+                `;
+            }
+        }
+
+        // Обработчики событий для загрузки файлов
+        document.getElementById('musicFileInput').addEventListener('change', handleMusicFiles);
+        document.getElementById('wallpaperFileInput').addEventListener('change', handleWallpaperUpload);
+
+        // Добавляем возможность перетаскивания окон
+        function makeWindowDraggable(windowId) {
+            const window = document.getElementById(windowId);
+            if (!window) return;
+            
+            const header = window.querySelector('.window-header');
+            if (!header) return;
+            
+            let pos1 = 0, pos2 = 0, pos3 = 0, pos4 = 0;
+            
+            header.onmousedown = dragMouseDown;
+            
+            function dragMouseDown(e) {
+                e = e || window.event;
+                e.preventDefault();
+                pos3 = e.clientX;
+                pos4 = e.clientY;
+                document.onmouseup = closeDragElement;
+                document.onmousemove = elementDrag;
+                window.style.zIndex = zIndex++;
+            }
+            
+            function elementDrag(e) {
+                e = e || window.event;
+                e.preventDefault();
+                pos1 = pos3 - e.clientX;
+                pos2 = pos4 - e.clientY;
+                pos3 = e.clientX;
+                pos4 = e.clientY;
+                window.style.top = (window.offsetTop - pos2) + "px";
+                window.style.left = (window.offsetLeft - pos1) + "px";
+            }
+            
+            function closeDragElement() {
+                document.onmouseup = null;
+                document.onmousemove = null;
+            }
+        }
+
+        // Инициализация перетаскивания для всех окон
+        ['notepadWindow', 'calculatorWindow', 'browserWindow', 'playerWindow', 
+         'explorerWindow', 'settingsWindow', 'themesWindow', 'installerWindow'].forEach(makeWindowDraggable);
+
+        // Инициализация при загрузке
+        loadFromLocalStorage();
+        updateCalcDisplay();
+        updateClock();
     </script>
 </body>
 </html>
