@@ -186,9 +186,24 @@
 
         // Глобальные переменные Canvas
         const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
-        const firebaseConfig = JSON.parse(typeof __firebase_config !== 'undefined' ? __firebase_config : '{}');
-        const initialAuthToken = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null; // Используем только для проверки наличия.
+        let configFromCanvas = JSON.parse(typeof __firebase_config !== 'undefined' ? __firebase_config : '{}');
+        const initialAuthToken = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null; 
 
+        // === ВАЖНО: ЗНАЧЕНИЯ КОНФИГУРАЦИИ FIREBASE (ПРЕДОСТАВЛЕНЫ ПОЛЬЗОВАТЕЛЕМ) ===
+        const MANUAL_FIREBASE_CONFIG = {
+            apiKey: "AIzaSyAWV097BE56m2YVNi2D494dyXK41j9V5bE", 
+            authDomain: "messanger-b0b91.firebaseapp.com",
+            projectId: "messanger-b0b91",
+            storageBucket: "messanger-b0b91.firebasestorage.app",
+            messagingSenderId: "895029700922",
+            appId: "1:895029700922:web:184790c791e66978aa4803"
+            // measurementId: "G-8YMP1TY2HW" -- Удалено, не требуется для базовой работы
+        };
+        // ===========================================================================================
+
+        // Используем конфигурацию Canvas, если она предоставлена, иначе используем ручную.
+        const effectiveConfig = Object.keys(configFromCanvas).length > 0 ? configFromCanvas : MANUAL_FIREBASE_CONFIG;
+        
         let db;
         let auth;
         let currentUserId = null;
@@ -331,11 +346,16 @@
 
         async function initializeFirebase() {
             try {
-                if (Object.keys(firebaseConfig).length === 0) {
-                    throw new Error("Конфигурация Firebase не найдена.");
+                // В этом случае, так как мы вставили данные, проверка на "YOUR_API_KEY" не сработает,
+                // и приложение попытается инициализироваться с вашими ключами.
+                
+                // Если конфигурация все еще пуста (например, при запуске в оригинальной среде без Canvas config),
+                // используем ручную проверку. 
+                if (!effectiveConfig.apiKey || effectiveConfig.apiKey.includes('YOUR_API_KEY')) {
+                     throw new Error("Конфигурация Firebase не найдена или не заполнена.");
                 }
 
-                const app = initializeApp(firebaseConfig);
+                const app = initializeApp(effectiveConfig);
                 db = getFirestore(app);
                 auth = getAuth(app);
 
@@ -351,6 +371,7 @@
                     }
                 });
             } catch (error) {
+                // Обрабатываем как ошибку конфигурации, так и ошибки инициализации Firebase
                 showError(`Ошибка инициализации Firebase: ${error.message}`);
                 loadingSpinner.innerHTML = '<p class="text-red-600">Не удалось подключиться к Firebase.</p>';
             }
