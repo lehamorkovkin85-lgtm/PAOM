@@ -181,12 +181,14 @@
     <!-- Подключение Firebase SDK -->
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
-        import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword, onAuthStateChanged, signOut, updateProfile } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        // Добавлен signInWithCustomToken для обработки токена среды Canvas
+        import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword, onAuthStateChanged, signOut, updateProfile, signInWithCustomToken } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
         import { getFirestore, doc, addDoc, onSnapshot, collection, query, orderBy, serverTimestamp, setLogLevel } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
         // Глобальные переменные Canvas
         const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
         let configFromCanvas = JSON.parse(typeof __firebase_config !== 'undefined' ? __firebase_config : '{}');
+        // Обновлен initialAuthToken
         const initialAuthToken = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null; 
 
         // === ВАЖНО: ЗНАЧЕНИЯ КОНФИГУРАЦИИ FIREBASE (ПРЕДОСТАВЛЕНЫ ПОЛЬЗОВАТЕЛЕМ) ===
@@ -320,7 +322,9 @@
                 }
             } catch (error) {
                 let msg = 'Произошла ошибка аутентификации.';
-                if (error.code === 'auth/email-already-in-use') msg = 'Этот email уже зарегистрирован.';
+                // ВАЖНО: 'auth/operation-not-allowed' почти всегда означает, что Email/Password не включен в консоли Firebase!
+                if (error.code === 'auth/operation-not-allowed') msg = 'Ошибка конфигурации: Включите провайдер Email/Password в настройках Firebase Authentication.';
+                else if (error.code === 'auth/email-already-in-use') msg = 'Этот email уже зарегистрирован.';
                 else if (error.code === 'auth/invalid-email') msg = 'Некорректный формат email.';
                 else if (error.code === 'auth/weak-password') msg = 'Пароль должен быть не менее 6 символов.';
                 else if (error.code === 'auth/user-not-found' || error.code === 'auth/wrong-password') msg = 'Неверный email или пароль.';
@@ -346,11 +350,8 @@
 
         async function initializeFirebase() {
             try {
-                // В этом случае, так как мы вставили данные, проверка на "YOUR_API_KEY" не сработает,
-                // и приложение попытается инициализироваться с вашими ключами.
                 
-                // Если конфигурация все еще пуста (например, при запуске в оригинальной среде без Canvas config),
-                // используем ручную проверку. 
+                // Проверка на заполненность конфигурации
                 if (!effectiveConfig.apiKey || effectiveConfig.apiKey.includes('YOUR_API_KEY')) {
                      throw new Error("Конфигурация Firebase не найдена или не заполнена.");
                 }
@@ -358,6 +359,23 @@
                 const app = initializeApp(effectiveConfig);
                 db = getFirestore(app);
                 auth = getAuth(app);
+
+                // ВНИМАНИЕ: Если вы получаете ошибку 'auth/operation-not-allowed' при попытке регистрации/входа, 
+                // ВАМ НЕОБХОДИМО включить провайдер "Email/Password" в консоли Firebase (Authentication -> Sign-in method).
+                console.warn("ВНИМАНИЕ: Если вы получаете ошибку 'auth/operation-not-allowed', убедитесь, что в консоли Firebase включена аутентификация по Email/Password.");
+
+
+                // Обработка токена инициализации Canvas (Mandatory)
+                if (initialAuthToken) {
+                    try {
+                        await signInWithCustomToken(auth, initialAuthToken);
+                        console.log("Успешный вход через токен Canvas.");
+                    } catch (tokenError) {
+                        console.warn("Не удалось войти с токеном Canvas. Возможно, токен устарел. Ожидание входа пользователя.", tokenError);
+                        // Продолжаем, onAuthStateChanged покажет модальное окно, если пользователь не аутентифицирован.
+                    }
+                }
+
 
                 // Слушатель состояния аутентификации
                 onAuthStateChanged(auth, (user) => {
