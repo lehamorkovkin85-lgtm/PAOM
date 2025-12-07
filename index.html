@@ -3,519 +3,460 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>RuApp</title>
+    <title>paom: Обновление 1 ❄️</title>
     <!-- Подключение Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
-    <!-- Настройка шрифта Inter -->
+    <!-- Настройка шрифта Inter и Зимняя тема -->
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap');
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap');
         body {
             font-family: 'Inter', sans-serif;
-            /* Стильный градиентный фон для проявления стекломорфизма */
-            background: linear-gradient(135deg, #10b981 0%, #064e3b 100%); 
+            /* Легкий, морозный фон */
+            background-color: #e0f7fa; 
         }
-        /* Добавляем blur для эффекта стекла, работает лучше, чем только Tailwind */
-        .glass-blur {
-            backdrop-filter: blur(16px);
-            -webkit-backdrop-filter: blur(16px);
+        .snow-accent {
+            color: #00bcd4; /* Голубой акцент */
         }
-        /* Стилизация полосы прокрутки для лучшего вида */
-        #messages-container::-webkit-scrollbar {
-            width: 8px;
+        .snow-shadow {
+            box-shadow: 0 4px 6px -1px rgba(0, 188, 212, 0.1), 0 2px 4px -2px rgba(0, 188, 212, 0.06);
         }
-        #messages-container::-webkit-scrollbar-thumb {
-            background-color: rgba(255, 255, 255, 0.4); /* Светлый полупрозрачный */
-            border-radius: 10px;
+        .snow-border {
+            border-color: #00bcd4;
         }
     </style>
-    <!-- Конфигурация Tailwind для адаптивного дизайна -->
-    <script>
-        tailwind.config = {
-            theme: {
-                extend: {
-                    colors: {
-                        // WhatsApp-like цвета
-                        'primary': '#075E54', // Темный бирюзовый (Шапка)
-                        'secondary': '#25D366', // Яркий зеленый (Акцент/Сообщения)
-                        'light-secondary': '#DCF8C6' // Светло-зеленый (Фон своих сообщений)
-                    }
-                }
-            }
-        }
-    </script>
 </head>
-<body class="min-h-screen flex items-center justify-center p-4">
-
-    <!-- Главный контейнер мессенджера со стекломорфизмом -->
-    <div class="glass-blur bg-white/10 shadow-2xl rounded-3xl w-full max-w-5xl flex flex-col h-[90vh] ring-1 ring-white/30">
-        
-        <!-- Шапка -->
-        <header class="p-4 bg-primary text-white rounded-t-3xl shadow-xl flex justify-between items-center">
-            <h1 class="text-xl font-bold">RuApp</h1>
-            <div class="flex items-center space-x-4">
-                <div id="user-info" class="text-sm bg-secondary px-3 py-1 rounded-full truncate max-w-[50%] sm:max-w-none shadow-md">
-                    <span id="username-display">Загрузка...</span>
-                </div>
-                <button id="logout-button" class="text-xs text-white/70 hover:text-white transition duration-150">Выйти</button>
+<body class="min-h-screen">
+    <div class="max-w-3xl mx-auto p-4 md:p-8">
+        <!-- Заголовок -->
+        <header class="text-center mb-10">
+            <h1 class="text-5xl font-extrabold text-indigo-700 mb-2">
+                paom
+            </h1>
+            <p class="text-xl font-semibold text-sky-500 mb-4">Обновление 1 ❄️</p>
+            <p class="text-gray-500">Поделитесь своими мыслями в реальном времени.</p>
+            <div id="user-info" class="mt-4 text-sm text-gray-700 p-3 bg-white rounded-xl shadow-lg snow-shadow border-t-4 border-sky-400">
+                <p>Статус: <span id="auth-status" class="font-semibold text-yellow-600">Загрузка...</span></p>
+                <p>Ваш ник: <span id="user-nickname" class="font-bold text-indigo-600"></span></p>
+                <p>Ваш ID: <code id="user-id" class="break-all text-xs text-gray-500"></code></p>
             </div>
         </header>
 
-        <!-- Основная область: Боковая панель + Чат -->
-        <div class="flex flex-row flex-grow overflow-hidden">
-            
-            <!-- Левая панель (Список чатов) -->
-            <div id="chat-sidebar" class="w-full sm:w-1/3 max-w-xs border-r border-white/20 bg-white/10 glass-blur flex-shrink-0 overflow-y-auto">
-                <div class="p-3 text-lg font-semibold text-white/90 border-b border-white/20">Чаты</div>
-                
-                <!-- Элемент чата -->
-                <div id="general-chat-item" class="p-3 flex items-center space-x-3 cursor-pointer bg-white/20 border-l-4 border-secondary transition duration-150">
-                    <div class="w-10 h-10 bg-secondary rounded-full flex items-center justify-center text-white font-bold">
-                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-                            <path fill-rule="evenodd" d="M10 2a8 8 0 100 16 8 8 0 000-16zM4.053 13.91l4.004-4.004a.75.75 0 000-1.06l-4.004-4.004a.75.75 0 00-1.06 1.06L7.94 10l-4.947 4.947a.75.75 0 001.06 1.06z" clip-rule="evenodd" />
-                        </svg>
-                    </div>
-                    <div>
-                        <div class="font-bold text-white">Общий чат</div>
-                        <div class="text-xs text-white/70 truncate">Сообщения всех пользователей</div>
-                    </div>
+        <!-- Форма для нового поста -->
+        <section class="bg-white p-6 rounded-xl shadow-lg snow-shadow mb-8 border-t-4 border-sky-300">
+            <h2 class="text-2xl font-semibold mb-4 text-gray-800">Что у вас на уме?</h2>
+            <form id="post-form">
+                <textarea id="post-content" rows="3"
+                    class="w-full p-3 border border-gray-300 rounded-lg focus:ring-sky-500 focus:border-sky-500 transition duration-150 resize-none"
+                    placeholder="Введите ваше сообщение здесь..." required disabled></textarea>
+                <div class="mt-4 flex justify-end">
+                    <button type="submit" id="post-button"
+                        class="bg-sky-500 hover:bg-sky-600 text-white font-bold py-2 px-6 rounded-lg shadow-md transition duration-300 ease-in-out disabled:bg-gray-400"
+                        disabled>
+                        Опубликовать
+                    </button>
                 </div>
-                <!-- Здесь будут добавляться другие чаты -->
-            </div>
-
-            <!-- Правая панель (Область сообщений) -->
-            <div id="chat-main" class="flex flex-col flex-grow">
-                 <!-- Контейнер для сообщений -->
-                <div id="messages-container" class="flex-grow overflow-y-auto p-4 space-y-4">
-                    <!-- Сообщения будут добавляться сюда JS -->
-                    <div id="loading-spinner" class="text-center p-8">
-                        <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-secondary mx-auto"></div>
-                        <p class="mt-2 text-white/70">Подключение к RuApp...</p>
-                    </div>
-                </div>
-
-                <!-- Форма для отправки сообщений -->
-                <div class="p-4 bg-white/10 glass-blur border-t border-white/20">
-                    <form id="message-form" class="flex space-x-3">
-                        <input
-                            type="text"
-                            id="message-input"
-                            placeholder="Введите ваше сообщение..."
-                            required
-                            autocomplete="off"
-                            class="flex-grow p-3 bg-white/50 border border-white/50 rounded-full text-gray-800 placeholder-gray-600 focus:ring-secondary focus:border-secondary transition duration-150 shadow-inner"
-                        >
-                        <button
-                            type="submit"
-                            id="send-button"
-                            class="bg-secondary text-white font-semibold py-3 px-6 rounded-full shadow-lg hover:bg-green-600 transition duration-150 disabled:bg-gray-400"
-                            disabled
-                        >
-                            Отправить
-                        </button>
-                    </form>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- Модальное окно Аутентификации (Registration/Login) -->
-    <div id="auth-modal" class="fixed inset-0 bg-black bg-opacity-70 flex items-center justify-center z-50 transition-opacity duration-300">
-        <div class="glass-blur bg-white/10 p-8 rounded-3xl shadow-2xl max-w-sm w-full ring-1 ring-white/30 text-white">
-            <h2 id="auth-title" class="text-3xl font-bold mb-6 text-center text-secondary">Вход / Регистрация</h2>
-            
-            <form id="auth-form" class="space-y-4">
-                <input
-                    type="text"
-                    id="auth-username"
-                    placeholder="Ваше имя пользователя"
-                    required
-                    autocomplete="username"
-                    class="w-full p-3 bg-white/50 border border-white/50 rounded-lg text-gray-800 placeholder-gray-600 focus:ring-secondary focus:border-secondary transition duration-150 shadow-inner"
-                >
-                <input
-                    type="email"
-                    id="auth-email"
-                    placeholder="Email"
-                    required
-                    autocomplete="email"
-                    class="w-full p-3 bg-white/50 border border-white/50 rounded-lg text-gray-800 placeholder-gray-600 focus:ring-secondary focus:border-secondary transition duration-150 shadow-inner"
-                >
-                <input
-                    type="password"
-                    id="auth-password"
-                    placeholder="Пароль"
-                    required
-                    autocomplete="current-password"
-                    class="w-full p-3 bg-white/50 border border-white/50 rounded-lg text-gray-800 placeholder-gray-600 focus:ring-secondary focus:border-secondary transition duration-150 shadow-inner"
-                >
-                
-                <p id="auth-error-message" class="text-sm text-red-400 font-medium"></p>
-
-                <button
-                    type="submit"
-                    id="auth-submit-button"
-                    class="w-full bg-secondary text-white font-bold py-3 rounded-lg shadow-xl hover:bg-green-600 transition duration-150"
-                >
-                    Зарегистрироваться
-                </button>
             </form>
-            
-            <button
-                id="toggle-auth-mode"
-                class="w-full mt-4 text-sm text-white/70 hover:text-white transition duration-150"
-            >
-                Уже есть аккаунт? Войти
-            </button>
+        </section>
+
+        <!-- Лента постов -->
+        <section>
+            <h2 class="text-2xl font-semibold mb-6 text-gray-800">Лента Сообщений</h2>
+            <div id="posts-feed" class="space-y-4">
+                <!-- Здесь будут отображаться посты -->
+                <p id="loading-indicator" class="text-center text-gray-500">Загрузка постов...</p>
+            </div>
+        </section>
+
+        <!-- Кастомное модальное окно для ошибок/уведомлений -->
+        <div id="modal" class="hidden fixed inset-0 bg-gray-600 bg-opacity-50 flex items-center justify-center z-50">
+            <div class="bg-white p-6 rounded-lg shadow-xl max-w-sm w-full">
+                <h3 id="modal-title" class="text-xl font-bold mb-3 text-red-600">Ошибка!</h3>
+                <p id="modal-message" class="text-gray-700 mb-4"></p>
+                <button onclick="document.getElementById('modal').classList.add('hidden')"
+                    class="w-full bg-red-600 hover:bg-red-700 text-white font-bold py-2 rounded-lg transition duration-300">
+                    Закрыть
+                </button>
+            </div>
         </div>
+
+        <!-- Кастомное модальное окно для регистрации никнейма -->
+        <div id="nickname-modal" class="hidden fixed inset-0 bg-gray-900 bg-opacity-75 flex items-center justify-center z-50">
+            <div class="bg-white p-8 rounded-xl shadow-2xl max-w-md w-full border-t-8 border-sky-400">
+                <h3 class="text-2xl font-bold mb-4 text-indigo-700">Добро пожаловать в paom!</h3>
+                <p class="text-gray-600 mb-6">Пожалуйста, придумайте никнейм. Он будет отображаться под вашими постами.</p>
+                <form id="nickname-form">
+                    <input type="text" id="nickname-input" minlength="2" maxlength="20" required
+                        class="w-full p-3 border border-gray-300 rounded-lg focus:ring-sky-500 focus:border-sky-500 transition duration-150"
+                        placeholder="Введите ваш никнейм (2-20 символов)">
+                    <p id="nickname-error" class="text-red-500 text-sm mt-2 hidden">Никнейм не может быть пустым.</p>
+                    <button type="submit" id="nickname-button"
+                        class="mt-6 w-full bg-sky-500 hover:bg-sky-600 text-white font-bold py-3 rounded-lg shadow-lg transition duration-300">
+                        Сохранить и Войти
+                    </button>
+                </form>
+            </div>
+        </div>
+
     </div>
 
-    <!-- Модальное окно для ошибок (заменяет alert()) -->
-    <div id="error-modal" class="fixed inset-0 bg-black bg-opacity-50 hidden items-center justify-center z-50">
-        <div class="bg-white p-6 rounded-xl shadow-xl max-w-sm w-full">
-            <h3 class="text-lg font-bold text-red-600 mb-4">Ошибка</h3>
-            <p id="error-message" class="text-gray-700"></p>
-            <button onclick="document.getElementById('error-modal').classList.add('hidden'); document.getElementById('error-modal').classList.remove('flex');" class="mt-4 w-full bg-red-600 text-white py-2 rounded-lg hover:bg-red-700">Закрыть</button>
-        </div>
-    </div>
-
-    <!-- Подключение Firebase SDK -->
+    <!-- Firebase SDK Imports -->
     <script type="module">
+        // Импорт необходимых модулей Firebase
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
-        // Добавлен signInWithCustomToken для обработки токена среды Canvas
-        import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword, onAuthStateChanged, signOut, updateProfile, signInWithCustomToken } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
-        import { getFirestore, doc, addDoc, onSnapshot, collection, query, orderBy, serverTimestamp, setLogLevel } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+        import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getFirestore, doc, addDoc, setDoc, getDoc, onSnapshot, collection, query, serverTimestamp, setLogLevel } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
-        // Глобальные переменные Canvas
-        const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
-        let configFromCanvas = JSON.parse(typeof __firebase_config !== 'undefined' ? __firebase_config : '{}');
-        // Обновлен initialAuthToken
-        const initialAuthToken = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null; 
-
-        // === ВАЖНО: ЗНАЧЕНИЯ КОНФИГУРАЦИИ FIREBASE (ПРЕДОСТАВЛЕНЫ ПОЛЬЗОВАТЕЛЕМ) ===
-        const MANUAL_FIREBASE_CONFIG = {
-            apiKey: "AIzaSyAWV097BE56m2YVNi2D494dyXK41j9V5bE", 
+        // ВАЖНО: Ваша СТРОГАЯ конфигурация (для развертывания)
+        const userConfig = {
+            apiKey: "AIzaSyAWV097BE56m2YVNi2D494dyXK41j9V5bE",
             authDomain: "messanger-b0b91.firebaseapp.com",
             projectId: "messanger-b0b91",
             storageBucket: "messanger-b0b91.firebasestorage.app",
             messagingSenderId: "895029700922",
-            appId: "1:895029700922:web:184790c791e66978aa4803"
-            // measurementId: "G-8YMP1TY2HW" -- Удалено, не требуется для базовой работы
+            appId: "1:895029700922:web:184790c791e66978aa4803",
+            measurementId: "G-8YMP1TY2HW"
         };
-        // ===========================================================================================
 
-        // Используем конфигурацию Canvas, если она предоставлена, иначе используем ручную.
-        const effectiveConfig = Object.keys(configFromCanvas).length > 0 ? configFromCanvas : MANUAL_FIREBASE_CONFIG;
-        
+        // --- Глобальные переменные Canvas, которые мы ДОЛЖНЫ использовать для корректной работы здесь ---
+        // Приоритет отдается конфигурации среды (для корректной аутентификации и работы с Firestore)
+        const firebaseConfig = (typeof __firebase_config !== 'undefined' && Object.keys(JSON.parse(__firebase_config)).length > 0)
+            ? JSON.parse(__firebase_config)
+            : userConfig; // Ваша конфигурация как запасной вариант
+
+        const appId = typeof __app_id !== 'undefined' ? __app_id : firebaseConfig.appId;
+        const initialAuthToken = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null;
+        // ------------------------------------------------------------------------------------------------
+
         let db;
         let auth;
         let currentUserId = null;
-        let currentUsername = 'Гость';
-        let isReady = false;
+        let currentUsername = null; // Новый стейт для никнейма
+        let isAuthReady = false;
 
-        // Элементы DOM
-        const messagesContainer = document.getElementById('messages-container');
-        const messageForm = document.getElementById('message-form');
-        const messageInput = document.getElementById('message-input');
-        const sendButton = document.getElementById('send-button');
-        const usernameDisplay = document.getElementById('username-display');
-        const loadingSpinner = document.getElementById('loading-spinner');
-        const logoutButton = document.getElementById('logout-button');
+        // Элементы UI
+        const postForm = document.getElementById('post-form');
+        const postContentInput = document.getElementById('post-content');
+        const postButton = document.getElementById('post-button');
+        const postsFeed = document.getElementById('posts-feed');
+        const authStatus = document.getElementById('auth-status');
+        const userIdDisplay = document.getElementById('user-id');
+        const userNicknameDisplay = document.getElementById('user-nickname');
+        const nicknameModal = document.getElementById('nickname-modal');
+        const nicknameForm = document.getElementById('nickname-form');
+        const nicknameInput = document.getElementById('nickname-input');
+        const nicknameError = document.getElementById('nickname-error');
+        const loadingIndicator = document.getElementById('loading-indicator');
+
+        // Пути Firestore
+        const PUBLIC_COLLECTION_PATH = `artifacts/${appId}/public/data/posts`;
         
-        // Элементы Аутентификации
-        const authModal = document.getElementById('auth-modal');
-        const authForm = document.getElementById('auth-form');
-        const authTitle = document.getElementById('auth-title');
-        const authUsernameInput = document.getElementById('auth-username');
-        const authEmailInput = document.getElementById('auth-email');
-        const authPasswordInput = document.getElementById('auth-password');
-        const authSubmitButton = document.getElementById('auth-submit-button');
-        const toggleAuthModeButton = document.getElementById('toggle-auth-mode');
-        const authErrorMessage = document.getElementById('auth-error-message');
-        
-        let isRegisterMode = true;
+        // Путь к документу профиля пользователя (приватное хранилище)
+        // Структура: artifacts/{appId}/users/{uid}/profile/details (6 сегментов)
+        const getUserProfileDocRef = (uid) => doc(db, `artifacts/${appId}/users/${uid}/profile/details`);
 
-        // Установка уровня логирования для отладки Firestore
-        setLogLevel('debug');
+        // --- Утилиты ---
 
-        // --- Утилиты UI ---
+        function showModal(title, message) {
+            document.getElementById('modal-title').textContent = title;
+            document.getElementById('modal-message').textContent = message;
+            const modal = document.getElementById('modal');
+            modal.querySelector('h3').classList.toggle('text-red-600', title.toLowerCase().includes('ошибка'));
+            modal.querySelector('h3').classList.toggle('text-green-600', !title.toLowerCase().includes('ошибка'));
+            modal.classList.remove('hidden');
+        }
 
         /**
-         * Показывает кастомное модальное окно с сообщением об ошибке.
-         * @param {string} message Сообщение об ошибке.
+         * Форматирует временную метку
          */
-        function showError(message) {
-            console.error(message);
-            document.getElementById('error-message').textContent = message;
-            document.getElementById('error-modal').classList.remove('hidden');
-            document.getElementById('error-modal').classList.add('flex');
+        function formatTimestamp(timestamp) {
+            if (!timestamp) return 'Неизвестно';
+            const date = new Date(timestamp);
+            const options = {
+                year: 'numeric', month: 'short', day: 'numeric',
+                hour: '2-digit', minute: '2-digit', second: '2-digit'
+            };
+            return date.toLocaleTimeString('ru-RU', options);
         }
-        
-        /**
-         * Обновляет UI после входа пользователя.
-         * @param {Object} user Объект пользователя Firebase.
-         */
-        function updateUI(user) {
-            currentUserId = user.uid;
-            currentUsername = user.displayName || 'Пользователь';
-            usernameDisplay.textContent = currentUsername;
-            isReady = true;
-            sendButton.disabled = false;
-            loadingSpinner.classList.add('hidden');
-            hideAuthModal();
-            setupMessageListener();
-        }
-
-        function showAuthModal() {
-            authModal.classList.remove('hidden');
-            authModal.classList.add('flex');
-            messagesContainer.innerHTML = ''; // Очистка чата при выходе
-            loadingSpinner.classList.remove('hidden');
-            loadingSpinner.innerHTML = '<p class="mt-2 text-white/70">Пожалуйста, войдите или зарегистрируйтесь.</p>';
-        }
-
-        function hideAuthModal() {
-            authModal.classList.add('hidden');
-            authModal.classList.remove('flex');
-            authErrorMessage.textContent = '';
-        }
-
-        // --- Логика Аутентификации ---
 
         /**
-         * Обработчик переключения режима (Вход/Регистрация).
+         * Управляет состоянием формы постинга (доступна/недоступна)
          */
-        toggleAuthModeButton.addEventListener('click', () => {
-            isRegisterMode = !isRegisterMode;
-            if (isRegisterMode) {
-                authTitle.textContent = 'Регистрация';
-                authSubmitButton.textContent = 'Зарегистрироваться';
-                toggleAuthModeButton.textContent = 'Уже есть аккаунт? Войти';
-                authUsernameInput.classList.remove('hidden');
+        function setPostingEnabled(isEnabled) {
+            postContentInput.disabled = !isEnabled;
+            postButton.disabled = !isEnabled;
+            if (isEnabled) {
+                postContentInput.placeholder = 'Введите ваше сообщение здесь...';
+                postButton.classList.remove('disabled:bg-gray-400');
             } else {
-                authTitle.textContent = 'Вход';
-                authSubmitButton.textContent = 'Войти';
-                toggleAuthModeButton.textContent = 'Нет аккаунта? Зарегистрироваться';
-                authUsernameInput.classList.add('hidden');
+                postContentInput.placeholder = 'Сначала установите никнейм или дождитесь аутентификации...';
+                postButton.classList.add('disabled:bg-gray-400');
             }
-            authErrorMessage.textContent = '';
-        });
+        }
+        
+        /**
+         * Рендерит один пост в ленте
+         */
+        function renderPost(post) {
+            const isCurrentUser = post.userId === currentUserId;
+            const postUsername = post.username || 'Аноним';
 
-        authForm.addEventListener('submit', async (e) => {
-            e.preventDefault();
-            const email = authEmailInput.value;
-            const password = authPasswordInput.value;
-            const username = authUsernameInput.value;
+            const postElement = document.createElement('div');
+            postElement.className = 'bg-white p-5 rounded-xl shadow-md border-t-4 ' + (isCurrentUser ? 'border-indigo-500' : 'border-sky-300');
+            postElement.dataset.id = post.id;
 
-            authSubmitButton.disabled = true;
-            authErrorMessage.textContent = '';
+            postElement.innerHTML = `
+                <div class="flex justify-between items-start mb-3">
+                    <div class="text-sm font-bold ${isCurrentUser ? 'text-indigo-600' : 'text-sky-600'}">
+                        ${postUsername} ${isCurrentUser ? '(Вы)' : ''}
+                    </div>
+                    <div class="text-xs text-gray-400">
+                        ${formatTimestamp(post.createdAt?.toMillis() || post.createdAt)}
+                    </div>
+                </div>
+                <p class="text-gray-800 whitespace-pre-wrap mb-3">${post.content}</p>
+                <div class="text-xs text-gray-500 break-all border-t pt-2 mt-2">
+                    ID: ${post.userId}
+                </div>
+            `;
+            return postElement;
+        }
 
+        // --- Логика Профиля (Никнейм) ---
+
+        /**
+         * Загружает или запрашивает никнейм пользователя.
+         */
+        async function loadUserProfile(userId) {
+            const profileRef = getUserProfileDocRef(userId);
             try {
-                if (isRegisterMode) {
-                    if (!username) {
-                        authErrorMessage.textContent = 'Пожалуйста, введите имя пользователя.';
-                        return;
-                    }
-                    const userCredential = await createUserWithEmailAndPassword(auth, email, password);
-                    await updateProfile(userCredential.user, { displayName: username });
+                const docSnap = await getDoc(profileRef);
+                
+                if (docSnap.exists() && docSnap.data().nickname) {
+                    // Профиль найден - УСПЕХ
+                    currentUsername = docSnap.data().nickname;
+                    userNicknameDisplay.textContent = currentUsername;
+                    setPostingEnabled(true);
+                    nicknameModal.classList.add('hidden'); // Убеждаемся, что модальное окно скрыто
                 } else {
-                    await signInWithEmailAndPassword(auth, email, password);
+                    // Профиль не найден - НОВЫЙ ПОЛЬЗОВАТЕЛЬ, показываем модальное окно
+                    currentUsername = null;
+                    userNicknameDisplay.textContent = 'Не установлен';
+                    setPostingEnabled(false);
+                    nicknameModal.classList.remove('hidden');
                 }
             } catch (error) {
-                let msg = 'Произошла ошибка аутентификации.';
-                // ВАЖНО: 'auth/operation-not-allowed' почти всегда означает, что Email/Password не включен в консоли Firebase!
-                if (error.code === 'auth/operation-not-allowed') msg = 'Ошибка конфигурации: Включите провайдер Email/Password в настройках Firebase Authentication.';
-                else if (error.code === 'auth/email-already-in-use') msg = 'Этот email уже зарегистрирован.';
-                else if (error.code === 'auth/invalid-email') msg = 'Некорректный формат email.';
-                else if (error.code === 'auth/weak-password') msg = 'Пароль должен быть не менее 6 символов.';
-                else if (error.code === 'auth/user-not-found' || error.code === 'auth/wrong-password') msg = 'Неверный email или пароль.';
+                console.error("Ошибка загрузки профиля (вероятно, из-за правил безопасности):", error);
                 
-                authErrorMessage.textContent = msg;
-                console.error("Auth Error:", error);
-            } finally {
-                authSubmitButton.disabled = false;
+                // ИСПРАВЛЕНИЕ: Если аутентификация прошла, но возникла ошибка при чтении
+                // профиля, мы принудительно показываем модальное окно, чтобы пользователь
+                // мог создать документ через setDoc.
+                currentUsername = null;
+                userNicknameDisplay.textContent = 'Не установлен (Ошибка чтения)';
+                setPostingEnabled(false);
+                nicknameModal.classList.remove('hidden');
+                showModal('Внимание', 'Не удалось прочитать ваш никнейм (возможно, вы входите впервые). Пожалуйста, введите его.');
             }
-        });
+        }
 
-        // Обработчик кнопки выхода
-        logoutButton.addEventListener('click', async () => {
+        /**
+         * Сохраняет никнейм пользователя в Firestore.
+         */
+        async function saveNickname(nickname) {
+            if (!currentUserId || !db) return;
+
+            const profileRef = getUserProfileDocRef(currentUserId);
             try {
-                await signOut(auth);
+                await setDoc(profileRef, {
+                    nickname: nickname,
+                    updatedAt: serverTimestamp()
+                }, { merge: true });
+
+                currentUsername = nickname;
+                userNicknameDisplay.textContent = currentUsername;
+                nicknameModal.classList.add('hidden');
+                setPostingEnabled(true);
+                showModal('Успех!', `Ваш никнейм "${nickname}" сохранен.`);
+
             } catch (error) {
-                showError("Ошибка при выходе: " + error.message);
+                console.error("Ошибка сохранения никнейма:", error);
+                showModal('Ошибка Сохранения', 'Не удалось сохранить никнейм. Попробуйте снова.');
             }
-        });
+        }
+        
+        /**
+         * Обработчик отправки формы никнейма.
+         */
+        function handleNicknameSubmit(e) {
+            e.preventDefault();
+            const nickname = nicknameInput.value.trim();
 
+            if (nickname.length < 2) {
+                nicknameError.textContent = 'Никнейм должен содержать не менее 2 символов.';
+                nicknameError.classList.remove('hidden');
+                return;
+            }
 
-        // --- Инициализация и Слушатель Состояний ---
+            nicknameError.classList.add('hidden');
+            saveNickname(nickname);
+        }
+
+        // --- Инициализация Firebase и Аутентификация ---
 
         async function initializeFirebase() {
             try {
-                
-                // Проверка на заполненность конфигурации
-                if (!effectiveConfig.apiKey || effectiveConfig.apiKey.includes('YOUR_API_KEY')) {
-                     throw new Error("Конфигурация Firebase не найдена или не заполнена.");
-                }
-
-                const app = initializeApp(effectiveConfig);
+                // setLogLevel('debug'); // Для отладки
+                const app = initializeApp(firebaseConfig);
                 db = getFirestore(app);
                 auth = getAuth(app);
-
-                // ВНИМАНИЕ: Если вы получаете ошибку 'auth/operation-not-allowed' при попытке регистрации/входа, 
-                // ВАМ НЕОБХОДИМО включить провайдер "Email/Password" в консоли Firebase (Authentication -> Sign-in method).
-                console.warn("ВНИМАНИЕ: Если вы получаете ошибку 'auth/operation-not-allowed', убедитесь, что в консоли Firebase включена аутентификация по Email/Password.");
-
-
-                // Обработка токена инициализации Canvas (Mandatory)
-                if (initialAuthToken) {
-                    try {
-                        await signInWithCustomToken(auth, initialAuthToken);
-                        console.log("Успешный вход через токен Canvas.");
-                    } catch (tokenError) {
-                        console.warn("Не удалось войти с токеном Canvas. Возможно, токен устарел. Ожидание входа пользователя.", tokenError);
-                        // Продолжаем, onAuthStateChanged покажет модальное окно, если пользователь не аутентифицирован.
-                    }
-                }
-
+                
+                // Назначаем обработчик формы никнейма
+                nicknameForm.addEventListener('submit', handleNicknameSubmit);
 
                 // Слушатель состояния аутентификации
-                onAuthStateChanged(auth, (user) => {
+                onAuthStateChanged(auth, async (user) => {
                     if (user) {
-                        updateUI(user);
+                        currentUserId = user.uid;
+                        authStatus.textContent = 'Аутентифицирован';
+                        authStatus.className = 'font-semibold text-green-600';
+                        userIdDisplay.textContent = currentUserId;
+                        
+                        // Загружаем профиль и никнейм
+                        await loadUserProfile(user.uid);
+
+                        // Начинаем слушать посты только после успешной аутентификации
+                        if (!isAuthReady) {
+                            isAuthReady = true;
+                            startPostsListener();
+                        }
                     } else {
-                        isReady = false;
-                        sendButton.disabled = true;
-                        usernameDisplay.textContent = 'Вы не вошли';
-                        showAuthModal();
+                        currentUserId = null;
+                        currentUsername = null;
+                        authStatus.textContent = 'Не аутентифицирован';
+                        authStatus.className = 'font-semibold text-red-600';
+                        userIdDisplay.textContent = 'N/A';
+                        userNicknameDisplay.textContent = 'N/A';
+                        
+                        setPostingEnabled(false);
+
+                        // Попытка входа
+                        if (!isAuthReady) {
+                             await handleSignIn();
+                        } else {
+                            // Если аутентификация была, но пользователь вышел
+                            showModal('Вход Необходим', 'Сессия истекла. Пожалуйста, обновите страницу.');
+                        }
                     }
                 });
+
+                // Если есть токен, пробуем войти с ним, иначе анонимно
+                const handleSignIn = async () => {
+                    try {
+                        if (initialAuthToken) {
+                            await signInWithCustomToken(auth, initialAuthToken);
+                        } else {
+                            await signInAnonymously(auth);
+                        }
+                        // onAuthStateChanged обработает результат
+                    } catch (error) {
+                        console.error("Ошибка аутентификации:", error);
+                        showModal('Ошибка Аутентификации', 'Не удалось войти в Firebase. Проверьте консоль.');
+                        authStatus.textContent = 'Ошибка';
+                        authStatus.className = 'font-semibold text-red-600';
+                    }
+                };
+
+                // Запускаем процесс аутентификации
+                await handleSignIn();
+
+
             } catch (error) {
-                // Обрабатываем как ошибку конфигурации, так и ошибки инициализации Firebase
-                showError(`Ошибка инициализации Firebase: ${error.message}`);
-                loadingSpinner.innerHTML = '<p class="text-red-600">Не удалось подключиться к Firebase.</p>';
+                console.error("Ошибка инициализации Firebase:", error);
+                showModal('Критическая Ошибка', 'Не удалось инициализировать Firebase. Проверьте конфигурацию и импорты.');
             }
         }
 
-        // --- Логика Чата ---
+
+        // --- Логика Постов ---
 
         /**
-         * Отображает одно сообщение в контейнере чата.
-         * @param {Object} message Объект сообщения.
+         * Обработчик отправки формы
          */
-        function displayMessage(message) {
-            const isSelf = message.userId === currentUserId;
-            const messageElement = document.createElement('div');
-            messageElement.classList.add('flex', isSelf ? 'justify-end' : 'justify-start');
+        async function handlePostSubmit(e) {
+            e.preventDefault();
+            const content = postContentInput.value.trim();
 
-            // --- Стили стекломорфизма для пузырей сообщений ---
-            const bubbleClasses = isSelf
-                ? 'bg-light-secondary text-gray-900 ml-auto rounded-tl-xl rounded-bl-xl rounded-br-xl shadow-md' // Свои сообщения: светло-зеленый (имитация WhatsApp)
-                : 'bg-white/30 text-white glass-blur mr-auto rounded-tr-xl rounded-br-xl rounded-bl-xl ring-1 ring-white/40 shadow-xl'; // Чужие сообщения: стеклянный эффект
-            
-            // Форматирование времени
-            const date = message.createdAt?.toDate ? message.createdAt.toDate() : new Date();
-            const timeString = date.toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' });
-            
-            // Сокращаем UID для отображения, если имя пользователя отсутствует
-            const senderName = message.username || `${message.userId.substring(0, 4)}...`;
+            if (!content || !currentUserId || !currentUsername) {
+                showModal('Ошибка', 'Сообщение не может быть пустым, и вы должны иметь никнейм.');
+                return;
+            }
 
-            messageElement.innerHTML = `
-                <div class="max-w-xs sm:max-w-md lg:max-w-lg p-3 ${bubbleClasses}">
-                    <div class="text-xs font-semibold mb-1 ${isSelf ? 'text-primary' : 'text-secondary'}">
-                        ${isSelf ? 'Вы' : senderName}
-                    </div>
-                    <p class="break-words">${message.text}</p>
-                    <div class="text-right text-xs mt-1 ${isSelf ? 'text-gray-600' : 'text-white/80'}">
-                        ${timeString}
-                    </div>
-                </div>
-            `;
-            messagesContainer.appendChild(messageElement);
+            setPostingEnabled(false);
+            postButton.textContent = 'Публикация...';
+
+            try {
+                // Используем addDoc для добавления нового документа в коллекцию
+                await addDoc(collection(db, PUBLIC_COLLECTION_PATH), {
+                    userId: currentUserId,
+                    username: currentUsername, // Добавляем никнейм в пост
+                    content: content,
+                    createdAt: serverTimestamp(),
+                });
+
+                postContentInput.value = ''; // Очищаем поле
+            } catch (error) {
+                console.error("Ошибка добавления поста:", error);
+                showModal('Ошибка Публикации', `Не удалось опубликовать сообщение: ${error.message}`);
+            } finally {
+                setPostingEnabled(true);
+                postButton.textContent = 'Опубликовать';
+            }
         }
 
         /**
-         * Настраивает слушатель Firestore для получения сообщений в реальном времени.
+         * Настраивает слушатель реального времени для ленты постов
          */
-        function setupMessageListener() {
-            if (!isReady || !currentUserId) return;
+        function startPostsListener() {
+            if (!db) return;
 
-            // Путь к коллекции: /artifacts/{appId}/public/data/messages
-            const messagesCollectionPath = `/artifacts/${appId}/public/data/messages`;
-            const messagesRef = collection(db, messagesCollectionPath);
-
-            // Запрос: все сообщения, отсортированные по времени создания (createdAt)
-            // ВАЖНО: При использовании orderBy('createdAt', 'asc') может потребоваться индекс Firestore. 
-            // Мы оставляем его для корректной работы, но помним о потенциальной ошибке индекса.
-            const q = query(messagesRef, orderBy('createdAt', 'asc'));
-
-            // Слушатель в реальном времени
+            const postsCollection = collection(db, PUBLIC_COLLECTION_PATH);
+            const q = query(postsCollection);
+            
+            // onSnapshot устанавливает слушатель реального времени
             onSnapshot(q, (snapshot) => {
-                // Очистка контейнера при первой загрузке
-                messagesContainer.innerHTML = '';
+                loadingIndicator.classList.add('hidden');
                 
-                let hasNewMessages = false;
-                
-                snapshot.docs.forEach(doc => {
-                    const message = doc.data();
-                    if (message.createdAt) {
-                        displayMessage({
-                            id: doc.id,
-                            userId: message.userId,
-                            username: message.username, // Теперь используем имя
-                            text: message.text,
-                            createdAt: message.createdAt
-                        });
-                        hasNewMessages = true;
-                    }
+                let posts = [];
+                snapshot.forEach((doc) => {
+                    posts.push({ id: doc.id, ...doc.data() });
                 });
 
-                // Прокрутка вниз к последнему сообщению
-                if (hasNewMessages) {
-                    messagesContainer.scrollTop = messagesContainer.scrollHeight;
+                // Сортируем в JavaScript
+                posts.sort((a, b) => {
+                    const timeA = a.createdAt?.toMillis() || 0;
+                    const timeB = b.createdAt?.toMillis() || 0;
+                    return timeB - timeA; // Сортировка по убыванию (новые сверху)
+                });
+
+                postsFeed.innerHTML = ''; // Очищаем ленту
+
+                if (posts.length === 0) {
+                    postsFeed.innerHTML = '<p class="text-center text-gray-500 p-4 bg-white rounded-lg border-t-4 border-sky-100">Пока нет сообщений. Будьте первым, кто опубликует!</p>';
+                } else {
+                    posts.forEach(post => {
+                        postsFeed.appendChild(renderPost(post));
+                    });
                 }
             }, (error) => {
-                showError(`Ошибка при получении сообщений в реальном времени: ${error.message}`);
+                console.error("Ошибка получения данных в реальном времени:", error);
+                showModal('Ошибка Ленты', 'Не удалось загрузить сообщения в реальном времени.');
             });
         }
 
-        /**
-         * Отправляет новое сообщение в Firestore.
-         * @param {Event} e Событие отправки формы.
-         */
-        async function sendMessage(e) {
-            e.preventDefault();
-            if (!isReady) return;
+        // --- Запуск Приложения ---
 
-            const text = messageInput.value.trim();
-            if (!text) return;
+        window.onload = initializeFirebase;
+        postForm.addEventListener('submit', handlePostSubmit);
 
-            sendButton.disabled = true;
-
-            try {
-                const messagesCollectionPath = `/artifacts/${appId}/public/data/messages`;
-                const messagesRef = collection(db, messagesCollectionPath);
-
-                await addDoc(messagesRef, {
-                    userId: currentUserId,
-                    username: currentUsername, // Отправляем имя пользователя
-                    text: text,
-                    createdAt: serverTimestamp(), // Firestore добавит временную метку на сервере
-                });
-
-                messageInput.value = ''; // Очистка поля ввода
-
-            } catch (error) {
-                showError(`Ошибка при отправке сообщения: ${error.message}`);
-            } finally {
-                sendButton.disabled = false;
-                messageInput.focus();
-            }
-        }
-
-        // Навешивание обработчика событий на форму
-        messageForm.addEventListener('submit', sendMessage);
-
-        // Запуск инициализации при загрузке страницы
-        window.addEventListener('load', initializeFirebase);
     </script>
 </body>
 </html>
