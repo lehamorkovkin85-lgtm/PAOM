@@ -95,7 +95,6 @@
         // Используем projectId пользователя для создания изолированного пути в Firestore (messanger-b0b91)
         const appId = USER_FIREBASE_CONFIG.projectId; 
         const firebaseConfig = USER_FIREBASE_CONFIG;
-        // Переменная initialAuthToken не используется для входа, чтобы избежать ошибки custom-token-mismatch
         const initialAuthToken = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null; 
 
 
@@ -192,16 +191,31 @@
         );
 
         const GroupChat = memo(({ messages, user, messagesEndRef, chatBubbleUser, chatBubbleOther, chatBubbleGemini, GeminiCrystal }) => {
+            // Функция для форматирования временной метки
+            const formatTimestamp = (timestamp) => {
+                if (timestamp && timestamp.seconds) {
+                    // Если есть серверная метка
+                    return new Date(timestamp.seconds * 1000).toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' });
+                } else if (timestamp && timestamp.toMillis) {
+                    // Если это локальная метка (при компенсации задержки)
+                    return new Date(timestamp.toMillis()).toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' });
+                }
+                // Если метка еще не пришла с сервера
+                return 'Отправка...';
+            };
+
             return (
                 <div className="flex-grow overflow-y-auto p-4 space-y-4 custom-scrollbar">
                     {messages.map((message) => {
-                        // ПРОВЕРКА: Ensure message has a uid before checking
                         const isMine = user && message.uid === user.uid;
                         const isGemini = message.uid === 'gemini_ai';
 
                         let bubbleClass = isGemini ? chatBubbleGemini : (isMine ? chatBubbleUser : chatBubbleOther);
                         let nameClass = isGemini ? 'text-emerald-300' : (isMine ? 'text-blue-300' : 'text-purple-300');
                         let contentClass = isGemini ? 'border-b-2 border-emerald-500/30 pb-1' : '';
+
+                        const timeString = formatTimestamp(message.timestamp);
+                        const isSending = timeString === 'Отправка...';
 
                         return (
                             <div key={message.id} className={`flex ${isMine ? 'justify-end' : 'justify-start'}`}>
@@ -220,11 +234,9 @@
                                     </p>
 
                                     {/* Таймстемп */}
-                                    {message.timestamp && message.timestamp.seconds && (
-                                        <p className="text-xs text-white/50 mt-1 text-right">
-                                            {new Date(message.timestamp.seconds * 1000).toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' })}
-                                        </p>
-                                    )}
+                                    <p className={`text-xs mt-1 text-right ${isSending ? 'text-yellow-400' : 'text-white/50'}`}>
+                                        {timeString}
+                                    </p>
                                 </div>
                             </div>
                         );
@@ -352,7 +364,7 @@
             }, [searchTerm]);
 
 
-            // 1. Инициализация Firebase и Аутентификация (КОРРЕКТНАЯ ЛОГИКА)
+            // 1. Инициализация Firebase и Аутентификация 
             useEffect(() => {
                 let unsubscribeAuth;
 
@@ -385,10 +397,11 @@
                                     displayName: localStorage.getItem('vibegram_displayName') || `Гость-${currentUser.uid.substring(0, 4)}`
                                 };
                                 setUser(userData);
+                                console.log(`[AUTH] User signed in. UID: ${currentUser.uid}`);
                             } else {
                                 // Если нет пользователя, всегда пытаемся войти анонимно. 
-                                // Убираем попытку использовать signInWithCustomToken, которая вызывает ошибку несоответствия токена.
                                 try {
+                                    console.log("[AUTH] Attempting anonymous sign-in...");
                                     await signInAnonymously(firebaseAuth);
                                     // onAuthStateChanged сработает снова с новым пользователем
                                     return;
@@ -424,20 +437,22 @@
                 // ЗАЩИТА: Запускать только после готовности аутентификации, наличия db и если активен групповой чат
                 if (!isAuthReady || !db || currentView !== 'group_chat' || !collection || !query || !onSnapshot || !orderBy || !limit) return;
 
-                console.log("Setting up Firestore listener for:", PUBLIC_CHAT_PATH);
+                console.log("[FIRESTORE] Setting up listener for messages...");
 
                 const messagesCollection = collection(db, PUBLIC_CHAT_PATH);
-                // Сортировка по возрастанию и ограничение
-                const q = query(messagesCollection, orderBy("timestamp", "asc"), limit(100));
+                
+                // Сортируем по убыванию времени, чтобы получить самые новые сообщения, и ограничиваем 100.
+                const q = query(messagesCollection, orderBy("timestamp", "desc"), limit(100));
 
                 const unsubscribe = onSnapshot(q, (snapshot) => {
-                    const fetchedMessages = snapshot.docs.map(doc => ({
-                        id: doc.id,
-                        ...doc.data()
-                    }));
-                    setMessages(fetchedMessages);
+                    const fetchedMessages = snapshot.docs
+                        .map(doc => ({ id: doc.id, ...doc.data() }));
+                        // УДАЛЕН АГРЕССИВНЫЙ ФИЛЬТР: .filter(msg => msg.timestamp && msg.timestamp.seconds) 
+                        
+                    // Меняем порядок на обратный для отображения от старых к новым.
+                    setMessages(fetchedMessages.reverse());
                 }, (error) => {
-                    console.error("Failed to fetch messages:", error);
+                    console.error("[FIRESTORE ERROR] Failed to fetch messages:", error);
                 });
 
                 return () => unsubscribe();
@@ -450,7 +465,10 @@
 
             // --- Логика отправки сообщений ---
             const sendMessage = useCallback(async (text) => {
-                if (!text.trim() || !user || !db || !addDoc || !collection || !serverTimestamp) return;
+                if (!text.trim() || !user || !user.uid || !db || !addDoc || !collection || !serverTimestamp) {
+                     console.error("[SEND ERROR] Cannot send message: missing text, user, or database connection.", { text, user, db: !!db });
+                     return;
+                }
 
                 const messageData = {
                     text: text,
@@ -459,20 +477,28 @@
                     timestamp: serverTimestamp(),
                 };
 
+                console.log(`[SEND] Attempting to send message from UID: ${user.uid} to path: ${PUBLIC_CHAT_PATH}`);
+
                 try {
-                    await addDoc(collection(db, PUBLIC_CHAT_PATH), messageData);
+                    // Используем await, чтобы гарантировать, что попытка записи завершена
+                    const docRef = await addDoc(collection(db, PUBLIC_CHAT_PATH), messageData);
+                    console.log("[SEND SUCCESS] Document written with ID: ", docRef.id);
                 } catch (e) {
-                    console.error("Error adding document: ", e);
+                    // КРИТИЧЕСКИ ВАЖНО: Логируем полную ошибку от Firebase
+                    console.error("[SEND FAIL] CRITICAL FIRESTORE ERROR (Permission Denied Likely): ", e);
+                    // Совет пользователю
+                    alert("ОШИБКА ОТПРАВКИ! Сообщение не было сохранено. Пожалуйста, проверьте консоль (F12) на наличие ошибки 'PERMISSION_DENIED'.");
                 }
             }, [user, db, PUBLIC_CHAT_PATH]);
 
             // --- Имитация ответа Gemini ---
             const handleGeminiCommand = async (command) => {
-                if (!addDoc || !collection || !serverTimestamp) return;
+                if (!addDoc || !collection || !serverTimestamp || !user || !user.uid) return;
 
                 const queryText = command.substring(7).trim(); 
                 
                 // 1. Отправка сообщения пользователя с запросом
+                // Обратите внимание: эта запись тоже может быть отклонена правилами
                 await addDoc(collection(db, PUBLIC_CHAT_PATH), {
                     text: `[Запрос к Gemini]: ${queryText || 'Не задан'}`,
                     uid: user.uid,
@@ -503,7 +529,7 @@
                             timestamp: serverTimestamp(),
                         });
                     } catch (e) {
-                        console.error("Error adding Gemini response: ", e);
+                        console.error("[GEMINI FAIL] Failed to add simulated Gemini response: ", e);
                     }
                 }, 1500);
             };
