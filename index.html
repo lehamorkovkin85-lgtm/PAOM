@@ -3,111 +3,85 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>paom: Обновление 1 ❄️</title>
-    <!-- Подключение Tailwind CSS -->
+    <title>Vibegram - Мессенджер из стекла</title>
+    
+    <!-- Tailwind CSS CDN для стилизации -->
     <script src="https://cdn.tailwindcss.com"></script>
-    <!-- Настройка шрифта Inter и Зимняя тема -->
+    
+    <!-- React, ReactDOM и Babel CDNs -->
+    <script src="https://unpkg.com/react@18/umd/react.development.js" crossorigin></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js" crossorigin></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+
+    <!-- Firebase SDK CDNs (модули) -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getFirestore, collection, query, onSnapshot, addDoc, serverTimestamp, limit, orderBy, setLogLevel } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+
+        // Глобальное назначение для доступа из скрипта 'text/babel'
+        window.firebase_services = {
+            initializeApp,
+            getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged,
+            getFirestore, collection, query, onSnapshot, addDoc, serverTimestamp, limit, orderBy, setLogLevel
+        };
+
+        // Логирование для отладки
+        if (window.firebase_services.setLogLevel) {
+            window.firebase_services.setLogLevel('debug');
+        }
+    </script>
+    
+    <!-- Добавляем uuid для генерации ID -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/uuid/8.3.2/uuid.min.js"></script>
+
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap');
+        /* Стили для кастомного скроллбара и анимации */
+        .custom-scrollbar::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+            background-color: rgba(255, 255, 255, 0.2);
+            border-radius: 4px;
+        }
+
+        .custom-scrollbar::-webkit-scrollbar-track {
+            background: rgba(0, 0, 0, 0.1);
+        }
+
+        @keyframes slow-spin {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+        .animate-spin-slow {
+            animation: slow-spin 5s linear infinite;
+        }
+        
+        /* Фон для тела, чтобы избежать прокрутки */
         body {
-            font-family: 'Inter', sans-serif;
-            /* Легкий, морозный фон */
-            background-color: #e0f7fa; 
-        }
-        .snow-accent {
-            color: #00bcd4; /* Голубой акцент */
-        }
-        .snow-shadow {
-            box-shadow: 0 4px 6px -1px rgba(0, 188, 212, 0.1), 0 2px 4px -2px rgba(0, 188, 212, 0.06);
-        }
-        .snow-border {
-            border-color: #00bcd4;
+            overflow: hidden;
         }
     </style>
 </head>
-<body class="min-h-screen">
-    <div class="max-w-3xl mx-auto p-4 md:p-8">
-        <!-- Заголовок -->
-        <header class="text-center mb-10">
-            <h1 class="text-5xl font-extrabold text-indigo-700 mb-2">
-                paom
-            </h1>
-            <p class="text-xl font-semibold text-sky-500 mb-4">Обновление 1 ❄️</p>
-            <p class="text-gray-500">Поделитесь своими мыслями в реальном времени.</p>
-            <div id="user-info" class="mt-4 text-sm text-gray-700 p-3 bg-white rounded-xl shadow-lg snow-shadow border-t-4 border-sky-400">
-                <p>Статус: <span id="auth-status" class="font-semibold text-yellow-600">Загрузка...</span></p>
-                <p>Ваш ник: <span id="user-nickname" class="font-bold text-indigo-600"></span></p>
-                <p>Ваш ID: <code id="user-id" class="break-all text-xs text-gray-500"></code></p>
-            </div>
-        </header>
+<body class="bg-gray-900">
 
-        <!-- Форма для нового поста -->
-        <section class="bg-white p-6 rounded-xl shadow-lg snow-shadow mb-8 border-t-4 border-sky-300">
-            <h2 class="text-2xl font-semibold mb-4 text-gray-800">Что у вас на уме?</h2>
-            <form id="post-form">
-                <textarea id="post-content" rows="3"
-                    class="w-full p-3 border border-gray-300 rounded-lg focus:ring-sky-500 focus:border-sky-500 transition duration-150 resize-none"
-                    placeholder="Введите ваше сообщение здесь..." required disabled></textarea>
-                <div class="mt-4 flex justify-end">
-                    <button type="submit" id="post-button"
-                        class="bg-sky-500 hover:bg-sky-600 text-white font-bold py-2 px-6 rounded-lg shadow-md transition duration-300 ease-in-out disabled:bg-gray-400"
-                        disabled>
-                        Опубликовать
-                    </button>
-                </div>
-            </form>
-        </section>
-
-        <!-- Лента постов -->
-        <section>
-            <h2 class="text-2xl font-semibold mb-6 text-gray-800">Лента Сообщений</h2>
-            <div id="posts-feed" class="space-y-4">
-                <!-- Здесь будут отображаться посты -->
-                <p id="loading-indicator" class="text-center text-gray-500">Загрузка постов...</p>
-            </div>
-        </section>
-
-        <!-- Кастомное модальное окно для ошибок/уведомлений -->
-        <div id="modal" class="hidden fixed inset-0 bg-gray-600 bg-opacity-50 flex items-center justify-center z-50">
-            <div class="bg-white p-6 rounded-lg shadow-xl max-w-sm w-full">
-                <h3 id="modal-title" class="text-xl font-bold mb-3 text-red-600">Ошибка!</h3>
-                <p id="modal-message" class="text-gray-700 mb-4"></p>
-                <button onclick="document.getElementById('modal').classList.add('hidden')"
-                    class="w-full bg-red-600 hover:bg-red-700 text-white font-bold py-2 rounded-lg transition duration-300">
-                    Закрыть
-                </button>
-            </div>
-        </div>
-
-        <!-- Кастомное модальное окно для регистрации никнейма -->
-        <div id="nickname-modal" class="hidden fixed inset-0 bg-gray-900 bg-opacity-75 flex items-center justify-center z-50">
-            <div class="bg-white p-8 rounded-xl shadow-2xl max-w-md w-full border-t-8 border-sky-400">
-                <h3 class="text-2xl font-bold mb-4 text-indigo-700">Добро пожаловать в paom!</h3>
-                <p class="text-gray-600 mb-6">Пожалуйста, придумайте никнейм. Он будет отображаться под вашими постами.</p>
-                <form id="nickname-form">
-                    <input type="text" id="nickname-input" minlength="2" maxlength="20" required
-                        class="w-full p-3 border border-gray-300 rounded-lg focus:ring-sky-500 focus:border-sky-500 transition duration-150"
-                        placeholder="Введите ваш никнейм (2-20 символов)">
-                    <p id="nickname-error" class="text-red-500 text-sm mt-2 hidden">Никнейм не может быть пустым.</p>
-                    <button type="submit" id="nickname-button"
-                        class="mt-6 w-full bg-sky-500 hover:bg-sky-600 text-white font-bold py-3 rounded-lg shadow-lg transition duration-300">
-                        Сохранить и Войти
-                    </button>
-                </form>
-            </div>
-        </div>
-
+    <div id="root">
+        <!-- React App будет рендериться здесь -->
     </div>
 
-    <!-- Firebase SDK Imports -->
-    <script type="module">
-        // Импорт необходимых модулей Firebase
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
-        import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
-        import { getFirestore, doc, addDoc, setDoc, getDoc, onSnapshot, collection, query, serverTimestamp, setLogLevel } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
-
-        // ВАЖНО: Ваша СТРОГАЯ конфигурация (для развертывания)
-        const userConfig = {
+    <!-- Основной код приложения с использованием Babel для JSX -->
+    <script type="text/babel">
+        // Получение сервисов Firebase и uuid из window
+        const {
+            initializeApp, getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged,
+            getFirestore, collection, query, onSnapshot, addDoc, serverTimestamp, limit, orderBy
+        } = window.firebase_services || {};
+        const { v4: uuidv4 } = window.uuid;
+        
+        // --- КОНФИГУРАЦИЯ FIREBASE (Используется конфигурация пользователя) ---
+        // ВНИМАНИЕ: Секретный ключ API прописан здесь.
+        const USER_FIREBASE_CONFIG = {
             apiKey: "AIzaSyAWV097BE56m2YVNi2D494dyXK41j9V5bE",
             authDomain: "messanger-b0b91.firebaseapp.com",
             projectId: "messanger-b0b91",
@@ -116,347 +90,641 @@
             appId: "1:895029700922:web:184790c791e66978aa4803",
             measurementId: "G-8YMP1TY2HW"
         };
-
-        // --- Глобальные переменные Canvas, которые мы ДОЛЖНЫ использовать для корректной работы здесь ---
-        // Приоритет отдается конфигурации среды (для корректной аутентификации и работы с Firestore)
-        const firebaseConfig = (typeof __firebase_config !== 'undefined' && Object.keys(JSON.parse(__firebase_config)).length > 0)
-            ? JSON.parse(__firebase_config)
-            : userConfig; // Ваша конфигурация как запасной вариант
-
-        const appId = typeof __app_id !== 'undefined' ? __app_id : firebaseConfig.appId;
-        const initialAuthToken = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null;
-        // ------------------------------------------------------------------------------------------------
-
-        let db;
-        let auth;
-        let currentUserId = null;
-        let currentUsername = null; // Новый стейт для никнейма
-        let isAuthReady = false;
-
-        // Элементы UI
-        const postForm = document.getElementById('post-form');
-        const postContentInput = document.getElementById('post-content');
-        const postButton = document.getElementById('post-button');
-        const postsFeed = document.getElementById('posts-feed');
-        const authStatus = document.getElementById('auth-status');
-        const userIdDisplay = document.getElementById('user-id');
-        const userNicknameDisplay = document.getElementById('user-nickname');
-        const nicknameModal = document.getElementById('nickname-modal');
-        const nicknameForm = document.getElementById('nickname-form');
-        const nicknameInput = document.getElementById('nickname-input');
-        const nicknameError = document.getElementById('nickname-error');
-        const loadingIndicator = document.getElementById('loading-indicator');
-
-        // Пути Firestore
-        const PUBLIC_COLLECTION_PATH = `artifacts/${appId}/public/data/posts`;
         
-        // Путь к документу профиля пользователя (приватное хранилище)
-        // Структура: artifacts/{appId}/users/{uid}/profile/details (6 сегментов)
-        const getUserProfileDocRef = (uid) => doc(db, `artifacts/${appId}/users/${uid}/profile/details`);
+        // Глобальные переменные (обновлены для использования предоставленной конфигурации)
+        // Используем projectId пользователя для создания изолированного пути в Firestore (messanger-b0b91)
+        const appId = USER_FIREBASE_CONFIG.projectId; 
+        const firebaseConfig = USER_FIREBASE_CONFIG;
+        // Переменная initialAuthToken не используется для входа, чтобы избежать ошибки custom-token-mismatch
+        const initialAuthToken = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null; 
 
-        // --- Утилиты ---
 
-        function showModal(title, message) {
-            document.getElementById('modal-title').textContent = title;
-            document.getElementById('modal-message').textContent = message;
-            const modal = document.getElementById('modal');
-            modal.querySelector('h3').classList.toggle('text-red-600', title.toLowerCase().includes('ошибка'));
-            modal.querySelector('h3').classList.toggle('text-green-600', !title.toLowerCase().includes('ошибка'));
-            modal.classList.remove('hidden');
-        }
+        const { useState, useEffect, useCallback, useRef, memo } = React;
 
-        /**
-         * Форматирует временную метку
-         */
-        function formatTimestamp(timestamp) {
-            if (!timestamp) return 'Неизвестно';
-            const date = new Date(timestamp);
-            const options = {
-                year: 'numeric', month: 'short', day: 'numeric',
-                hour: '2-digit', minute: '2-digit', second: '2-digit'
-            };
-            return date.toLocaleTimeString('ru-RU', options);
-        }
+        // --- Стили и утилиты стекломорфизма ---
+        const glassBase = "backdrop-blur-xl border border-opacity-20 shadow-xl transition-all duration-300";
+        const glassLight = `${glassBase} bg-white/15 border-white/20`;
+        const shadowGlow = (color) => `drop-shadow-lg shadow-[0_0_15px_rgba(${color},0.5)]`;
+        const chatBubbleUser = `ml-auto bg-blue-600/30 border-blue-400/30 ${glassBase} ${shadowGlow('37, 99, 235')}`; // сине-голубой
+        const chatBubbleOther = `mr-auto bg-purple-600/30 border-purple-400/30 ${glassBase} ${shadowGlow('147, 51, 234')}`; // фиолетово-розовый
+        const chatBubbleGemini = `mr-auto bg-emerald-600/30 border-emerald-400/30 ${glassBase} ${shadowGlow('16, 185, 129')}`; // ИИ-пузырь
 
-        /**
-         * Управляет состоянием формы постинга (доступна/недоступна)
-         */
-        function setPostingEnabled(isEnabled) {
-            postContentInput.disabled = !isEnabled;
-            postButton.disabled = !isEnabled;
-            if (isEnabled) {
-                postContentInput.placeholder = 'Введите ваше сообщение здесь...';
-                postButton.classList.remove('disabled:bg-gray-400');
+        // --- ВСПОМОГАТЕЛЬНЫЕ КОМПОНЕНТЫ ---
+
+        const GeminiCrystal = () => (
+            <svg className="w-6 h-6 text-emerald-300 animate-spin-slow" viewBox="0 0 24 24" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+                <path d="M12 2L2 12L12 22L22 12L12 2Z" opacity="0.4" />
+                <path d="M12 5L5 12L12 19L19 12L12 5Z" opacity="0.6" />
+                <path d="M12 8L8 12L12 16L16 12L12 8Z" />
+            </svg>
+        );
+
+        const ChatListItem = ({ name, view, currentView, setCurrentView, activeClass }) => {
+            const isActive = view === currentView;
+            const baseClass = "p-3 rounded-xl cursor-pointer transition";
+            const inactiveClass = "text-white/70 hover:bg-white/10";
+
+            return (
+                <div 
+                    className={`${baseClass} ${isActive ? activeClass : inactiveClass}`}
+                    onClick={() => setCurrentView(view)}
+                >
+                    {name}
+                </div>
+            );
+        };
+
+        const ChatHeader = ({ currentView }) => {
+            let title = "Загрузка...";
+            let subtitle = "Пожалуйста, подождите.";
+            let iconBg = "bg-gray-500";
+            let Icon = 'G';
+
+            switch (currentView) {
+                case 'group_chat':
+                    title = "🌐 Групповой Чат (Live)";
+                    subtitle = "Общий чат для всех пользователей Vibegram";
+                    iconBg = "bg-purple-500";
+                    Icon = 'G';
+                    break;
+                case 'ai_lab':
+                    title = "🤖 AI Lab (Gemini)";
+                    subtitle = "Ваш личный ассистент Gemini";
+                    iconBg = "bg-emerald-500";
+                    Icon = <GeminiCrystal />;
+                    break;
+                case 'favorites':
+                    title = "⭐ Избранное";
+                    subtitle = "Ваши сохраненные сообщения";
+                    iconBg = "bg-yellow-500";
+                    Icon = '★';
+                    break;
+                default:
+                    break;
+            }
+
+            return (
+                <>
+                    <div className={`w-10 h-10 ${iconBg} rounded-full flex items-center justify-center text-white font-bold mr-3`}>
+                        {Icon}
+                    </div>
+                    <div>
+                        <h3 className="text-lg font-bold text-white">
+                            {title}
+                        </h3>
+                        <p className="text-sm text-white/70">
+                            {subtitle}
+                        </p>
+                    </div>
+                </>
+            );
+        };
+
+        const PlaceholderView = ({ title, description }) => (
+            <div className="flex flex-col items-center justify-center h-full text-center p-8">
+                <div className="text-7xl mb-4 text-white/50">
+                    {title.includes('AI') ? '🤖' : (title.includes('Избранное') ? '⭐' : '🔍')}
+                </div>
+                <h3 className="text-xl font-bold text-white mb-2">{title}</h3>
+                <p className="text-white/70">{description}</p>
+                <p className="text-white/50 text-sm mt-4">Этот функционал будет реализован в будущих обновлениях!</p>
+            </div>
+        );
+
+        const GroupChat = memo(({ messages, user, messagesEndRef, chatBubbleUser, chatBubbleOther, chatBubbleGemini, GeminiCrystal }) => {
+            return (
+                <div className="flex-grow overflow-y-auto p-4 space-y-4 custom-scrollbar">
+                    {messages.map((message) => {
+                        // ПРОВЕРКА: Ensure message has a uid before checking
+                        const isMine = user && message.uid === user.uid;
+                        const isGemini = message.uid === 'gemini_ai';
+
+                        let bubbleClass = isGemini ? chatBubbleGemini : (isMine ? chatBubbleUser : chatBubbleOther);
+                        let nameClass = isGemini ? 'text-emerald-300' : (isMine ? 'text-blue-300' : 'text-purple-300');
+                        let contentClass = isGemini ? 'border-b-2 border-emerald-500/30 pb-1' : '';
+
+                        return (
+                            <div key={message.id} className={`flex ${isMine ? 'justify-end' : 'justify-start'}`}>
+                                <div className={`max-w-xs sm:max-w-sm lg:max-w-md p-3 rounded-xl ${bubbleClass}`}>
+                                    {/* Имя отправителя */}
+                                    <p className={`text-xs font-bold mb-1 ${nameClass} flex items-center`}>
+                                        {isGemini && <GeminiCrystal />}
+                                        <span className={isGemini ? 'ml-1' : ''}>
+                                            {message.displayName}
+                                        </span>
+                                    </p>
+
+                                    {/* Текст сообщения */}
+                                    <p className={`text-white whitespace-pre-wrap ${contentClass}`}>
+                                        {message.text}
+                                    </p>
+
+                                    {/* Таймстемп */}
+                                    {message.timestamp && message.timestamp.seconds && (
+                                        <p className="text-xs text-white/50 mt-1 text-right">
+                                            {new Date(message.timestamp.seconds * 1000).toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' })}
+                                        </p>
+                                    )}
+                                </div>
+                            </div>
+                        );
+                    })}
+                    <div ref={messagesEndRef} />
+                </div>
+            );
+        });
+
+        const ChatInput = ({ handleSubmit, currentMessage, setCurrentMessage, isAuthReady, glassLight, chatBubbleUser }) => (
+            <form onSubmit={handleSubmit} className={`p-4 rounded-b-3xl ${glassLight} flex items-center border-t border-white/20 flex-shrink-0`}>
+                <input
+                    type="text"
+                    placeholder="Напишите сообщение или /gemini <вопрос>..."
+                    value={currentMessage}
+                    onChange={(e) => setCurrentMessage(e.target.value)}
+                    className="flex-grow p-3 rounded-xl bg-white/10 border border-white/30 text-white placeholder-white/50 focus:outline-none focus:ring-2 focus:ring-blue-300 transition duration-300"
+                    disabled={!isAuthReady}
+                />
+                <button
+                    type="submit"
+                    disabled={!currentMessage.trim() || !isAuthReady}
+                    className={`ml-3 p-3 rounded-xl ${chatBubbleUser.replace('ml-auto', '')} hover:bg-blue-600/50 disabled:bg-gray-500/30 disabled:border-gray-500/30 active:scale-[0.9] transition duration-150 flex items-center justify-center`}
+                >
+                    <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"></path>
+                    </svg>
+                </button>
+            </form>
+        );
+
+
+        const VibeWave = ({ messageCount }) => {
+            // Простая логика Vibe Wave
+            const activityLevel = Math.min(Math.floor(messageCount / 5), 5); // 0 to 5
+            let vibeColor = 'text-blue-400';
+            let vibeText = 'Спокойный обмен мнениями';
+
+            if (activityLevel >= 4) {
+                vibeColor = 'text-red-400';
+                vibeText = '🔥 Жаркая дискуссия';
+            } else if (activityLevel >= 2) {
+                vibeColor = 'text-orange-400';
+                vibeText = 'Энергичное общение';
             } else {
-                postContentInput.placeholder = 'Сначала установите никнейм или дождитесь аутентификации...';
-                postButton.classList.add('disabled:bg-gray-400');
+                vibeColor = 'text-blue-400';
             }
-        }
-        
-        /**
-         * Рендерит один пост в ленте
-         */
-        function renderPost(post) {
-            const isCurrentUser = post.userId === currentUserId;
-            const postUsername = post.username || 'Аноним';
 
-            const postElement = document.createElement('div');
-            postElement.className = 'bg-white p-5 rounded-xl shadow-md border-t-4 ' + (isCurrentUser ? 'border-indigo-500' : 'border-sky-300');
-            postElement.dataset.id = post.id;
-
-            postElement.innerHTML = `
-                <div class="flex justify-between items-start mb-3">
-                    <div class="text-sm font-bold ${isCurrentUser ? 'text-indigo-600' : 'text-sky-600'}">
-                        ${postUsername} ${isCurrentUser ? '(Вы)' : ''}
-                    </div>
-                    <div class="text-xs text-gray-400">
-                        ${formatTimestamp(post.createdAt?.toMillis() || post.createdAt)}
+            const waveAmplitude = 1 + activityLevel * 0.2;
+            return (
+                <div className={`p-4 rounded-xl ${glassLight} mb-4 flex flex-col`} style={{height: '120px'}}>
+                    <h3 className="text-white text-lg font-semibold mb-2">Вибе-волна</h3>
+                    <div className="flex-grow flex items-center justify-center relative">
+                        <svg viewBox="0 0 100 20" className={`w-full h-10 transition-colors ${vibeColor}`} preserveAspectRatio="none">
+                            {/* Анимация волны */}
+                            <defs>
+                                <style>{`
+                                    @keyframes oscillate {
+                                        0%, 100% { transform: scaleY(${waveAmplitude}); }
+                                        50% { transform: scaleY(${waveAmplitude * 1.1}); }
+                                    }
+                                    .vibe-path {
+                                        animation: oscillate 3s ease-in-out infinite alternate;
+                                    }
+                                `}</style>
+                            </defs>
+                            <path
+                                className={`stroke-current fill-transparent vibe-path`}
+                                strokeWidth="1.5"
+                                style={{
+                                    transformOrigin: 'center',
+                                }}
+                                d="M0,10 C 25,10 25,0 50,10 C 75,20 75,10 100,10"
+                            />
+                        </svg>
+                        <div className={`absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 text-sm font-medium ${vibeColor}`}>
+                            {vibeText}
+                        </div>
                     </div>
                 </div>
-                <p class="text-gray-800 whitespace-pre-wrap mb-3">${post.content}</p>
-                <div class="text-xs text-gray-500 break-all border-t pt-2 mt-2">
-                    ID: ${post.userId}
-                </div>
-            `;
-            return postElement;
-        }
+            );
+        };
 
-        // --- Логика Профиля (Никнейм) ---
+        // --- Основное приложение ---
+        function App() {
+            const [db, setDb] = useState(null);
+            const [auth, setAuth] = useState(null);
+            const [user, setUser] = useState(null); // { uid, displayName }
+            const [userId, setUserId] = useState(null); // Для путей Firestore
+            const [isAuthReady, setIsAuthReady] = useState(false);
+            const [loading, setLoading] = useState(true);
 
-        /**
-         * Загружает или запрашивает никнейм пользователя.
-         */
-        async function loadUserProfile(userId) {
-            const profileRef = getUserProfileDocRef(userId);
-            try {
-                const docSnap = await getDoc(profileRef);
-                
-                if (docSnap.exists() && docSnap.data().nickname) {
-                    // Профиль найден - УСПЕХ
-                    currentUsername = docSnap.data().nickname;
-                    userNicknameDisplay.textContent = currentUsername;
-                    setPostingEnabled(true);
-                    nicknameModal.classList.add('hidden'); // Убеждаемся, что модальное окно скрыто
-                } else {
-                    // Профиль не найден - НОВЫЙ ПОЛЬЗОВАТЕЛЬ, показываем модальное окно
-                    currentUsername = null;
-                    userNicknameDisplay.textContent = 'Не установлен';
-                    setPostingEnabled(false);
-                    nicknameModal.classList.remove('hidden');
+            // Chat-specific state
+            const [messages, setMessages] = useState([]);
+            const [currentMessage, setCurrentMessage] = useState('');
+            const [currentView, setCurrentView] = useState('group_chat'); 
+            
+            // Поиск
+            const [searchTerm, setSearchTerm] = useState('');
+            const [searchResults, setSearchResults] = useState([]);
+
+            const messagesEndRef = useRef(null);
+            const PUBLIC_CHAT_PATH = `artifacts/${appId}/public/data/vibegram_messages`;
+
+            const MOCK_USERS = [
+                { id: 'user1', name: 'Алексей' },
+                { id: 'user2', name: 'Елена' },
+                { id: 'user3', name: 'Дмитрий' },
+                { id: 'user4', name: 'Мария' },
+                { id: 'user5', name: 'Антон' },
+                { id: 'gemini_ai', name: 'Gemini 💎' },
+            ];
+
+            // Логика поиска
+            useEffect(() => {
+                if (searchTerm.trim() === '') {
+                    setSearchResults([]);
+                    return;
                 }
-            } catch (error) {
-                console.error("Ошибка загрузки профиля (вероятно, из-за правил безопасности):", error);
                 
-                // ИСПРАВЛЕНИЕ: Если аутентификация прошла, но возникла ошибка при чтении
-                // профиля, мы принудительно показываем модальное окно, чтобы пользователь
-                // мог создать документ через setDoc.
-                currentUsername = null;
-                userNicknameDisplay.textContent = 'Не установлен (Ошибка чтения)';
-                setPostingEnabled(false);
-                nicknameModal.classList.remove('hidden');
-                showModal('Внимание', 'Не удалось прочитать ваш никнейм (возможно, вы входите впервые). Пожалуйста, введите его.');
-            }
-        }
+                const results = MOCK_USERS.filter(u =>
+                    u.name.toLowerCase().includes(searchTerm.toLowerCase())
+                );
+                setSearchResults(results);
+            }, [searchTerm]);
 
-        /**
-         * Сохраняет никнейм пользователя в Firestore.
-         */
-        async function saveNickname(nickname) {
-            if (!currentUserId || !db) return;
 
-            const profileRef = getUserProfileDocRef(currentUserId);
-            try {
-                await setDoc(profileRef, {
-                    nickname: nickname,
-                    updatedAt: serverTimestamp()
-                }, { merge: true });
+            // 1. Инициализация Firebase и Аутентификация (КОРРЕКТНАЯ ЛОГИКА)
+            useEffect(() => {
+                let unsubscribeAuth;
 
-                currentUsername = nickname;
-                userNicknameDisplay.textContent = currentUsername;
-                nicknameModal.classList.add('hidden');
-                setPostingEnabled(true);
-                showModal('Успех!', `Ваш никнейм "${nickname}" сохранен.`);
-
-            } catch (error) {
-                console.error("Ошибка сохранения никнейма:", error);
-                showModal('Ошибка Сохранения', 'Не удалось сохранить никнейм. Попробуйте снова.');
-            }
-        }
-        
-        /**
-         * Обработчик отправки формы никнейма.
-         */
-        function handleNicknameSubmit(e) {
-            e.preventDefault();
-            const nickname = nicknameInput.value.trim();
-
-            if (nickname.length < 2) {
-                nicknameError.textContent = 'Никнейм должен содержать не менее 2 символов.';
-                nicknameError.classList.remove('hidden');
-                return;
-            }
-
-            nicknameError.classList.add('hidden');
-            saveNickname(nickname);
-        }
-
-        // --- Инициализация Firebase и Аутентификация ---
-
-        async function initializeFirebase() {
-            try {
-                // setLogLevel('debug'); // Для отладки
-                const app = initializeApp(firebaseConfig);
-                db = getFirestore(app);
-                auth = getAuth(app);
-                
-                // Назначаем обработчик формы никнейма
-                nicknameForm.addEventListener('submit', handleNicknameSubmit);
-
-                // Слушатель состояния аутентификации
-                onAuthStateChanged(auth, async (user) => {
-                    if (user) {
-                        currentUserId = user.uid;
-                        authStatus.textContent = 'Аутентифицирован';
-                        authStatus.className = 'font-semibold text-green-600';
-                        userIdDisplay.textContent = currentUserId;
-                        
-                        // Загружаем профиль и никнейм
-                        await loadUserProfile(user.uid);
-
-                        // Начинаем слушать посты только после успешной аутентификации
-                        if (!isAuthReady) {
-                            isAuthReady = true;
-                            startPostsListener();
-                        }
-                    } else {
-                        currentUserId = null;
-                        currentUsername = null;
-                        authStatus.textContent = 'Не аутентифицирован';
-                        authStatus.className = 'font-semibold text-red-600';
-                        userIdDisplay.textContent = 'N/A';
-                        userNicknameDisplay.textContent = 'N/A';
-                        
-                        setPostingEnabled(false);
-
-                        // Попытка входа
-                        if (!isAuthReady) {
-                             await handleSignIn();
-                        } else {
-                            // Если аутентификация была, но пользователь вышел
-                            showModal('Вход Необходим', 'Сессия истекла. Пожалуйста, обновите страницу.');
-                        }
+                const initializeFirebase = async () => {
+                    if (!initializeApp || !getFirestore || !getAuth) {
+                        console.error("Firebase services are not available. Check CDN loading.");
+                        setLoading(false);
+                        setIsAuthReady(true);
+                        return;
                     }
-                });
 
-                // Если есть токен, пробуем войти с ним, иначе анонимно
-                const handleSignIn = async () => {
                     try {
-                        if (initialAuthToken) {
-                            await signInWithCustomToken(auth, initialAuthToken);
-                        } else {
-                            await signInAnonymously(auth);
-                        }
-                        // onAuthStateChanged обработает результат
-                    } catch (error) {
-                        console.error("Ошибка аутентификации:", error);
-                        showModal('Ошибка Аутентификации', 'Не удалось войти в Firebase. Проверьте консоль.');
-                        authStatus.textContent = 'Ошибка';
-                        authStatus.className = 'font-semibold text-red-600';
+                        // Инициализация сервисов Firebase
+                        const app = initializeApp(firebaseConfig);
+                        const firestore = getFirestore(app);
+                        const firebaseAuth = getAuth(app);
+
+                        setDb(firestore);
+                        setAuth(firebaseAuth);
+
+                        // onAuthStateChanged для отслеживания состояния аутентификации
+                        unsubscribeAuth = onAuthStateChanged(firebaseAuth, async (currentUser) => {
+                            let currentId;
+                            if (currentUser) {
+                                currentId = currentUser.uid;
+                                // Безопасное получение displayName из localStorage или установка по умолчанию
+                                const userData = {
+                                    uid: currentUser.uid,
+                                    // Используем uuid.v4() как запасной вариант для crypto.randomUUID()
+                                    displayName: localStorage.getItem('vibegram_displayName') || `Гость-${currentUser.uid.substring(0, 4)}`
+                                };
+                                setUser(userData);
+                            } else {
+                                // Если нет пользователя, всегда пытаемся войти анонимно. 
+                                // Убираем попытку использовать signInWithCustomToken, которая вызывает ошибку несоответствия токена.
+                                try {
+                                    await signInAnonymously(firebaseAuth);
+                                    // onAuthStateChanged сработает снова с новым пользователем
+                                    return;
+                                } catch (authError) {
+                                    console.error("Ошибка анонимной аутентификации Firebase:", authError);
+                                    // Fallback на случайный ID, если аутентификация не удалась
+                                    currentId = uuidv4(); 
+                                }
+                            }
+                            
+                            setUserId(currentId);
+                            setIsAuthReady(true);
+                            setLoading(false);
+                        });
+
+                    } catch (e) {
+                        console.error("Ошибка инициализации Firebase:", e);
+                        // В случае ошибки, завершаем загрузку, чтобы показать UI
+                        setIsAuthReady(true);
+                        setLoading(false);
                     }
                 };
 
-                // Запускаем процесс аутентификации
-                await handleSignIn();
+                initializeFirebase();
 
+                return () => {
+                    if (unsubscribeAuth) unsubscribeAuth();
+                };
+            }, []); // Зависимости пусты, так как это выполняется только один раз
 
-            } catch (error) {
-                console.error("Ошибка инициализации Firebase:", error);
-                showModal('Критическая Ошибка', 'Не удалось инициализировать Firebase. Проверьте конфигурацию и импорты.');
-            }
-        }
+            // 2. Слушатель сообщений (onSnapshot)
+            useEffect(() => {
+                // ЗАЩИТА: Запускать только после готовности аутентификации, наличия db и если активен групповой чат
+                if (!isAuthReady || !db || currentView !== 'group_chat' || !collection || !query || !onSnapshot || !orderBy || !limit) return;
 
+                console.log("Setting up Firestore listener for:", PUBLIC_CHAT_PATH);
 
-        // --- Логика Постов ---
+                const messagesCollection = collection(db, PUBLIC_CHAT_PATH);
+                // Сортировка по возрастанию и ограничение
+                const q = query(messagesCollection, orderBy("timestamp", "asc"), limit(100));
 
-        /**
-         * Обработчик отправки формы
-         */
-        async function handlePostSubmit(e) {
-            e.preventDefault();
-            const content = postContentInput.value.trim();
-
-            if (!content || !currentUserId || !currentUsername) {
-                showModal('Ошибка', 'Сообщение не может быть пустым, и вы должны иметь никнейм.');
-                return;
-            }
-
-            setPostingEnabled(false);
-            postButton.textContent = 'Публикация...';
-
-            try {
-                // Используем addDoc для добавления нового документа в коллекцию
-                await addDoc(collection(db, PUBLIC_COLLECTION_PATH), {
-                    userId: currentUserId,
-                    username: currentUsername, // Добавляем никнейм в пост
-                    content: content,
-                    createdAt: serverTimestamp(),
+                const unsubscribe = onSnapshot(q, (snapshot) => {
+                    const fetchedMessages = snapshot.docs.map(doc => ({
+                        id: doc.id,
+                        ...doc.data()
+                    }));
+                    setMessages(fetchedMessages);
+                }, (error) => {
+                    console.error("Failed to fetch messages:", error);
                 });
 
-                postContentInput.value = ''; // Очищаем поле
-            } catch (error) {
-                console.error("Ошибка добавления поста:", error);
-                showModal('Ошибка Публикации', `Не удалось опубликовать сообщение: ${error.message}`);
-            } finally {
-                setPostingEnabled(true);
-                postButton.textContent = 'Опубликовать';
-            }
-        }
+                return () => unsubscribe();
+            }, [db, isAuthReady, currentView]); 
 
-        /**
-         * Настраивает слушатель реального времени для ленты постов
-         */
-        function startPostsListener() {
-            if (!db) return;
+            // Прокрутка вниз при получении новых сообщений
+            useEffect(() => {
+                messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+            }, [messages]);
 
-            const postsCollection = collection(db, PUBLIC_COLLECTION_PATH);
-            const q = query(postsCollection);
-            
-            // onSnapshot устанавливает слушатель реального времени
-            onSnapshot(q, (snapshot) => {
-                loadingIndicator.classList.add('hidden');
-                
-                let posts = [];
-                snapshot.forEach((doc) => {
-                    posts.push({ id: doc.id, ...doc.data() });
-                });
+            // --- Логика отправки сообщений ---
+            const sendMessage = useCallback(async (text) => {
+                if (!text.trim() || !user || !db || !addDoc || !collection || !serverTimestamp) return;
 
-                // Сортируем в JavaScript
-                posts.sort((a, b) => {
-                    const timeA = a.createdAt?.toMillis() || 0;
-                    const timeB = b.createdAt?.toMillis() || 0;
-                    return timeB - timeA; // Сортировка по убыванию (новые сверху)
-                });
+                const messageData = {
+                    text: text,
+                    uid: user.uid,
+                    displayName: user.displayName,
+                    timestamp: serverTimestamp(),
+                };
 
-                postsFeed.innerHTML = ''; // Очищаем ленту
-
-                if (posts.length === 0) {
-                    postsFeed.innerHTML = '<p class="text-center text-gray-500 p-4 bg-white rounded-lg border-t-4 border-sky-100">Пока нет сообщений. Будьте первым, кто опубликует!</p>';
-                } else {
-                    posts.forEach(post => {
-                        postsFeed.appendChild(renderPost(post));
-                    });
+                try {
+                    await addDoc(collection(db, PUBLIC_CHAT_PATH), messageData);
+                } catch (e) {
+                    console.error("Error adding document: ", e);
                 }
-            }, (error) => {
-                console.error("Ошибка получения данных в реальном времени:", error);
-                showModal('Ошибка Ленты', 'Не удалось загрузить сообщения в реальном времени.');
-            });
+            }, [user, db, PUBLIC_CHAT_PATH]);
+
+            // --- Имитация ответа Gemini ---
+            const handleGeminiCommand = async (command) => {
+                if (!addDoc || !collection || !serverTimestamp) return;
+
+                const queryText = command.substring(7).trim(); 
+                
+                // 1. Отправка сообщения пользователя с запросом
+                await addDoc(collection(db, PUBLIC_CHAT_PATH), {
+                    text: `[Запрос к Gemini]: ${queryText || 'Не задан'}`,
+                    uid: user.uid,
+                    displayName: user.displayName,
+                    timestamp: serverTimestamp(),
+                });
+
+                if (!queryText) {
+                    // 2. Имитация ответа от Gemini
+                    await addDoc(collection(db, PUBLIC_CHAT_PATH), {
+                        text: "Привет! Я Gemini, виртуальный кристалл Vibegram. Задайте мне вопрос после команды /gemini. Например: /gemini что такое стекломорфизм?",
+                        uid: 'gemini_ai',
+                        displayName: 'Gemini 💎',
+                        timestamp: serverTimestamp(),
+                    });
+                    return;
+                }
+
+                const geminiResponse = `(Сгенерировано ИИ) Отвечаю на ваш запрос: "${queryText}". Стекломорфизм — это элегантный и современный стиль дизайна, который фокусируется на эффекте матового, полупрозрачного стекла. Он создает ощущение глубины и современности. Я всегда готов помочь вам с любой информацией!`;
+
+                // 3. Отложенная имитация ответа ИИ
+                setTimeout(async () => {
+                    try {
+                        await addDoc(collection(db, PUBLIC_CHAT_PATH), {
+                            text: geminiResponse,
+                            uid: 'gemini_ai',
+                            displayName: 'Gemini 💎',
+                            timestamp: serverTimestamp(),
+                        });
+                    } catch (e) {
+                        console.error("Error adding Gemini response: ", e);
+                    }
+                }, 1500);
+            };
+
+            // --- Обработчик отправки формы ---
+            const handleSubmit = (e) => {
+                e.preventDefault();
+                const text = currentMessage.trim();
+                if (!text) return;
+
+                if (text.toLowerCase().startsWith('/gemini')) {
+                    handleGeminiCommand(text);
+                } else {
+                    sendMessage(text);
+                }
+
+                setCurrentMessage('');
+            };
+
+            // --- Компонент Входа/Установки Имени (Стекло-аутентификация) ---
+            const AuthScreen = ({ onSetName }) => {
+                const [name, setName] = useState('');
+                const [error, setError] = useState('');
+
+                const handleAuthSubmit = () => {
+                    if (name.length < 2) {
+                        // Используем кастомный модальный UI вместо alert/confirm
+                        setError('Имя должно содержать не менее 2 символов.');
+                        return;
+                    }
+                    onSetName(name);
+                };
+
+                return (
+                    <div className="flex flex-col items-center justify-center h-screen p-4">
+                        <div className={`p-8 rounded-3xl w-full max-w-sm ${glassLight} ${shadowGlow('255, 255, 255')}`}>
+                            <h1 className="text-3xl font-extrabold text-white mb-6 text-center">
+                                Vibegram | Вход
+                            </h1>
+                            <p className="text-white/80 text-center mb-6">
+                                Добро пожаловать в мессенджер из стекла! Введите ваше имя.
+                            </p>
+                            {error && <p className="text-red-400 mb-4 text-center">{error}</p>}
+                            <input
+                                type="text"
+                                placeholder="Ваше имя пользователя..."
+                                value={name}
+                                onChange={(e) => { setName(e.target.value); setError(''); }}
+                                className="w-full p-3 mb-6 rounded-xl bg-white/10 border border-white/30 text-white placeholder-white/50 focus:outline-none focus:ring-2 focus:ring-blue-300 transition duration-300"
+                            />
+                            <button
+                                onClick={handleAuthSubmit}
+                                className={`w-full py-3 rounded-xl font-bold text-white uppercase tracking-wider ${chatBubbleUser.replace('ml-auto', '')} hover:bg-blue-600/50 active:scale-[0.98] transition duration-150`}
+                            >
+                                Войти в Стекло-Чат
+                            </button>
+                        </div>
+                    </div>
+                );
+            };
+
+            // --- Render logic ---
+
+            // 1. Если идет начальная загрузка Firebase
+            if (loading) {
+                return (
+                    <div className="h-screen flex items-center justify-center bg-gradient-to-br from-indigo-900 via-purple-900 to-pink-900">
+                        <div className="text-white text-xl animate-pulse">
+                            Загрузка Vibegram...
+                        </div>
+                    </div>
+                );
+            }
+
+            // 2. Если аутентификация завершена, но имя пользователя не установлено
+            if (!user || !user.displayName || user.displayName.startsWith('Гость-')) {
+                const handleSetName = (displayName) => {
+                    localStorage.setItem('vibegram_displayName', displayName);
+                    setUser(prev => prev ? ({ ...prev, displayName }) : { uid: userId, displayName });
+                };
+                return (
+                    <div className="h-screen bg-gradient-to-br from-indigo-900 via-purple-900 to-pink-900">
+                        <AuthScreen onSetName={handleSetName} />
+                    </div>
+                );
+            }
+
+            // БЕЗОПАСНОЕ использование userId: используем опциональную цепочку и проверку
+            const displayUserId = user.uid 
+                ? `${user.uid.substring(0, 8)}...` 
+                : (userId ? `${userId.substring(0, 8)}...` : 'N/A');
+
+            // 3. Основной интерфейс приложения
+            return (
+                <div className="h-screen overflow-hidden p-4 bg-gradient-to-br from-indigo-900 via-purple-900 to-pink-900 font-sans antialiased flex flex-col md:flex-row">
+                    {/* Левая боковая панель */}
+                    <div className={`w-full md:w-1/3 lg:w-1/4 md:mr-4 flex-shrink-0 flex flex-col h-full ${glassLight} rounded-3xl p-4 hidden md:flex`}>
+                        <h2 className="text-2xl font-bold text-white mb-4 flex items-center">
+                            <GeminiCrystal />
+                            <span className="ml-2">Vibegram</span>
+                        </h2>
+
+                        {/* Профиль пользователя */}
+                        <div className="p-4 rounded-xl mb-4 bg-white/10 flex items-center">
+                            <div className="relative p-1 rounded-full border-2 border-green-400 shadow-lg shadow-green-500/50">
+                                <div className="w-10 h-10 bg-gray-500 rounded-full flex items-center justify-center text-white font-bold">
+                                    {user.displayName[0]}
+                                </div>
+                                <div className="absolute bottom-0 right-0 w-3 h-3 bg-green-400 rounded-full border border-white/30"></div>
+                            </div>
+                            <div className="ml-3">
+                                <p className="text-white font-semibold">{user.displayName}</p>
+                                <p className="text-xs text-white/50">ID: {displayUserId}</p>
+                            </div>
+                        </div>
+
+                        {/* Поиск пользователей */}
+                        <div className={`p-4 rounded-xl ${glassLight} mb-4 flex flex-col`}>
+                            <input
+                                type="text"
+                                placeholder="Поиск пользователей..."
+                                value={searchTerm}
+                                onChange={(e) => setSearchTerm(e.target.value)}
+                                className="w-full p-2 mb-3 rounded-lg bg-white/10 border border-white/30 text-white placeholder-white/50 focus:outline-none focus:ring-1 focus:ring-blue-300 transition duration-300"
+                            />
+                            
+                            {searchResults.length > 0 && (
+                                <div className="space-y-2 max-h-40 overflow-y-auto">
+                                    <p className="text-white/70 text-sm font-semibold border-b border-white/10 pb-1 mb-1">Результаты поиска:</p>
+                                    {searchResults.map(u => (
+                                        <div key={u.id} className="p-2 rounded-lg text-white/90 bg-white/10 flex items-center hover:bg-white/20 transition cursor-pointer">
+                                            <div className="w-6 h-6 bg-gray-600 rounded-full flex items-center justify-center text-xs font-bold mr-2">
+                                                {u.name[0]}
+                                            </div>
+                                            {u.name}
+                                        </div>
+                                    ))}
+                                </div>
+                            )}
+                            {searchTerm && searchResults.length === 0 && (
+                                <p className="text-white/50 text-sm">Пользователи не найдены.</p>
+                            )}
+                        </div>
+
+
+                        {/* Vibe Wave Widget */}
+                        <VibeWave messageCount={messages.length} />
+
+                        {/* Список чатов */}
+                        <div className="overflow-y-auto flex-grow space-y-2">
+                            <ChatListItem 
+                                name="🌐 Групповой Чат (Live)" 
+                                view="group_chat" 
+                                currentView={currentView} 
+                                setCurrentView={setCurrentView} 
+                                activeClass="bg-blue-500/20 text-white/90 border border-blue-400/30 font-semibold"
+                            />
+                            <ChatListItem 
+                                name="🤖 AI Lab (Gemini)" 
+                                view="ai_lab" 
+                                currentView={currentView} 
+                                setCurrentView={setCurrentView}
+                                activeClass="bg-emerald-500/20 text-white/90 border border-emerald-400/30 font-semibold"
+                            />
+                            <ChatListItem 
+                                name="⭐ Избранное" 
+                                view="favorites" 
+                                currentView={currentView} 
+                                setCurrentView={setCurrentView}
+                                activeClass="bg-yellow-500/20 text-white/90 border border-yellow-400/30 font-semibold"
+                            />
+                        </div>
+                    </div>
+
+                    {/* Правая панель - Контент */}
+                    <div className={`flex-grow h-full flex flex-col ${glassLight} rounded-3xl`}>
+                        {/* Шапка чата */}
+                        <div className={`p-4 rounded-t-3xl ${glassLight} flex items-center border-b border-white/20 flex-shrink-0`}>
+                            <ChatHeader currentView={currentView} />
+                        </div>
+
+                        {/* Область сообщений / Контент */}
+                        {currentView === 'group_chat' ? (
+                            <GroupChat 
+                                messages={messages} 
+                                user={user} 
+                                messagesEndRef={messagesEndRef} 
+                                chatBubbleUser={chatBubbleUser} 
+                                chatBubbleOther={chatBubbleOther} 
+                                chatBubbleGemini={chatBubbleGemini} 
+                                GeminiCrystal={GeminiCrystal} 
+                            />
+                        ) : (
+                            <PlaceholderView 
+                                title={currentView === 'ai_lab' ? "AI Lab (Gemini)" : "Избранное"} 
+                                description={currentView === 'ai_lab' ? "Здесь вы можете общаться с Gemini 💎 один на один." : "Сохраняйте важные сообщения здесь."} 
+                            />
+                        )}
+
+                        {/* Панель ввода - только для group_chat */}
+                        {currentView === 'group_chat' && (
+                            <ChatInput 
+                                handleSubmit={handleSubmit}
+                                currentMessage={currentMessage}
+                                setCurrentMessage={setCurrentMessage}
+                                isAuthReady={isAuthReady}
+                                glassLight={glassLight}
+                                chatBubbleUser={chatBubbleUser}
+                            />
+                        )}
+                    </div>
+                </div>
+            );
         }
 
-        // --- Запуск Приложения ---
-
-        window.onload = initializeFirebase;
-        postForm.addEventListener('submit', handlePostSubmit);
-
+        // Рендеринг приложения
+        window.onload = () => {
+            const container = document.getElementById('root');
+            const root = ReactDOM.createRoot(container);
+            root.render(<App />);
+        };
     </script>
 </body>
 </html>
