@@ -28,7 +28,7 @@
     <div id="root"></div>
 
     <script type="text/babel" data-type="module">
-        // Импорты Firebase (используем модульную версию через CDN)
+        // Импорты Firebase
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-app.js";
         import { 
             getAuth, 
@@ -52,7 +52,7 @@
             getDocs
         } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-firestore.js";
 
-        // --- ИКОНКИ (Inline SVG Components) ---
+        // --- ИКОНКИ ---
         const Icon = ({ path, className, size = 24, color = "currentColor" }) => (
             <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>
                 {path}
@@ -76,8 +76,6 @@
         };
 
         // --- КОНФИГУРАЦИЯ ---
-        
-        // 1. По умолчанию берем ВАШУ конфигурацию для публикации
         let firebaseConfig = {
           apiKey: "AIzaSyAWV097BE56m2YVNi2D494dyXK41j9V5bE",
           authDomain: "messanger-b0b91.firebaseapp.com",
@@ -88,13 +86,11 @@
           measurementId: "G-RQ7GYZPT2G"
         };
 
-        // 2. Если мы в среде предпросмотра, подменяем на системную (чтобы работало сейчас)
         if (typeof window.__firebase_config !== 'undefined') {
              try {
                 const envConfig = JSON.parse(window.__firebase_config);
                 if (envConfig && envConfig.apiKey) {
                     firebaseConfig = envConfig;
-                    console.log("Using Environment Config");
                 }
              } catch(e) { console.warn("Env config parse error", e); }
         }
@@ -107,7 +103,6 @@
             return typeof window.__app_id !== 'undefined' ? window.__app_id : 'paom-tic-tac-toe-public';
         };
 
-        // --- КОНСТАНТЫ ---
         const DEFAULT_QUESTS = [
             { id: 'q1', desc: 'Выиграть 3 матча в ранговом', target: 3, current: 0, reward: 50, claimed: false },
             { id: 'q2', desc: 'Сыграть 5 игр с ИИ', target: 5, current: 0, reward: 30, claimed: false },
@@ -124,6 +119,7 @@
         ];
 
         const NEWS_UPDATES = [
+            { ver: '1.2', title: 'Исправление матчмейкинга', content: 'Улучшена система поиска противников и отображение статуса ожидания.' },
             { ver: '1.1', title: 'Обновление: Ранговый с ботами', content: 'Добавлена возможность играть на рейтинг против ИИ, если нет игроков. Исправлены баги магазина.' },
             { ver: '1.0', title: 'Релиз Paom.Tic.Tac.Toe', content: 'Первый запуск игры! Доступны: Ранговые матчи, Игра с ИИ (Gemini), Магазин, Ежедневные задания.' }
         ];
@@ -135,6 +131,7 @@
             const [currentScreen, setCurrentScreen] = React.useState('auth');
             const [loading, setLoading] = React.useState(false);
             const [errorMsg, setErrorMsg] = React.useState('');
+            const [isAuthChecking, setIsAuthChecking] = React.useState(true);
             
             // Auth State
             const [email, setEmail] = React.useState('');
@@ -152,34 +149,33 @@
             const [aiThinking, setAiThinking] = React.useState(false);
 
             React.useEffect(() => {
+                let unsubAuth;
                 const initAuth = async () => {
                     const token = window.__initial_auth_token;
                     if (token) {
-                        try { await signInWithCustomToken(auth, token); } catch(e) { console.error(e); }
+                        try { await signInWithCustomToken(auth, token); } catch(e) { console.error("Auth Token Failed:", e); }
                     }
+                    unsubAuth = onAuthStateChanged(auth, (u) => {
+                        setUser(u);
+                        setIsAuthChecking(false);
+                        if (!u) setCurrentScreen('auth');
+                    });
                 };
                 initAuth();
-                const unsub = onAuthStateChanged(auth, (u) => {
-                    setUser(u);
-                    if (u) {
-                        setCurrentScreen('menu');
-                        loadUserProfile(u.uid);
-                    } else {
-                        setCurrentScreen('auth');
-                        setProfile(null);
-                    }
-                });
-                return () => unsub();
+                return () => { if (unsubAuth) unsubAuth(); };
             }, []);
 
-            const loadUserProfile = (uid) => {
+            React.useEffect(() => {
+                if (!user || isAuthChecking) {
+                    if (!user && !isAuthChecking) setProfile(null);
+                    return;
+                }
+                setCurrentScreen('menu');
                 const appId = getAppId();
-                const docRef = doc(db, 'artifacts', appId, 'users', uid, 'profile', 'data');
-                
-                return onSnapshot(docRef, async (snap) => {
+                const docRef = doc(db, 'artifacts', appId, 'users', user.uid, 'profile', 'data');
+                const unsubProfile = onSnapshot(docRef, async (snap) => {
                     if (snap.exists()) {
                         const data = snap.data();
-                        // Check daily reset
                         const today = new Date().toDateString();
                         if (data.lastLogin !== today) {
                             const newQuests = DEFAULT_QUESTS.map(q => ({...q}));
@@ -198,10 +194,11 @@
                             quests: DEFAULT_QUESTS,
                             lastLogin: new Date().toDateString()
                         };
-                        await setDoc(docRef, newProfile);
+                        try { await setDoc(docRef, newProfile); } catch (err) { console.error("Error creating profile:", err); }
                     }
-                }, (err) => console.error("Profile load error", err));
-            };
+                }, (err) => { console.error("Profile Load Error:", err); alert("Ошибка доступа к профилю."); });
+                return () => unsubProfile();
+            }, [user, isAuthChecking]);
 
             const handleAuth = async (e) => {
                 e.preventDefault();
@@ -213,11 +210,7 @@
                     } else {
                         await signInWithEmailAndPassword(auth, email, password);
                     }
-                } catch (err) {
-                    setErrorMsg(err.message);
-                } finally {
-                    setLoading(false);
-                }
+                } catch (err) { setErrorMsg(err.message); } finally { setLoading(false); }
             };
 
             const handleLogout = () => signOut(auth);
@@ -226,20 +219,15 @@
                 if (!user || !profile) return;
                 const appId = getAppId();
                 const docRef = doc(db, 'artifacts', appId, 'users', user.uid, 'profile', 'data');
-                
                 const updatedQuests = profile.quests.map(q => {
                     if (q.claimed) return q;
                     let match = false;
                     if (type === 'win_ranked' && q.id === 'q1') match = true;
                     if (type === 'play_ai' && q.id === 'q2') match = true;
                     if (type === 'buy_item' && q.id === 'q3') match = true;
-
-                    if (match) {
-                        return { ...q, current: Math.min(q.current + amount, q.target) };
-                    }
+                    if (match) return { ...q, current: Math.min(q.current + amount, q.target) };
                     return q;
                 });
-
                 await updateDoc(docRef, { quests: updatedQuests });
             };
 
@@ -247,29 +235,17 @@
                 if (!user || !profile) return;
                 const quest = profile.quests.find(q => q.id === questId);
                 if (!quest || quest.claimed || quest.current < quest.target) return;
-
                 const appId = getAppId();
                 const docRef = doc(db, 'artifacts', appId, 'users', user.uid, 'profile', 'data');
-                
                 const updatedQuests = profile.quests.map(q => q.id === questId ? { ...q, claimed: true } : q);
-                
-                await updateDoc(docRef, { 
-                    quests: updatedQuests,
-                    diamonds: profile.diamonds + quest.reward
-                });
+                await updateDoc(docRef, { quests: updatedQuests, diamonds: profile.diamonds + quest.reward });
             };
 
             const calculateWinner = (squares) => {
-                const lines = [
-                    [0, 1, 2], [3, 4, 5], [6, 7, 8],
-                    [0, 3, 6], [1, 4, 7], [2, 5, 8],
-                    [0, 4, 8], [2, 4, 6],
-                ];
+                const lines = [[0, 1, 2], [3, 4, 5], [6, 7, 8], [0, 3, 6], [1, 4, 7], [2, 5, 8], [0, 4, 8], [2, 4, 6]];
                 for (let i = 0; i < lines.length; i++) {
                     const [a, b, c] = lines[i];
-                    if (squares[a] && squares[a] === squares[b] && squares[a] === squares[c]) {
-                        return squares[a];
-                    }
+                    if (squares[a] && squares[a] === squares[b] && squares[a] === squares[c]) return squares[a];
                 }
                 return squares.includes(null) ? null : 'Draw';
             };
@@ -347,7 +323,7 @@
                     }
                 } catch (err) {
                     console.error("Matchmaking error:", err);
-                    alert("Ошибка. Проверьте консоль.");
+                    alert("Ошибка поиска матча: " + err.message + ". Проверьте соединение.");
                     setLoading(false);
                 }
             };
@@ -363,7 +339,7 @@
 
                     setBoard(data.board);
                     
-                    if (mySymbol === 'X' && data.player2Name && opponentName === "Поиск...") {
+                    if (mySymbol === 'X' && data.player2Name && (opponentName === "Поиск..." || opponentName === "Player 2")) {
                         setOpponentName(data.player2Name);
                     }
                     setIsMyTurn(data.currentTurn === mySymbol);
@@ -382,6 +358,8 @@
 
             const handleClick = async (i) => {
                 if (board[i] || winner || !isMyTurn) return;
+                // Блокируем ход, если соперник еще не найден
+                if (gameMode === 'ranked' && opponentName === "Поиск...") return;
 
                 const newBoard = [...board];
                 newBoard[i] = mySymbol;
@@ -559,13 +537,30 @@
             const GameScreen = () => {
                 const status = winner ? (winner === 'Draw' ? "Ничья!" : `Победитель: ${winner}`) : aiThinking ? "ИИ думает..." : (isMyTurn ? "Твой ход" : `Ход ${opponentName}`);
                 const boardStyle = SHOP_ITEMS.find(i => i.id === profile?.boardSkin)?.color || 'bg-gray-800';
+                
+                // Проверяем, идет ли поиск противника
+                const isSearching = gameMode === 'ranked' && opponentName === "Поиск...";
+                
                 return (
                     <div className="flex flex-col items-center justify-center min-h-screen bg-slate-950 text-white p-4">
                         <div className="w-full max-w-md mb-8 flex justify-between items-end">
                             <div className="flex flex-col"><span className="text-xs text-slate-500">Вы играете за</span><span className="text-2xl font-black text-blue-400">{mySymbol}</span></div>
-                            <div className="text-center"><div className="text-3xl font-bold mb-1">{status}</div>{matchId && <div className="text-xs font-mono text-slate-600">ID: {matchId.slice(0,6)}...</div>}</div>
+                            <div className="text-center">
+                                <div className="text-3xl font-bold mb-1">{status}</div>
+                                {matchId && <div className="text-xs font-mono text-slate-600">ID: {matchId.slice(0,6)}...</div>}
+                            </div>
                             <div className="flex flex-col items-end"><span className="text-xs text-slate-500">Противник</span><span className="text-lg font-bold text-red-400 max-w-[100px] truncate">{opponentName}</span></div>
                         </div>
+
+                        {/* Индикатор поиска */}
+                        {isSearching && (
+                            <div className="absolute inset-0 z-50 flex flex-col items-center justify-center bg-slate-950/80 backdrop-blur-sm">
+                                <Icons.Loader2 size={64} className="animate-spin text-blue-500 mb-4" />
+                                <div className="text-2xl font-bold animate-pulse">ОЖИДАНИЕ ПРОТИВНИКА...</div>
+                                <div className="text-slate-400 mt-2">Не закрывайте вкладку</div>
+                            </div>
+                        )}
+
                         <div className={`grid grid-cols-3 gap-3 p-3 rounded-2xl shadow-2xl ${boardStyle}`}>
                             {board.map((sq, i) => (
                                 <button key={i} onClick={() => handleClick(i)} className={`w-24 h-24 rounded-xl bg-slate-900/50 backdrop-blur-sm flex items-center justify-center text-5xl font-black transition-all ${!sq && !winner && isMyTurn ? 'hover:bg-slate-800 cursor-pointer' : 'cursor-default'}`}>
@@ -579,7 +574,7 @@
                                 <button onClick={() => startGame(gameMode)} className="bg-blue-600 hover:bg-blue-500 text-white px-8 py-3 rounded-xl font-bold shadow-lg">Играть снова</button>
                             </div>
                         )}
-                        {!winner && !isMyTurn && !aiThinking && gameMode === 'ranked' && <div className="mt-4 flex items-center gap-2 text-slate-500 text-sm animate-pulse"><Icons.Loader2 size={16} className="animate-spin" /> Ожидание...</div>}
+                        {!winner && !isMyTurn && !aiThinking && gameMode === 'ranked' && !isSearching && <div className="mt-4 flex items-center gap-2 text-slate-500 text-sm animate-pulse"><Icons.Loader2 size={16} className="animate-spin" /> Ожидание хода противника...</div>}
                     </div>
                 );
             };
@@ -673,7 +668,9 @@
                 </div>
             );
 
-            if (loading && currentScreen === 'auth') return <div className="min-h-screen bg-slate-950 flex items-center justify-center text-white"><Icons.Loader2 className="animate-spin" size={48} /></div>;
+            if (isAuthChecking || (loading && currentScreen === 'auth')) {
+                return <div className="min-h-screen bg-slate-950 flex items-center justify-center text-white"><Icons.Loader2 className="animate-spin" size={48} /></div>;
+            }
 
             return (
                 <div className="font-sans">
@@ -692,4 +689,4 @@
         root.render(<App />);
     </script>
 </body>
-</html>
+</html>-
