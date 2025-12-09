@@ -3,754 +3,693 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Vibegram - Мессенджер из стекла</title>
+    <title>Paom Tic Tac Toe</title>
     
-    <!-- Tailwind CSS CDN для стилизации -->
+    <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
     
-    <!-- React, ReactDOM и Babel CDNs -->
-    <script src="https://unpkg.com/react@18/umd/react.development.js" crossorigin></script>
-    <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js" crossorigin></script>
+    <!-- React & ReactDOM -->
+    <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+    <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+    
+    <!-- Babel (для компиляции JSX в браузере) -->
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
 
-    <!-- Firebase SDK CDNs (модули) -->
-    <script type="module">
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
-        import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
-        import { getFirestore, collection, query, onSnapshot, addDoc, serverTimestamp, limit, orderBy, setLogLevel } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
-
-        // Глобальное назначение для доступа из скрипта 'text/babel'
-        window.firebase_services = {
-            initializeApp,
-            getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged,
-            getFirestore, collection, query, onSnapshot, addDoc, serverTimestamp, limit, orderBy, setLogLevel
-        };
-
-        // Логирование для отладки
-        if (window.firebase_services.setLogLevel) {
-            window.firebase_services.setLogLevel('debug');
-        }
-    </script>
-    
-    <!-- Добавляем uuid для генерации ID -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/uuid/8.3.2/uuid.min.js"></script>
-
+    <!-- Стили для анимаций -->
     <style>
-        /* Стили для кастомного скроллбара и анимации */
-        .custom-scrollbar::-webkit-scrollbar {
-            width: 8px;
-        }
-
-        .custom-scrollbar::-webkit-scrollbar-thumb {
-            background-color: rgba(255, 255, 255, 0.2);
-            border-radius: 4px;
-        }
-
-        .custom-scrollbar::-webkit-scrollbar-track {
-            background: rgba(0, 0, 0, 0.1);
-        }
-
-        @keyframes slow-spin {
-            from { transform: rotate(0deg); }
-            to { transform: rotate(360deg); }
-        }
-        .animate-spin-slow {
-            animation: slow-spin 5s linear infinite;
-        }
-        
-        /* Фон для тела, чтобы избежать прокрутки */
-        body {
-            overflow: hidden;
-        }
+        .drop-shadow-glow { filter: drop-shadow(0 0 10px rgba(currentColor, 0.5)); }
+        @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+        .animate-spin { animation: spin 1s linear infinite; }
+        .animate-pulse { animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite; }
+        @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: .5; } }
     </style>
 </head>
-<body class="bg-gray-900">
+<body class="bg-slate-950 text-white overflow-hidden">
+    <div id="root"></div>
 
-    <div id="root">
-        <!-- React App будет рендериться здесь -->
-    </div>
+    <script type="text/babel" data-type="module">
+        // Импорты Firebase (используем модульную версию через CDN)
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-app.js";
+        import { 
+            getAuth, 
+            signInWithEmailAndPassword, 
+            createUserWithEmailAndPassword, 
+            signOut, 
+            onAuthStateChanged,
+            signInWithCustomToken
+        } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-auth.js";
+        import { 
+            getFirestore, 
+            doc, 
+            setDoc, 
+            getDoc, 
+            updateDoc, 
+            collection, 
+            onSnapshot, 
+            addDoc, 
+            query, 
+            where, 
+            getDocs
+        } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-firestore.js";
 
-    <!-- Основной код приложения с использованием Babel для JSX -->
-    <script type="text/babel">
-        // Получение сервисов Firebase и uuid из window
-        const {
-            initializeApp, getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged,
-            getFirestore, collection, query, onSnapshot, addDoc, serverTimestamp, limit, orderBy
-        } = window.firebase_services || {};
-        const { v4: uuidv4 } = window.uuid;
-        
-        // --- КОНФИГУРАЦИЯ FIREBASE (Используется конфигурация пользователя) ---
-        // ВНИМАНИЕ: Секретный ключ API прописан здесь.
-        const USER_FIREBASE_CONFIG = {
-            apiKey: "AIzaSyAWV097BE56m2YVNi2D494dyXK41j9V5bE",
-            authDomain: "messanger-b0b91.firebaseapp.com",
-            projectId: "messanger-b0b91",
-            storageBucket: "messanger-b0b91.firebasestorage.app",
-            messagingSenderId: "895029700922",
-            appId: "1:895029700922:web:184790c791e66978aa4803",
-            measurementId: "G-8YMP1TY2HW"
-        };
-        
-        // Глобальные переменные (обновлены для использования предоставленной конфигурации)
-        // Используем projectId пользователя для создания изолированного пути в Firestore (messanger-b0b91)
-        const appId = USER_FIREBASE_CONFIG.projectId; 
-        const firebaseConfig = USER_FIREBASE_CONFIG;
-        const initialAuthToken = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null; 
-
-
-        const { useState, useEffect, useCallback, useRef, memo } = React;
-
-        // --- Стили и утилиты стекломорфизма ---
-        const glassBase = "backdrop-blur-xl border border-opacity-20 shadow-xl transition-all duration-300";
-        const glassLight = `${glassBase} bg-white/15 border-white/20`;
-        const shadowGlow = (color) => `drop-shadow-lg shadow-[0_0_15px_rgba(${color},0.5)]`;
-        const chatBubbleUser = `ml-auto bg-blue-600/30 border-blue-400/30 ${glassBase} ${shadowGlow('37, 99, 235')}`; // сине-голубой
-        const chatBubbleOther = `mr-auto bg-purple-600/30 border-purple-400/30 ${glassBase} ${shadowGlow('147, 51, 234')}`; // фиолетово-розовый
-        const chatBubbleGemini = `mr-auto bg-emerald-600/30 border-emerald-400/30 ${glassBase} ${shadowGlow('16, 185, 129')}`; // ИИ-пузырь
-
-        // --- ВСПОМОГАТЕЛЬНЫЕ КОМПОНЕНТЫ ---
-
-        const GeminiCrystal = () => (
-            <svg className="w-6 h-6 text-emerald-300 animate-spin-slow" viewBox="0 0 24 24" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
-                <path d="M12 2L2 12L12 22L22 12L12 2Z" opacity="0.4" />
-                <path d="M12 5L5 12L12 19L19 12L12 5Z" opacity="0.6" />
-                <path d="M12 8L8 12L12 16L16 12L12 8Z" />
+        // --- ИКОНКИ (Inline SVG Components) ---
+        const Icon = ({ path, className, size = 24, color = "currentColor" }) => (
+            <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>
+                {path}
             </svg>
         );
 
-        const ChatListItem = ({ name, view, currentView, setCurrentView, activeClass }) => {
-            const isActive = view === currentView;
-            const baseClass = "p-3 rounded-xl cursor-pointer transition";
-            const inactiveClass = "text-white/70 hover:bg-white/10";
-
-            return (
-                <div 
-                    className={`${baseClass} ${isActive ? activeClass : inactiveClass}`}
-                    onClick={() => setCurrentView(view)}
-                >
-                    {name}
-                </div>
-            );
+        const Icons = {
+            Trophy: (p) => <Icon {...p} path={<><path d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6"/><path d="M18 9h1.5a2.5 2.5 0 0 0 0-5H18"/><path d="M4 22h16"/><path d="M10 14.66V17c0 .55-.47.98-.97 1.21C7.85 18.75 7 20.24 7 22"/><path d="M14 14.66V17c0 .55.47.98.97 1.21C16.15 18.75 17 20.24 17 22"/><path d="M18 2H6v7a6 6 0 0 0 12 0V2Z"/></>} />,
+            User: (p) => <Icon {...p} path={<><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></>} />,
+            Settings: (p) => <Icon {...p} path={<><path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.09a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/><circle cx="12" cy="12" r="3"/></>} />,
+            ShoppingBag: (p) => <Icon {...p} path={<><path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4Z"/><path d="M3 6h18"/><path d="M16 10a4 4 0 0 1-8 0"/></>} />,
+            Newspaper: (p) => <Icon {...p} path={<><path d="M4 22h16a2 2 0 0 0 2-2V4a2 2 0 0 0-2-2H8a2 2 0 0 0-2 2v16a2 2 0 0 1-2 2Zm0 0a2 2 0 0 1-2-2v-9c0-1.1.9-2 2-2h2"/><path d="M18 14h-8"/><path d="M15 18h-5"/><path d="M10 6h8v4h-8V6Z"/></>} />,
+            Cpu: (p) => <Icon {...p} path={<><rect x="4" y="4" width="16" height="16" rx="2"/><rect x="9" y="9" width="6" height="6"/><path d="M15 2v2"/><path d="M15 20v2"/><path d="M2 15h2"/><path d="M2 9h2"/><path d="M20 15h2"/><path d="M20 9h2"/><path d="M9 2v2"/><path d="M9 20v2"/></>} />,
+            Users: (p) => <Icon {...p} path={<><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></>} />,
+            LogOut: (p) => <Icon {...p} path={<><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" x2="9" y1="12" y2="12"/></>} />,
+            X: (p) => <Icon {...p} path={<><path d="M18 6 6 18"/><path d="m6 6 12 12"/></>} />,
+            Check: (p) => <Icon {...p} path={<polyline points="20 6 9 17 4 12"/>} />,
+            Loader2: (p) => <Icon {...p} path={<path d="M21 12a9 9 0 1 1-6.219-8.56"/>} />,
+            Diamond: (p) => <Icon {...p} path={<path d="M6 3h12l4 6-10 13L2 9Z"/>} />,
+            Swords: (p) => <Icon {...p} path={<><polyline points="14.5 17.5 3 6 3 3 6 3 17.5 14.5"/><line x1="13" x2="19" y1="19" y2="13"/><line x1="16" x2="20" y1="16" y2="20"/><line x1="19" x2="21" y1="21" y2="19"/><polyline points="14.5 6.5 18 3 21 3 21 6 17.5 9.5"/><line x1="5" x2="9" y1="14" y2="18"/><line x1="7" x2="4" y1="17" y2="20"/><line x1="3" x2="5" y1="19" y2="21"/></>} />
         };
 
-        const ChatHeader = ({ currentView }) => {
-            let title = "Загрузка...";
-            let subtitle = "Пожалуйста, подождите.";
-            let iconBg = "bg-gray-500";
-            let Icon = 'G';
-
-            switch (currentView) {
-                case 'group_chat':
-                    title = "🌐 Групповой Чат (Live)";
-                    subtitle = "Общий чат для всех пользователей Vibegram";
-                    iconBg = "bg-purple-500";
-                    Icon = 'G';
-                    break;
-                case 'ai_lab':
-                    title = "🤖 AI Lab (Gemini)";
-                    subtitle = "Ваш личный ассистент Gemini";
-                    iconBg = "bg-emerald-500";
-                    Icon = <GeminiCrystal />;
-                    break;
-                case 'favorites':
-                    title = "⭐ Избранное";
-                    subtitle = "Ваши сохраненные сообщения";
-                    iconBg = "bg-yellow-500";
-                    Icon = '★';
-                    break;
-                default:
-                    break;
-            }
-
-            return (
-                <>
-                    <div className={`w-10 h-10 ${iconBg} rounded-full flex items-center justify-center text-white font-bold mr-3`}>
-                        {Icon}
-                    </div>
-                    <div>
-                        <h3 className="text-lg font-bold text-white">
-                            {title}
-                        </h3>
-                        <p className="text-sm text-white/70">
-                            {subtitle}
-                        </p>
-                    </div>
-                </>
-            );
+        // --- КОНФИГУРАЦИЯ ---
+        
+        // 1. По умолчанию берем ВАШУ конфигурацию для публикации
+        let firebaseConfig = {
+          apiKey: "AIzaSyAWV097BE56m2YVNi2D494dyXK41j9V5bE",
+          authDomain: "messanger-b0b91.firebaseapp.com",
+          projectId: "messanger-b0b91",
+          storageBucket: "messanger-b0b91.firebasestorage.app",
+          messagingSenderId: "895029700922",
+          appId: "1:895029700922:web:35b5f3999f2b3641aa4803",
+          measurementId: "G-RQ7GYZPT2G"
         };
 
-        const PlaceholderView = ({ title, description }) => (
-            <div className="flex flex-col items-center justify-center h-full text-center p-8">
-                <div className="text-7xl mb-4 text-white/50">
-                    {title.includes('AI') ? '🤖' : (title.includes('Избранное') ? '⭐' : '🔍')}
-                </div>
-                <h3 className="text-xl font-bold text-white mb-2">{title}</h3>
-                <p className="text-white/70">{description}</p>
-                <p className="text-white/50 text-sm mt-4">Этот функционал будет реализован в будущих обновлениях!</p>
-            </div>
-        );
-
-        const GroupChat = memo(({ messages, user, messagesEndRef, chatBubbleUser, chatBubbleOther, chatBubbleGemini, GeminiCrystal }) => {
-            // Функция для форматирования временной метки
-            const formatTimestamp = (timestamp) => {
-                if (timestamp && timestamp.seconds) {
-                    // Если есть серверная метка
-                    return new Date(timestamp.seconds * 1000).toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' });
-                } else if (timestamp && timestamp.toMillis) {
-                    // Если это локальная метка (при компенсации задержки)
-                    return new Date(timestamp.toMillis()).toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' });
+        // 2. Если мы в среде предпросмотра, подменяем на системную (чтобы работало сейчас)
+        if (typeof window.__firebase_config !== 'undefined') {
+             try {
+                const envConfig = JSON.parse(window.__firebase_config);
+                if (envConfig && envConfig.apiKey) {
+                    firebaseConfig = envConfig;
+                    console.log("Using Environment Config");
                 }
-                // Если метка еще не пришла с сервера
-                return 'Отправка...';
-            };
+             } catch(e) { console.warn("Env config parse error", e); }
+        }
 
-            return (
-                <div className="flex-grow overflow-y-auto p-4 space-y-4 custom-scrollbar">
-                    {messages.map((message) => {
-                        const isMine = user && message.uid === user.uid;
-                        const isGemini = message.uid === 'gemini_ai';
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        const db = getFirestore(app);
 
-                        let bubbleClass = isGemini ? chatBubbleGemini : (isMine ? chatBubbleUser : chatBubbleOther);
-                        let nameClass = isGemini ? 'text-emerald-300' : (isMine ? 'text-blue-300' : 'text-purple-300');
-                        let contentClass = isGemini ? 'border-b-2 border-emerald-500/30 pb-1' : '';
-
-                        const timeString = formatTimestamp(message.timestamp);
-                        const isSending = timeString === 'Отправка...';
-
-                        return (
-                            <div key={message.id} className={`flex ${isMine ? 'justify-end' : 'justify-start'}`}>
-                                <div className={`max-w-xs sm:max-w-sm lg:max-w-md p-3 rounded-xl ${bubbleClass}`}>
-                                    {/* Имя отправителя */}
-                                    <p className={`text-xs font-bold mb-1 ${nameClass} flex items-center`}>
-                                        {isGemini && <GeminiCrystal />}
-                                        <span className={isGemini ? 'ml-1' : ''}>
-                                            {message.displayName}
-                                        </span>
-                                    </p>
-
-                                    {/* Текст сообщения */}
-                                    <p className={`text-white whitespace-pre-wrap ${contentClass}`}>
-                                        {message.text}
-                                    </p>
-
-                                    {/* Таймстемп */}
-                                    <p className={`text-xs mt-1 text-right ${isSending ? 'text-yellow-400' : 'text-white/50'}`}>
-                                        {timeString}
-                                    </p>
-                                </div>
-                            </div>
-                        );
-                    })}
-                    <div ref={messagesEndRef} />
-                </div>
-            );
-        });
-
-        const ChatInput = ({ handleSubmit, currentMessage, setCurrentMessage, isAuthReady, glassLight, chatBubbleUser }) => (
-            <form onSubmit={handleSubmit} className={`p-4 rounded-b-3xl ${glassLight} flex items-center border-t border-white/20 flex-shrink-0`}>
-                <input
-                    type="text"
-                    placeholder="Напишите сообщение или /gemini <вопрос>..."
-                    value={currentMessage}
-                    onChange={(e) => setCurrentMessage(e.target.value)}
-                    className="flex-grow p-3 rounded-xl bg-white/10 border border-white/30 text-white placeholder-white/50 focus:outline-none focus:ring-2 focus:ring-blue-300 transition duration-300"
-                    disabled={!isAuthReady}
-                />
-                <button
-                    type="submit"
-                    disabled={!currentMessage.trim() || !isAuthReady}
-                    className={`ml-3 p-3 rounded-xl ${chatBubbleUser.replace('ml-auto', '')} hover:bg-blue-600/50 disabled:bg-gray-500/30 disabled:border-gray-500/30 active:scale-[0.9] transition duration-150 flex items-center justify-center`}
-                >
-                    <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"></path>
-                    </svg>
-                </button>
-            </form>
-        );
-
-
-        const VibeWave = ({ messageCount }) => {
-            // Простая логика Vibe Wave
-            const activityLevel = Math.min(Math.floor(messageCount / 5), 5); // 0 to 5
-            let vibeColor = 'text-blue-400';
-            let vibeText = 'Спокойный обмен мнениями';
-
-            if (activityLevel >= 4) {
-                vibeColor = 'text-red-400';
-                vibeText = '🔥 Жаркая дискуссия';
-            } else if (activityLevel >= 2) {
-                vibeColor = 'text-orange-400';
-                vibeText = 'Энергичное общение';
-            } else {
-                vibeColor = 'text-blue-400';
-            }
-
-            const waveAmplitude = 1 + activityLevel * 0.2;
-            return (
-                <div className={`p-4 rounded-xl ${glassLight} mb-4 flex flex-col`} style={{height: '120px'}}>
-                    <h3 className="text-white text-lg font-semibold mb-2">Вибе-волна</h3>
-                    <div className="flex-grow flex items-center justify-center relative">
-                        <svg viewBox="0 0 100 20" className={`w-full h-10 transition-colors ${vibeColor}`} preserveAspectRatio="none">
-                            {/* Анимация волны */}
-                            <defs>
-                                <style>{`
-                                    @keyframes oscillate {
-                                        0%, 100% { transform: scaleY(${waveAmplitude}); }
-                                        50% { transform: scaleY(${waveAmplitude * 1.1}); }
-                                    }
-                                    .vibe-path {
-                                        animation: oscillate 3s ease-in-out infinite alternate;
-                                    }
-                                `}</style>
-                            </defs>
-                            <path
-                                className={`stroke-current fill-transparent vibe-path`}
-                                strokeWidth="1.5"
-                                style={{
-                                    transformOrigin: 'center',
-                                }}
-                                d="M0,10 C 25,10 25,0 50,10 C 75,20 75,10 100,10"
-                            />
-                        </svg>
-                        <div className={`absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 text-sm font-medium ${vibeColor}`}>
-                            {vibeText}
-                        </div>
-                    </div>
-                </div>
-            );
+        const getAppId = () => {
+            return typeof window.__app_id !== 'undefined' ? window.__app_id : 'paom-tic-tac-toe-public';
         };
 
-        // --- Основное приложение ---
+        // --- КОНСТАНТЫ ---
+        const DEFAULT_QUESTS = [
+            { id: 'q1', desc: 'Выиграть 3 матча в ранговом', target: 3, current: 0, reward: 50, claimed: false },
+            { id: 'q2', desc: 'Сыграть 5 игр с ИИ', target: 5, current: 0, reward: 30, claimed: false },
+            { id: 'q3', desc: 'Купить 1 предмет', target: 1, current: 0, reward: 20, claimed: false }
+        ];
+
+        const SHOP_ITEMS = [
+            { id: 'default_av', name: 'Классика (Аватар)', type: 'avatar', price: 0, icon: '😊' },
+            { id: 'robot_av', name: 'Киборг (Аватар)', type: 'avatar', price: 100, icon: '🤖' },
+            { id: 'ninja_av', name: 'Ниндзя (Аватар)', type: 'avatar', price: 250, icon: '🥷' },
+            { id: 'default_bd', name: 'Серый (Доска)', type: 'board', price: 0, color: 'bg-gray-800' },
+            { id: 'blue_bd', name: 'Неон Синий (Доска)', type: 'board', price: 150, color: 'bg-blue-900' },
+            { id: 'red_bd', name: 'Лава (Доска)', type: 'board', price: 300, color: 'bg-red-900' },
+        ];
+
+        const NEWS_UPDATES = [
+            { ver: '1.1', title: 'Обновление: Ранговый с ботами', content: 'Добавлена возможность играть на рейтинг против ИИ, если нет игроков. Исправлены баги магазина.' },
+            { ver: '1.0', title: 'Релиз Paom.Tic.Tac.Toe', content: 'Первый запуск игры! Доступны: Ранговые матчи, Игра с ИИ (Gemini), Магазин, Ежедневные задания.' }
+        ];
+
+        // --- ПРИЛОЖЕНИЕ ---
         function App() {
-            const [db, setDb] = useState(null);
-            const [auth, setAuth] = useState(null);
-            const [user, setUser] = useState(null); // { uid, displayName }
-            const [userId, setUserId] = useState(null); // Для путей Firestore
-            const [isAuthReady, setIsAuthReady] = useState(false);
-            const [loading, setLoading] = useState(true);
-
-            // Chat-specific state
-            const [messages, setMessages] = useState([]);
-            const [currentMessage, setCurrentMessage] = useState('');
-            const [currentView, setCurrentView] = useState('group_chat'); 
+            const [user, setUser] = React.useState(null);
+            const [profile, setProfile] = React.useState(null);
+            const [currentScreen, setCurrentScreen] = React.useState('auth');
+            const [loading, setLoading] = React.useState(false);
+            const [errorMsg, setErrorMsg] = React.useState('');
             
-            // Поиск
-            const [searchTerm, setSearchTerm] = useState('');
-            const [searchResults, setSearchResults] = useState([]);
+            // Auth State
+            const [email, setEmail] = React.useState('');
+            const [password, setPassword] = React.useState('');
+            const [isRegistering, setIsRegistering] = React.useState(false);
 
-            const messagesEndRef = useRef(null);
-            const PUBLIC_CHAT_PATH = `artifacts/${appId}/public/data/vibegram_messages`;
+            // Game State
+            const [gameMode, setGameMode] = React.useState('ai');
+            const [board, setBoard] = React.useState(Array(9).fill(null));
+            const [winner, setWinner] = React.useState(null);
+            const [matchId, setMatchId] = React.useState(null);
+            const [opponentName, setOpponentName] = React.useState('Bot');
+            const [isMyTurn, setIsMyTurn] = React.useState(true);
+            const [mySymbol, setMySymbol] = React.useState('X');
+            const [aiThinking, setAiThinking] = React.useState(false);
 
-            const MOCK_USERS = [
-                { id: 'user1', name: 'Алексей' },
-                { id: 'user2', name: 'Елена' },
-                { id: 'user3', name: 'Дмитрий' },
-                { id: 'user4', name: 'Мария' },
-                { id: 'user5', name: 'Антон' },
-                { id: 'gemini_ai', name: 'Gemini 💎' },
-            ];
-
-            // Логика поиска
-            useEffect(() => {
-                if (searchTerm.trim() === '') {
-                    setSearchResults([]);
-                    return;
-                }
-                
-                const results = MOCK_USERS.filter(u =>
-                    u.name.toLowerCase().includes(searchTerm.toLowerCase())
-                );
-                setSearchResults(results);
-            }, [searchTerm]);
-
-
-            // 1. Инициализация Firebase и Аутентификация 
-            useEffect(() => {
-                let unsubscribeAuth;
-
-                const initializeFirebase = async () => {
-                    if (!initializeApp || !getFirestore || !getAuth) {
-                        console.error("Firebase services are not available. Check CDN loading.");
-                        setLoading(false);
-                        setIsAuthReady(true);
-                        return;
-                    }
-
-                    try {
-                        // Инициализация сервисов Firebase
-                        const app = initializeApp(firebaseConfig);
-                        const firestore = getFirestore(app);
-                        const firebaseAuth = getAuth(app);
-
-                        setDb(firestore);
-                        setAuth(firebaseAuth);
-
-                        // onAuthStateChanged для отслеживания состояния аутентификации
-                        unsubscribeAuth = onAuthStateChanged(firebaseAuth, async (currentUser) => {
-                            let currentId;
-                            if (currentUser) {
-                                currentId = currentUser.uid;
-                                // Безопасное получение displayName из localStorage или установка по умолчанию
-                                const userData = {
-                                    uid: currentUser.uid,
-                                    // Используем uuid.v4() как запасной вариант для crypto.randomUUID()
-                                    displayName: localStorage.getItem('vibegram_displayName') || `Гость-${currentUser.uid.substring(0, 4)}`
-                                };
-                                setUser(userData);
-                                console.log(`[AUTH] User signed in. UID: ${currentUser.uid}`);
-                            } else {
-                                // Если нет пользователя, всегда пытаемся войти анонимно. 
-                                try {
-                                    console.log("[AUTH] Attempting anonymous sign-in...");
-                                    await signInAnonymously(firebaseAuth);
-                                    // onAuthStateChanged сработает снова с новым пользователем
-                                    return;
-                                } catch (authError) {
-                                    console.error("Ошибка анонимной аутентификации Firebase:", authError);
-                                    // Fallback на случайный ID, если аутентификация не удалась
-                                    currentId = uuidv4(); 
-                                }
-                            }
-                            
-                            setUserId(currentId);
-                            setIsAuthReady(true);
-                            setLoading(false);
-                        });
-
-                    } catch (e) {
-                        console.error("Ошибка инициализации Firebase:", e);
-                        // В случае ошибки, завершаем загрузку, чтобы показать UI
-                        setIsAuthReady(true);
-                        setLoading(false);
+            React.useEffect(() => {
+                const initAuth = async () => {
+                    const token = window.__initial_auth_token;
+                    if (token) {
+                        try { await signInWithCustomToken(auth, token); } catch(e) { console.error(e); }
                     }
                 };
-
-                initializeFirebase();
-
-                return () => {
-                    if (unsubscribeAuth) unsubscribeAuth();
-                };
-            }, []); // Зависимости пусты, так как это выполняется только один раз
-
-            // 2. Слушатель сообщений (onSnapshot)
-            useEffect(() => {
-                // ЗАЩИТА: Запускать только после готовности аутентификации, наличия db и если активен групповой чат
-                if (!isAuthReady || !db || currentView !== 'group_chat' || !collection || !query || !onSnapshot || !orderBy || !limit) return;
-
-                console.log("[FIRESTORE] Setting up listener for messages...");
-
-                const messagesCollection = collection(db, PUBLIC_CHAT_PATH);
-                
-                // Сортируем по убыванию времени, чтобы получить самые новые сообщения, и ограничиваем 100.
-                const q = query(messagesCollection, orderBy("timestamp", "desc"), limit(100));
-
-                const unsubscribe = onSnapshot(q, (snapshot) => {
-                    const fetchedMessages = snapshot.docs
-                        .map(doc => ({ id: doc.id, ...doc.data() }));
-                        // УДАЛЕН АГРЕССИВНЫЙ ФИЛЬТР: .filter(msg => msg.timestamp && msg.timestamp.seconds) 
-                        
-                    // Меняем порядок на обратный для отображения от старых к новым.
-                    setMessages(fetchedMessages.reverse());
-                }, (error) => {
-                    console.error("[FIRESTORE ERROR] Failed to fetch messages:", error);
+                initAuth();
+                const unsub = onAuthStateChanged(auth, (u) => {
+                    setUser(u);
+                    if (u) {
+                        setCurrentScreen('menu');
+                        loadUserProfile(u.uid);
+                    } else {
+                        setCurrentScreen('auth');
+                        setProfile(null);
+                    }
                 });
+                return () => unsub();
+            }, []);
 
-                return () => unsubscribe();
-            }, [db, isAuthReady, currentView]); 
-
-            // Прокрутка вниз при получении новых сообщений
-            useEffect(() => {
-                messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
-            }, [messages]);
-
-            // --- Логика отправки сообщений ---
-            const sendMessage = useCallback(async (text) => {
-                if (!text.trim() || !user || !user.uid || !db || !addDoc || !collection || !serverTimestamp) {
-                     console.error("[SEND ERROR] Cannot send message: missing text, user, or database connection.", { text, user, db: !!db });
-                     return;
-                }
-
-                const messageData = {
-                    text: text,
-                    uid: user.uid,
-                    displayName: user.displayName,
-                    timestamp: serverTimestamp(),
-                };
-
-                console.log(`[SEND] Attempting to send message from UID: ${user.uid} to path: ${PUBLIC_CHAT_PATH}`);
-
-                try {
-                    // Используем await, чтобы гарантировать, что попытка записи завершена
-                    const docRef = await addDoc(collection(db, PUBLIC_CHAT_PATH), messageData);
-                    console.log("[SEND SUCCESS] Document written with ID: ", docRef.id);
-                } catch (e) {
-                    // КРИТИЧЕСКИ ВАЖНО: Логируем полную ошибку от Firebase
-                    console.error("[SEND FAIL] CRITICAL FIRESTORE ERROR (Permission Denied Likely): ", e);
-                    // Совет пользователю
-                    alert("ОШИБКА ОТПРАВКИ! Сообщение не было сохранено. Пожалуйста, проверьте консоль (F12) на наличие ошибки 'PERMISSION_DENIED'.");
-                }
-            }, [user, db, PUBLIC_CHAT_PATH]);
-
-            // --- Имитация ответа Gemini ---
-            const handleGeminiCommand = async (command) => {
-                if (!addDoc || !collection || !serverTimestamp || !user || !user.uid) return;
-
-                const queryText = command.substring(7).trim(); 
+            const loadUserProfile = (uid) => {
+                const appId = getAppId();
+                const docRef = doc(db, 'artifacts', appId, 'users', uid, 'profile', 'data');
                 
-                // 1. Отправка сообщения пользователя с запросом
-                // Обратите внимание: эта запись тоже может быть отклонена правилами
-                await addDoc(collection(db, PUBLIC_CHAT_PATH), {
-                    text: `[Запрос к Gemini]: ${queryText || 'Не задан'}`,
-                    uid: user.uid,
-                    displayName: user.displayName,
-                    timestamp: serverTimestamp(),
-                });
-
-                if (!queryText) {
-                    // 2. Имитация ответа от Gemini
-                    await addDoc(collection(db, PUBLIC_CHAT_PATH), {
-                        text: "Привет! Я Gemini, виртуальный кристалл Vibegram. Задайте мне вопрос после команды /gemini. Например: /gemini что такое стекломорфизм?",
-                        uid: 'gemini_ai',
-                        displayName: 'Gemini 💎',
-                        timestamp: serverTimestamp(),
-                    });
-                    return;
-                }
-
-                const geminiResponse = `(Сгенерировано ИИ) Отвечаю на ваш запрос: "${queryText}". Стекломорфизм — это элегантный и современный стиль дизайна, который фокусируется на эффекте матового, полупрозрачного стекла. Он создает ощущение глубины и современности. Я всегда готов помочь вам с любой информацией!`;
-
-                // 3. Отложенная имитация ответа ИИ
-                setTimeout(async () => {
-                    try {
-                        await addDoc(collection(db, PUBLIC_CHAT_PATH), {
-                            text: geminiResponse,
-                            uid: 'gemini_ai',
-                            displayName: 'Gemini 💎',
-                            timestamp: serverTimestamp(),
-                        });
-                    } catch (e) {
-                        console.error("[GEMINI FAIL] Failed to add simulated Gemini response: ", e);
+                return onSnapshot(docRef, async (snap) => {
+                    if (snap.exists()) {
+                        const data = snap.data();
+                        // Check daily reset
+                        const today = new Date().toDateString();
+                        if (data.lastLogin !== today) {
+                            const newQuests = DEFAULT_QUESTS.map(q => ({...q}));
+                            await updateDoc(docRef, { quests: newQuests, lastLogin: today });
+                        }
+                        setProfile(data);
+                    } else {
+                        const newProfile = {
+                            nickname: `Player${Math.floor(Math.random()*1000)}`,
+                            elo: 1000,
+                            diamonds: 50,
+                            avatar: 'default_av',
+                            boardSkin: 'default_bd',
+                            inventory: ['default_av', 'default_bd'],
+                            settings: { geminiKey: '', rankedWithBots: false },
+                            quests: DEFAULT_QUESTS,
+                            lastLogin: new Date().toDateString()
+                        };
+                        await setDoc(docRef, newProfile);
                     }
-                }, 1500);
+                }, (err) => console.error("Profile load error", err));
             };
 
-            // --- Обработчик отправки формы ---
-            const handleSubmit = (e) => {
+            const handleAuth = async (e) => {
                 e.preventDefault();
-                const text = currentMessage.trim();
-                if (!text) return;
-
-                if (text.toLowerCase().startsWith('/gemini')) {
-                    handleGeminiCommand(text);
-                } else {
-                    sendMessage(text);
+                setLoading(true);
+                setErrorMsg('');
+                try {
+                    if (isRegistering) {
+                        await createUserWithEmailAndPassword(auth, email, password);
+                    } else {
+                        await signInWithEmailAndPassword(auth, email, password);
+                    }
+                } catch (err) {
+                    setErrorMsg(err.message);
+                } finally {
+                    setLoading(false);
                 }
-
-                setCurrentMessage('');
             };
 
-            // --- Компонент Входа/Установки Имени (Стекло-аутентификация) ---
-            const AuthScreen = ({ onSetName }) => {
-                const [name, setName] = useState('');
-                const [error, setError] = useState('');
+            const handleLogout = () => signOut(auth);
 
-                const handleAuthSubmit = () => {
-                    if (name.length < 2) {
-                        // Используем кастомный модальный UI вместо alert/confirm
-                        setError('Имя должно содержать не менее 2 символов.');
+            const updateQuestProgress = async (type, amount = 1) => {
+                if (!user || !profile) return;
+                const appId = getAppId();
+                const docRef = doc(db, 'artifacts', appId, 'users', user.uid, 'profile', 'data');
+                
+                const updatedQuests = profile.quests.map(q => {
+                    if (q.claimed) return q;
+                    let match = false;
+                    if (type === 'win_ranked' && q.id === 'q1') match = true;
+                    if (type === 'play_ai' && q.id === 'q2') match = true;
+                    if (type === 'buy_item' && q.id === 'q3') match = true;
+
+                    if (match) {
+                        return { ...q, current: Math.min(q.current + amount, q.target) };
+                    }
+                    return q;
+                });
+
+                await updateDoc(docRef, { quests: updatedQuests });
+            };
+
+            const claimQuest = async (questId) => {
+                if (!user || !profile) return;
+                const quest = profile.quests.find(q => q.id === questId);
+                if (!quest || quest.claimed || quest.current < quest.target) return;
+
+                const appId = getAppId();
+                const docRef = doc(db, 'artifacts', appId, 'users', user.uid, 'profile', 'data');
+                
+                const updatedQuests = profile.quests.map(q => q.id === questId ? { ...q, claimed: true } : q);
+                
+                await updateDoc(docRef, { 
+                    quests: updatedQuests,
+                    diamonds: profile.diamonds + quest.reward
+                });
+            };
+
+            const calculateWinner = (squares) => {
+                const lines = [
+                    [0, 1, 2], [3, 4, 5], [6, 7, 8],
+                    [0, 3, 6], [1, 4, 7], [2, 5, 8],
+                    [0, 4, 8], [2, 4, 6],
+                ];
+                for (let i = 0; i < lines.length; i++) {
+                    const [a, b, c] = lines[i];
+                    if (squares[a] && squares[a] === squares[b] && squares[a] === squares[c]) {
+                        return squares[a];
+                    }
+                }
+                return squares.includes(null) ? null : 'Draw';
+            };
+
+            const startGame = async (mode, friendId) => {
+                setGameMode(mode);
+                setBoard(Array(9).fill(null));
+                setWinner(null);
+                setMatchId(null);
+                
+                if (mode === 'ai') {
+                    setOpponentName("Gemini AI");
+                    setMySymbol('X');
+                    setIsMyTurn(true);
+                    setCurrentScreen('game');
+                } else if (mode === 'ranked') {
+                    setLoading(true);
+                    await findRankedMatch();
+                } else if (mode === 'friend') {
+                    alert("В демо режиме мультиплеер доступен через 'Ранговый матч' (создание публичной комнаты).");
+                }
+            };
+
+            const findRankedMatch = async () => {
+                if (profile?.settings.rankedWithBots) {
+                    setOpponentName("Bot (Ranked)");
+                    setMySymbol('X');
+                    setIsMyTurn(true);
+                    setCurrentScreen('game');
+                    setLoading(false);
+                    return;
+                }
+
+                const appId = getAppId();
+                const matchesRef = collection(db, 'artifacts', appId, 'public', 'data', 'matches');
+                
+                try {
+                    const q = query(matchesRef, where("status", "==", "waiting"));
+                    const querySnapshot = await getDocs(q);
+                    
+                    let foundMatch = null;
+                    querySnapshot.forEach((doc) => {
+                        if (doc.data().player1Id !== user.uid) foundMatch = doc;
+                    });
+
+                    if (foundMatch) {
+                        const matchDoc = foundMatch;
+                        await updateDoc(doc(matchesRef, matchDoc.id), {
+                            player2Id: user.uid,
+                            player2Name: profile?.nickname || 'Player 2',
+                            status: 'active',
+                            currentTurn: 'X'
+                        });
+                        setMatchId(matchDoc.id);
+                        setMySymbol('O');
+                        setOpponentName(matchDoc.data().player1Name);
+                        setIsMyTurn(false);
+                        subscribeToMatch(matchDoc.id);
+                    } else {
+                        const newMatch = {
+                            player1Id: user.uid,
+                            player1Name: profile?.nickname || 'Player 1',
+                            status: 'waiting',
+                            board: Array(9).fill(null),
+                            currentTurn: 'X',
+                            winner: null,
+                            createdAt: Date.now()
+                        };
+                        const docRef = await addDoc(matchesRef, newMatch);
+                        setMatchId(docRef.id);
+                        setMySymbol('X');
+                        setOpponentName("Поиск...");
+                        setIsMyTurn(true);
+                        subscribeToMatch(docRef.id);
+                    }
+                } catch (err) {
+                    console.error("Matchmaking error:", err);
+                    alert("Ошибка. Проверьте консоль.");
+                    setLoading(false);
+                }
+            };
+
+            const subscribeToMatch = (id) => {
+                const appId = getAppId();
+                setLoading(false);
+                setCurrentScreen('game');
+
+                onSnapshot(doc(db, 'artifacts', appId, 'public', 'data', 'matches', id), async (docSnap) => {
+                    if (!docSnap.exists()) return;
+                    const data = docSnap.data();
+
+                    setBoard(data.board);
+                    
+                    if (mySymbol === 'X' && data.player2Name && opponentName === "Поиск...") {
+                        setOpponentName(data.player2Name);
+                    }
+                    setIsMyTurn(data.currentTurn === mySymbol);
+
+                    if (data.winner) {
+                        setWinner(data.winner);
+                        handleGameEnd(data.winner);
+                    } else {
+                        const w = calculateWinner(data.board);
+                        if (w && !data.winner && isMyTurn) {
+                            await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'matches', id), { winner: w });
+                        }
+                    }
+                });
+            };
+
+            const handleClick = async (i) => {
+                if (board[i] || winner || !isMyTurn) return;
+
+                const newBoard = [...board];
+                newBoard[i] = mySymbol;
+                setBoard(newBoard);
+                setIsMyTurn(false);
+
+                if (gameMode === 'ai' || (gameMode === 'ranked' && profile?.settings.rankedWithBots && opponentName.includes("Bot"))) {
+                    const w = calculateWinner(newBoard);
+                    if (w) {
+                        setWinner(w);
+                        handleGameEnd(w);
                         return;
                     }
-                    onSetName(name);
-                };
+                    setAiThinking(true);
+                    makeAiMove(newBoard);
+                } else if (matchId) {
+                    const appId = getAppId();
+                    const nextTurn = mySymbol === 'X' ? 'O' : 'X';
+                    const w = calculateWinner(newBoard);
+                    await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'matches', matchId), {
+                        board: newBoard,
+                        currentTurn: nextTurn,
+                        winner: w || null
+                    });
+                }
+            };
 
-                return (
-                    <div className="flex flex-col items-center justify-center h-screen p-4">
-                        <div className={`p-8 rounded-3xl w-full max-w-sm ${glassLight} ${shadowGlow('255, 255, 255')}`}>
-                            <h1 className="text-3xl font-extrabold text-white mb-6 text-center">
-                                Vibegram | Вход
-                            </h1>
-                            <p className="text-white/80 text-center mb-6">
-                                Добро пожаловать в мессенджер из стекла! Введите ваше имя.
-                            </p>
-                            {error && <p className="text-red-400 mb-4 text-center">{error}</p>}
-                            <input
-                                type="text"
-                                placeholder="Ваше имя пользователя..."
-                                value={name}
-                                onChange={(e) => { setName(e.target.value); setError(''); }}
-                                className="w-full p-3 mb-6 rounded-xl bg-white/10 border border-white/30 text-white placeholder-white/50 focus:outline-none focus:ring-2 focus:ring-blue-300 transition duration-300"
-                            />
-                            <button
-                                onClick={handleAuthSubmit}
-                                className={`w-full py-3 rounded-xl font-bold text-white uppercase tracking-wider ${chatBubbleUser.replace('ml-auto', '')} hover:bg-blue-600/50 active:scale-[0.98] transition duration-150`}
-                            >
-                                Войти в Стекло-Чат
+            const makeAiMove = async (currentBoard) => {
+                try {
+                    let moveIndex = -1;
+                    if (profile?.settings.geminiKey) {
+                        const prompt = `Play Tic Tac Toe. You are 'O'. The board is represented as an array of 9 elements (0-8), where null is empty, 'X' is opponent, 'O' is you. Current board: ${JSON.stringify(currentBoard)}. Return ONLY the index (0-8) of your next move. Valid moves are indices with null.`;
+                        const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent?key=${profile.settings.geminiKey}`, {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] })
+                        });
+                        const data = await response.json();
+                        const text = data.candidates?.[0]?.content?.parts?.[0]?.text;
+                        const parsed = parseInt(text?.trim() || "-1");
+                        if (!isNaN(parsed) && currentBoard[parsed] === null) moveIndex = parsed;
+                    }
+
+                    if (moveIndex === -1) {
+                        const emptyIndices = currentBoard.map((v, k) => v === null ? k : null).filter(v => v !== null);
+                        if (emptyIndices.length > 0) moveIndex = emptyIndices[Math.floor(Math.random() * emptyIndices.length)];
+                    }
+
+                    if (moveIndex !== -1) {
+                        setTimeout(() => {
+                            const aiBoard = [...currentBoard];
+                            aiBoard[moveIndex] = 'O';
+                            setBoard(aiBoard);
+                            setAiThinking(false);
+                            setIsMyTurn(true);
+                            const w = calculateWinner(aiBoard);
+                            if (w) {
+                                setWinner(w);
+                                handleGameEnd(w);
+                            }
+                        }, 600);
+                    }
+                } catch (e) {
+                    console.error("AI Error", e);
+                    setAiThinking(false);
+                    setIsMyTurn(true);
+                }
+            };
+
+            const handleGameEnd = async (w) => {
+                if (!profile || !user) return;
+                const isWin = w === mySymbol;
+                const isDraw = w === 'Draw';
+                const isLoss = !isWin && !isDraw;
+
+                const appId = getAppId();
+                const docRef = doc(db, 'artifacts', appId, 'users', user.uid, 'profile', 'data');
+                
+                let eloChange = 0;
+                if (gameMode === 'ranked' || (gameMode === 'ranked' && profile.settings.rankedWithBots)) {
+                    if (isWin) eloChange = 25;
+                    if (isLoss) eloChange = -25;
+                }
+
+                if (isWin && gameMode === 'ranked') updateQuestProgress('win_ranked');
+                if (gameMode === 'ai') updateQuestProgress('play_ai');
+
+                const newElo = Math.max(0, profile.elo + eloChange);
+                await updateDoc(docRef, { elo: newElo });
+            };
+
+            // --- SCREENS ---
+            const AuthScreen = () => (
+                <div className="flex flex-col items-center justify-center min-h-screen bg-slate-900 text-white p-4">
+                    <div className="w-full max-w-md bg-slate-800 p-8 rounded-2xl shadow-2xl border border-slate-700">
+                        <h1 className="text-4xl font-bold text-center mb-2 bg-gradient-to-r from-blue-400 to-purple-500 bg-clip-text text-transparent">Paom ID</h1>
+                        <p className="text-center text-slate-400 mb-8">Вход в Paom.Tic.Tac.Toe</p>
+                        {errorMsg && <div className="bg-red-500/20 text-red-200 p-3 rounded mb-4 text-sm">{errorMsg}</div>}
+                        <form onSubmit={handleAuth} className="space-y-4">
+                            <div>
+                                <label className="block text-xs font-medium text-slate-400 mb-1">EMAIL</label>
+                                <input type="email" required className="w-full bg-slate-900 border border-slate-700 rounded p-3" placeholder="name@example.com" value={email} onChange={(e) => setEmail(e.target.value)} />
+                            </div>
+                            <div>
+                                <label className="block text-xs font-medium text-slate-400 mb-1">ПАРОЛЬ</label>
+                                <input type="password" required className="w-full bg-slate-900 border border-slate-700 rounded p-3" placeholder="••••••••" value={password} onChange={(e) => setPassword(e.target.value)} />
+                            </div>
+                            <button type="submit" disabled={loading} className="w-full bg-blue-600 hover:bg-blue-500 text-white font-bold py-3 rounded-xl flex justify-center items-center shadow-lg">
+                                {loading ? <Icons.Loader2 className="animate-spin" /> : (isRegistering ? 'Создать Paom ID' : 'Войти')}
+                            </button>
+                        </form>
+                        <div className="mt-6 text-center">
+                            <button onClick={() => setIsRegistering(!isRegistering)} className="text-sm text-slate-400 hover:text-white underline underline-offset-4">
+                                {isRegistering ? 'Уже есть аккаунт? Войти' : 'Нет аккаунта? Регистрация'}
                             </button>
                         </div>
                     </div>
+                </div>
+            );
+
+            const MainMenu = () => (
+                <div className="flex flex-col h-screen bg-slate-900 text-white overflow-hidden">
+                    <div className="p-4 bg-slate-800/50 flex justify-between items-center backdrop-blur-sm border-b border-slate-700/50">
+                        <div className="flex items-center gap-3">
+                            <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center text-lg shadow-inner">
+                                {SHOP_ITEMS.find(i => i.id === profile?.avatar)?.icon || '👤'}
+                            </div>
+                            <div>
+                                <div className="font-bold">{profile?.nickname}</div>
+                                <div className="text-xs text-yellow-400 flex items-center gap-1"><Icons.Trophy size={12} /> {profile?.elo} ELO</div>
+                            </div>
+                        </div>
+                        <div className="flex items-center gap-2 bg-slate-900 px-3 py-1 rounded-full border border-slate-700">
+                            <Icons.Diamond size={14} className="text-cyan-400" /><span className="font-mono">{profile?.diamonds}</span>
+                        </div>
+                    </div>
+                    <div className="flex-1 p-6 flex flex-col items-center justify-center gap-4 relative">
+                        <div className="absolute top-0 left-0 w-full h-full opacity-10 pointer-events-none">
+                            <div className="absolute top-10 left-10 w-32 h-32 bg-blue-500 rounded-full blur-3xl"></div>
+                            <div className="absolute bottom-10 right-10 w-64 h-64 bg-purple-500 rounded-full blur-3xl"></div>
+                        </div>
+                        <button onClick={() => startGame('ranked')} className="w-full max-w-sm bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 text-white p-6 rounded-2xl shadow-lg flex items-center justify-between group transition-all transform hover:scale-105">
+                            <div className="text-left"><div className="text-2xl font-black italic">ИГРАТЬ</div><div className="text-blue-200 text-sm">Ранговый матч</div></div>
+                            <Icons.Swords size={32} className="group-hover:rotate-12 transition-transform" />
+                        </button>
+                        <div className="grid grid-cols-2 gap-4 w-full max-w-sm">
+                            <button onClick={() => startGame('ai')} className="bg-slate-800 p-4 rounded-xl border border-slate-700 hover:border-blue-500 flex flex-col items-center gap-2"><Icons.Cpu size={24} className="text-emerald-400" /><span className="font-bold text-sm">Против ИИ</span></button>
+                            <button onClick={() => startGame('friend')} className="bg-slate-800 p-4 rounded-xl border border-slate-700 hover:border-blue-500 flex flex-col items-center gap-2"><Icons.Users size={24} className="text-pink-400" /><span className="font-bold text-sm">С Другом</span></button>
+                            <button onClick={() => setCurrentScreen('shop')} className="bg-slate-800 p-4 rounded-xl border border-slate-700 hover:border-blue-500 flex flex-col items-center gap-2"><Icons.ShoppingBag size={24} className="text-yellow-400" /><span className="font-bold text-sm">Магазин</span></button>
+                            <button onClick={() => setCurrentScreen('news')} className="bg-slate-800 p-4 rounded-xl border border-slate-700 hover:border-blue-500 flex flex-col items-center gap-2"><Icons.Newspaper size={24} className="text-slate-400" /><span className="font-bold text-sm">Новости</span></button>
+                        </div>
+                        <div className="w-full max-w-sm mt-4 bg-slate-800/80 rounded-xl p-4 border border-slate-700">
+                            <h3 className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">Ежедневные задания</h3>
+                            <div className="space-y-2">
+                                {profile?.quests.slice(0, 2).map(q => (
+                                    <div key={q.id} className="flex justify-between items-center text-sm">
+                                        <span className="truncate flex-1 text-slate-300">{q.desc}</span>
+                                        <div className="flex items-center gap-2">
+                                            <span className="text-xs text-slate-500">{q.current}/{q.target}</span>
+                                            {q.current >= q.target && !q.claimed ? (
+                                                <button onClick={() => claimQuest(q.id)} className="text-xs bg-yellow-500 text-black px-2 py-1 rounded font-bold animate-pulse">Claim</button>
+                                            ) : q.claimed ? <Icons.Check size={14} className="text-green-500" /> : (
+                                                <div className="w-14 h-1 bg-slate-700 rounded-full overflow-hidden"><div className="h-full bg-blue-500" style={{width: `${(q.current/q.target)*100}%`}}></div></div>
+                                            )}
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                            <button onClick={() => setCurrentScreen('profile')} className="w-full mt-3 text-xs text-center text-slate-500 hover:text-white">Все задания & Настройки</button>
+                        </div>
+                    </div>
+                </div>
+            );
+
+            const GameScreen = () => {
+                const status = winner ? (winner === 'Draw' ? "Ничья!" : `Победитель: ${winner}`) : aiThinking ? "ИИ думает..." : (isMyTurn ? "Твой ход" : `Ход ${opponentName}`);
+                const boardStyle = SHOP_ITEMS.find(i => i.id === profile?.boardSkin)?.color || 'bg-gray-800';
+                return (
+                    <div className="flex flex-col items-center justify-center min-h-screen bg-slate-950 text-white p-4">
+                        <div className="w-full max-w-md mb-8 flex justify-between items-end">
+                            <div className="flex flex-col"><span className="text-xs text-slate-500">Вы играете за</span><span className="text-2xl font-black text-blue-400">{mySymbol}</span></div>
+                            <div className="text-center"><div className="text-3xl font-bold mb-1">{status}</div>{matchId && <div className="text-xs font-mono text-slate-600">ID: {matchId.slice(0,6)}...</div>}</div>
+                            <div className="flex flex-col items-end"><span className="text-xs text-slate-500">Противник</span><span className="text-lg font-bold text-red-400 max-w-[100px] truncate">{opponentName}</span></div>
+                        </div>
+                        <div className={`grid grid-cols-3 gap-3 p-3 rounded-2xl shadow-2xl ${boardStyle}`}>
+                            {board.map((sq, i) => (
+                                <button key={i} onClick={() => handleClick(i)} className={`w-24 h-24 rounded-xl bg-slate-900/50 backdrop-blur-sm flex items-center justify-center text-5xl font-black transition-all ${!sq && !winner && isMyTurn ? 'hover:bg-slate-800 cursor-pointer' : 'cursor-default'}`}>
+                                    {sq === 'X' && <span className="text-blue-400 drop-shadow-glow">X</span>}{sq === 'O' && <span className="text-red-400 drop-shadow-glow">O</span>}
+                                </button>
+                            ))}
+                        </div>
+                        {winner && (
+                            <div className="mt-8 flex gap-4 animate-in fade-in slide-in-from-bottom-4">
+                                <button onClick={() => setCurrentScreen('menu')} className="bg-slate-700 hover:bg-slate-600 text-white px-8 py-3 rounded-xl font-bold">В меню</button>
+                                <button onClick={() => startGame(gameMode)} className="bg-blue-600 hover:bg-blue-500 text-white px-8 py-3 rounded-xl font-bold shadow-lg">Играть снова</button>
+                            </div>
+                        )}
+                        {!winner && !isMyTurn && !aiThinking && gameMode === 'ranked' && <div className="mt-4 flex items-center gap-2 text-slate-500 text-sm animate-pulse"><Icons.Loader2 size={16} className="animate-spin" /> Ожидание...</div>}
+                    </div>
                 );
             };
 
-            // --- Render logic ---
-
-            // 1. Если идет начальная загрузка Firebase
-            if (loading) {
-                return (
-                    <div className="h-screen flex items-center justify-center bg-gradient-to-br from-indigo-900 via-purple-900 to-pink-900">
-                        <div className="text-white text-xl animate-pulse">
-                            Загрузка Vibegram...
-                        </div>
+            const ShopScreen = () => (
+                <div className="min-h-screen bg-slate-900 text-white p-4">
+                    <div className="flex items-center justify-between mb-6">
+                        <button onClick={() => setCurrentScreen('menu')} className="p-2 hover:bg-slate-800 rounded-full"><Icons.X /></button>
+                        <div className="flex items-center gap-2 bg-slate-800 px-4 py-2 rounded-full"><Icons.Diamond size={16} className="text-cyan-400" /><span className="font-bold">{profile?.diamonds}</span></div>
                     </div>
-                );
-            }
-
-            // 2. Если аутентификация завершена, но имя пользователя не установлено
-            if (!user || !user.displayName || user.displayName.startsWith('Гость-')) {
-                const handleSetName = (displayName) => {
-                    localStorage.setItem('vibegram_displayName', displayName);
-                    setUser(prev => prev ? ({ ...prev, displayName }) : { uid: userId, displayName });
-                };
-                return (
-                    <div className="h-screen bg-gradient-to-br from-indigo-900 via-purple-900 to-pink-900">
-                        <AuthScreen onSetName={handleSetName} />
-                    </div>
-                );
-            }
-
-            // БЕЗОПАСНОЕ использование userId: используем опциональную цепочку и проверку
-            const displayUserId = user.uid 
-                ? `${user.uid.substring(0, 8)}...` 
-                : (userId ? `${userId.substring(0, 8)}...` : 'N/A');
-
-            // 3. Основной интерфейс приложения
-            return (
-                <div className="h-screen overflow-hidden p-4 bg-gradient-to-br from-indigo-900 via-purple-900 to-pink-900 font-sans antialiased flex flex-col md:flex-row">
-                    {/* Левая боковая панель */}
-                    <div className={`w-full md:w-1/3 lg:w-1/4 md:mr-4 flex-shrink-0 flex flex-col h-full ${glassLight} rounded-3xl p-4 hidden md:flex`}>
-                        <h2 className="text-2xl font-bold text-white mb-4 flex items-center">
-                            <GeminiCrystal />
-                            <span className="ml-2">Vibegram</span>
-                        </h2>
-
-                        {/* Профиль пользователя */}
-                        <div className="p-4 rounded-xl mb-4 bg-white/10 flex items-center">
-                            <div className="relative p-1 rounded-full border-2 border-green-400 shadow-lg shadow-green-500/50">
-                                <div className="w-10 h-10 bg-gray-500 rounded-full flex items-center justify-center text-white font-bold">
-                                    {user.displayName[0]}
+                    <h2 className="text-2xl font-bold mb-4 px-2">Магазин</h2>
+                    <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+                        {SHOP_ITEMS.map(item => {
+                            const isOwned = profile?.inventory.includes(item.id);
+                            const isEquipped = profile?.avatar === item.id || profile?.boardSkin === item.id;
+                            return (
+                                <div key={item.id} className="bg-slate-800 p-4 rounded-xl border border-slate-700 flex flex-col items-center gap-3">
+                                    <div className={`w-16 h-16 rounded-full flex items-center justify-center text-3xl ${item.color || 'bg-slate-700'}`}>{item.icon || (item.type === 'board' ? '🎨' : '?')}</div>
+                                    <div className="text-center"><div className="font-bold text-sm">{item.name}</div>{!isOwned && <div className="text-cyan-400 text-xs flex items-center justify-center gap-1 mt-1"><Icons.Diamond size={10} /> {item.price}</div>}</div>
+                                    {isOwned ? (
+                                        <button onClick={async () => {
+                                            const appId = getAppId();
+                                            const update = item.type === 'avatar' ? { avatar: item.id } : { boardSkin: item.id };
+                                            await updateDoc(doc(db, 'artifacts', appId, 'users', user.uid, 'profile', 'data'), update);
+                                        }} disabled={isEquipped} className={`w-full py-2 rounded-lg text-xs font-bold ${isEquipped ? 'bg-green-600/20 text-green-400' : 'bg-slate-700 hover:bg-slate-600'}`}>{isEquipped ? 'Выбрано' : 'Выбрать'}</button>
+                                    ) : (
+                                        <button onClick={async () => {
+                                            if ((profile?.diamonds || 0) >= item.price) {
+                                                const appId = getAppId();
+                                                await updateDoc(doc(db, 'artifacts', appId, 'users', user.uid, 'profile', 'data'), { inventory: [...(profile?.inventory || []), item.id], diamonds: (profile?.diamonds || 0) - item.price });
+                                                updateQuestProgress('buy_item');
+                                            } else { alert("Недостаточно алмазов!"); }
+                                        }} className="w-full bg-cyan-600 hover:bg-cyan-500 py-2 rounded-lg text-xs font-bold">Купить</button>
+                                    )}
                                 </div>
-                                <div className="absolute bottom-0 right-0 w-3 h-3 bg-green-400 rounded-full border border-white/30"></div>
-                            </div>
-                            <div className="ml-3">
-                                <p className="text-white font-semibold">{user.displayName}</p>
-                                <p className="text-xs text-white/50">ID: {displayUserId}</p>
-                            </div>
-                        </div>
+                            );
+                        })}
+                    </div>
+                </div>
+            );
 
-                        {/* Поиск пользователей */}
-                        <div className={`p-4 rounded-xl ${glassLight} mb-4 flex flex-col`}>
-                            <input
-                                type="text"
-                                placeholder="Поиск пользователей..."
-                                value={searchTerm}
-                                onChange={(e) => setSearchTerm(e.target.value)}
-                                className="w-full p-2 mb-3 rounded-lg bg-white/10 border border-white/30 text-white placeholder-white/50 focus:outline-none focus:ring-1 focus:ring-blue-300 transition duration-300"
-                            />
-                            
-                            {searchResults.length > 0 && (
-                                <div className="space-y-2 max-h-40 overflow-y-auto">
-                                    <p className="text-white/70 text-sm font-semibold border-b border-white/10 pb-1 mb-1">Результаты поиска:</p>
-                                    {searchResults.map(u => (
-                                        <div key={u.id} className="p-2 rounded-lg text-white/90 bg-white/10 flex items-center hover:bg-white/20 transition cursor-pointer">
-                                            <div className="w-6 h-6 bg-gray-600 rounded-full flex items-center justify-center text-xs font-bold mr-2">
-                                                {u.name[0]}
-                                            </div>
-                                            {u.name}
-                                        </div>
+            const ProfileSettingsScreen = () => {
+                const [localNick, setLocalNick] = React.useState(profile?.nickname || '');
+                const [localKey, setLocalKey] = React.useState(profile?.settings.geminiKey || '');
+
+                const saveSettings = async () => {
+                    if (!user) return;
+                    const appId = getAppId();
+                    await updateDoc(doc(db, 'artifacts', appId, 'users', user.uid, 'profile', 'data'), { nickname: localNick, 'settings.geminiKey': localKey, 'settings.rankedWithBots': profile?.settings.rankedWithBots });
+                    alert("Сохранено!");
+                };
+
+                const toggleBotRanked = async () => {
+                    if (!user) return;
+                    const appId = getAppId();
+                    await updateDoc(doc(db, 'artifacts', appId, 'users', user.uid, 'profile', 'data'), { 'settings.rankedWithBots': !profile?.settings.rankedWithBots });
+                }
+
+                return (
+                    <div className="min-h-screen bg-slate-900 text-white p-4">
+                        <div className="flex items-center gap-4 mb-6"><button onClick={() => setCurrentScreen('menu')} className="p-2 hover:bg-slate-800 rounded-full"><Icons.X /></button><h2 className="text-xl font-bold">Настройки</h2></div>
+                        <div className="space-y-6">
+                            <div className="bg-slate-800 p-4 rounded-xl">
+                                <h3 className="font-bold text-yellow-400 mb-4 flex items-center gap-2"><Icons.Trophy size={18} /> Задания</h3>
+                                <div className="space-y-3">
+                                    {profile?.quests.map(q => (
+                                        <div key={q.id} className="bg-slate-900/50 p-3 rounded-lg flex justify-between items-center">
+                                            <div><div className="text-sm font-medium">{q.desc}</div><div className="text-xs text-slate-500 mt-1">{q.current}/{q.target}</div></div>
+                                            {q.claimed ? <div className="text-green-500 text-xs font-bold">Получено</div> : q.current >= q.target ? <button onClick={() => claimQuest(q.id)} className="bg-yellow-500 text-black px-3 py-1 rounded text-xs font-bold">Забрать</button> : <div className="text-slate-600 text-xs">{q.reward} 💎</div>}
+                                        </div> 
                                     ))}
                                 </div>
-                            )}
-                            {searchTerm && searchResults.length === 0 && (
-                                <p className="text-white/50 text-sm">Пользователи не найдены.</p>
-                            )}
-                        </div>
-
-
-                        {/* Vibe Wave Widget */}
-                        <VibeWave messageCount={messages.length} />
-
-                        {/* Список чатов */}
-                        <div className="overflow-y-auto flex-grow space-y-2">
-                            <ChatListItem 
-                                name="🌐 Групповой Чат (Live)" 
-                                view="group_chat" 
-                                currentView={currentView} 
-                                setCurrentView={setCurrentView} 
-                                activeClass="bg-blue-500/20 text-white/90 border border-blue-400/30 font-semibold"
-                            />
-                            <ChatListItem 
-                                name="🤖 AI Lab (Gemini)" 
-                                view="ai_lab" 
-                                currentView={currentView} 
-                                setCurrentView={setCurrentView}
-                                activeClass="bg-emerald-500/20 text-white/90 border border-emerald-400/30 font-semibold"
-                            />
-                            <ChatListItem 
-                                name="⭐ Избранное" 
-                                view="favorites" 
-                                currentView={currentView} 
-                                setCurrentView={setCurrentView}
-                                activeClass="bg-yellow-500/20 text-white/90 border border-yellow-400/30 font-semibold"
-                            />
+                            </div>
+                            <div className="bg-slate-800 p-4 rounded-xl space-y-4">
+                                <h3 className="font-bold text-blue-400 flex items-center gap-2"><Icons.Settings size={18} /> Настройки</h3>
+                                <div><label className="block text-xs text-slate-400 mb-1">Никнейм</label><input value={localNick} onChange={e => setLocalNick(e.target.value)} className="w-full bg-slate-900 p-2 rounded border border-slate-700" /></div>
+                                <div><label className="block text-xs text-slate-400 mb-1">Gemini API Key</label><input value={localKey} type="password" onChange={e => setLocalKey(e.target.value)} className="w-full bg-slate-900 p-2 rounded border border-slate-700" /></div>
+                                <div className="flex items-center justify-between p-2 bg-slate-900 rounded border border-slate-700"><span className="text-sm">Ранговый с ботами</span><button onClick={toggleBotRanked} className={`w-12 h-6 rounded-full transition-colors relative ${profile?.settings.rankedWithBots ? 'bg-green-500' : 'bg-slate-600'}`}><div className={`absolute top-1 w-4 h-4 bg-white rounded-full transition-all ${profile?.settings.rankedWithBots ? 'left-7' : 'left-1'}`}></div></button></div>
+                                <button onClick={saveSettings} className="w-full bg-blue-600 py-2 rounded font-bold hover:bg-blue-500">Сохранить</button>
+                                <div className="pt-4 border-t border-slate-700"><button onClick={handleLogout} className="w-full text-red-400 text-sm flex items-center justify-center gap-2 hover:bg-slate-900 py-2 rounded"><Icons.LogOut size={16}/> Выйти</button></div>
+                            </div>
                         </div>
                     </div>
+                );
+            };
 
-                    {/* Правая панель - Контент */}
-                    <div className={`flex-grow h-full flex flex-col ${glassLight} rounded-3xl`}>
-                        {/* Шапка чата */}
-                        <div className={`p-4 rounded-t-3xl ${glassLight} flex items-center border-b border-white/20 flex-shrink-0`}>
-                            <ChatHeader currentView={currentView} />
-                        </div>
+            const NewsScreen = () => (
+                <div className="min-h-screen bg-slate-900 text-white p-4">
+                    <div className="flex items-center gap-4 mb-6"><button onClick={() => setCurrentScreen('menu')} className="p-2 hover:bg-slate-800 rounded-full"><Icons.X /></button><h2 className="text-xl font-bold">Обновления</h2></div>
+                    <div className="space-y-4">{NEWS_UPDATES.map((news, idx) => <div key={idx} className="bg-slate-800 p-5 rounded-xl border-l-4 border-blue-500 shadow-lg"><div className="flex justify-between items-start mb-2"><h3 className="font-bold text-lg">{news.title}</h3><span className="bg-slate-900 px-2 py-1 rounded text-xs font-mono text-blue-400">v{news.ver}</span></div><p className="text-slate-300 text-sm leading-relaxed">{news.content}</p></div>)}</div>
+                </div>
+            );
 
-                        {/* Область сообщений / Контент */}
-                        {currentView === 'group_chat' ? (
-                            <GroupChat 
-                                messages={messages} 
-                                user={user} 
-                                messagesEndRef={messagesEndRef} 
-                                chatBubbleUser={chatBubbleUser} 
-                                chatBubbleOther={chatBubbleOther} 
-                                chatBubbleGemini={chatBubbleGemini} 
-                                GeminiCrystal={GeminiCrystal} 
-                            />
-                        ) : (
-                            <PlaceholderView 
-                                title={currentView === 'ai_lab' ? "AI Lab (Gemini)" : "Избранное"} 
-                                description={currentView === 'ai_lab' ? "Здесь вы можете общаться с Gemini 💎 один на один." : "Сохраняйте важные сообщения здесь."} 
-                            />
-                        )}
+            if (loading && currentScreen === 'auth') return <div className="min-h-screen bg-slate-950 flex items-center justify-center text-white"><Icons.Loader2 className="animate-spin" size={48} /></div>;
 
-                        {/* Панель ввода - только для group_chat */}
-                        {currentView === 'group_chat' && (
-                            <ChatInput 
-                                handleSubmit={handleSubmit}
-                                currentMessage={currentMessage}
-                                setCurrentMessage={setCurrentMessage}
-                                isAuthReady={isAuthReady}
-                                glassLight={glassLight}
-                                chatBubbleUser={chatBubbleUser}
-                            />
-                        )}
-                    </div>
+            return (
+                <div className="font-sans">
+                    {currentScreen === 'auth' && <AuthScreen />}
+                    {currentScreen === 'menu' && <MainMenu />}
+                    {currentScreen === 'game' && <GameScreen />}
+                    {currentScreen === 'shop' && <ShopScreen />}
+                    {currentScreen === 'profile' && <ProfileSettingsScreen />}
+                    {currentScreen === 'settings' && <ProfileSettingsScreen />}
+                    {currentScreen === 'news' && <NewsScreen />}
                 </div>
             );
         }
 
-        // Рендеринг приложения
-        window.onload = () => {
-            const container = document.getElementById('root');
-            const root = ReactDOM.createRoot(container);
-            root.render(<App />);
-        };
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(<App />);
     </script>
 </body>
 </html>
