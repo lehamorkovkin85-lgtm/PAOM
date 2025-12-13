@@ -3,7 +3,11 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>NFS: Cyberpunk Drift Redux (Multiplayer)</title>
+    <title>NFS: Cyberpunk Drift Redux (Session Mode)</title>
+    
+    <!-- FIX 1: Полифил для Safari/Mac (поддержка import maps) -->
+    <script async src="https://unpkg.com/es-module-shims@1.8.0/dist/es-module-shims.js"></script>
+
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&display=swap');
 
@@ -30,13 +34,14 @@
             display: none;
             position: fixed;
             top: 0; left: 0; width: 100%; height: 100%;
-            background: rgba(50, 0, 0, 0.95);
+            background: rgba(10, 0, 0, 0.95);
             color: #ff5555;
             z-index: 9999;
             padding: 40px;
             box-sizing: border-box;
             font-family: monospace;
             white-space: pre-wrap;
+            overflow: auto;
         }
 
         #game-ui {
@@ -61,6 +66,12 @@
             font-size: 0.9rem;
             color: var(--neon-pink);
             margin-top: 5px;
+        }
+        #session-id-display {
+            font-size: 0.7rem;
+            color: #666;
+            margin-top: 2px;
+            text-transform: uppercase;
         }
 
         #nitro-bar-container {
@@ -165,6 +176,28 @@
         }
         .color-btn:hover { transform: scale(1.2); }
 
+        /* Поле ввода кода сессии */
+        .session-input-container {
+            margin: 20px 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        #session-input {
+            background: rgba(0,0,0,0.5);
+            border: 1px solid var(--neon-blue);
+            color: white;
+            padding: 10px;
+            font-family: 'Orbitron', sans-serif;
+            font-size: 1.2rem;
+            text-align: center;
+            text-transform: uppercase;
+            width: 200px;
+            outline: none;
+            margin-top: 5px;
+        }
+        #session-input::placeholder { color: rgba(255,255,255,0.3); }
+
         #controls-hint {
             margin-top: 20px;
             font-size: 0.8rem;
@@ -193,7 +226,7 @@
         window.onerror = function(message, source, lineno, colno, error) {
             const overlay = document.getElementById('error-overlay');
             overlay.style.display = 'block';
-            overlay.innerHTML = `CRITICAL SYSTEM FAILURE:\n\n${message}\nLine: ${lineno}\nSource: ${source}`;
+            overlay.innerHTML += `CRITICAL ERROR:\n${message}\nLine: ${lineno}\n\n`;
             console.error(error);
         };
     </script>
@@ -209,6 +242,7 @@
             <div class="hud-value" id="score-display" style="font-size: 1.5rem; margin-top:10px; color:white;">0</div>
             <div class="hud-label">SCORE</div>
             <div id="players-count">ONLINE: 1</div>
+            <div id="session-id-display">ROOM: GLOBAL</div>
         </div>
         <div id="nitro-bar-container"><div id="nitro-bar"></div></div>
 
@@ -243,6 +277,11 @@
                 </div>
             </div>
 
+            <div class="session-input-container">
+                <label for="session-input" style="font-size:0.8rem; color:#aaa;">КОД СЕССИИ (ОПЦИОНАЛЬНО)</label>
+                <input type="text" id="session-input" placeholder="GLOBAL" maxlength="10">
+            </div>
+
             <button onclick="startGame()">ГОНКА</button>
             <div id="controls-hint">WASD / Стрелки - Управление<br>ПРОБЕЛ - Нитро</div>
             <div id="connection-status">Connecting to server...</div>
@@ -265,7 +304,6 @@
 
         // --- FIREBASE IMPORTS (CDN) ---
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-        import { getAnalytics } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-analytics.js";
         import { getFirestore, collection, doc, setDoc, onSnapshot, deleteDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
         import { getAuth, signInAnonymously, signInWithCustomToken } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
 
@@ -280,8 +318,9 @@
         // Firebase Globals
         let db, auth, currentUserId;
         let lastSyncTime = 0;
-        let rivalsData = {}; // Map of userId -> data
-        let raceCollectionRef; // Dynamic reference based on env
+        let rivalsData = {}; 
+        let raceCollectionRef = null;
+        let unsubscribeRace = null;
         
         // --- HYBRID CONFIGURATION ---
         const FALLBACK_CONFIG = {
@@ -294,7 +333,6 @@
             measurementId: "G-RQ7GYZPT2G"
         };
 
-        // Состояние игры
         const gameState = {
             active: false,
             speed: 0,
@@ -303,11 +341,12 @@
             nitroMaxSpeed: 280,
             nitro: 100,
             score: 0,
-            distance: 0, // Абсолютная дистанция для мультиплеера
+            distance: 0,
             lane: 0,
             targetX: 0,
             carColor: 0x00f3ff,
-            neonColor: 0xff00ff
+            neonColor: 0xff00ff,
+            sessionCode: 'global'
         };
 
         const WORLD_CONFIG = {
@@ -326,65 +365,52 @@
 
         // --- INIT ---
         async function init() {
-            // Setup Firebase (Hybrid Mode)
             let isCanvasEnv = false;
             let app;
 
             try {
-                // 1. Попытка загрузить конфигурацию среды (для Canvas)
                 if (typeof __firebase_config !== 'undefined') {
                     const envConfig = JSON.parse(__firebase_config);
                     app = initializeApp(envConfig);
                     isCanvasEnv = true;
                     console.log("Environment: Canvas/Internal");
                 } else {
-                    // Если __firebase_config нет, вызываем ошибку, чтобы перейти в catch
                     throw new Error("Env config missing");
                 }
             } catch (e) {
-                // 2. Фолбэк: Использование вашей жестко заданной конфигурации (для внешнего мира)
                 app = initializeApp(FALLBACK_CONFIG);
                 isCanvasEnv = false;
                 console.log("Environment: External/Public");
             }
 
             try {
-                // const analytics = getAnalytics(app); // Analytics optional
                 db = getFirestore(app);
                 auth = getAuth(app);
                 
-                // AUTH LOGIC
                 if (isCanvasEnv) {
-                    // Внутри среды: Используем токены если есть, и специфический путь
                     if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
                         await signInWithCustomToken(auth, __initial_auth_token);
                     } else {
                         await signInAnonymously(auth);
                     }
-                    
-                    // Установка пути к коллекции для Canvas (Strict Path)
-                    const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
-                    raceCollectionRef = collection(db, 'artifacts', appId, 'public', 'data', 'nfs_multiplayer_races');
+                    // Сохраняем флаг среды для формирования путей позже
+                    window.isCanvasEnv = true;
+                    window.canvasAppId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
 
                 } else {
-                    // Снаружи: Обычная анонимная авторизация и обычный путь
                     await signInAnonymously(auth);
-                    
-                    // Установка пути к коллекции для External (Simple Path)
-                    raceCollectionRef = collection(db, 'nfs_multiplayer_races');
+                    window.isCanvasEnv = false;
                 }
 
                 currentUserId = auth.currentUser.uid;
                 document.getElementById('connection-status').innerText = "CONNECTED: " + currentUserId.substring(0,6);
                 document.getElementById('connection-status').style.color = "#00ff00";
                 
-                initMultiplayerListener();
             } catch (e) {
                 console.error("Firebase Auth/Init Error:", e);
                 document.getElementById('connection-status').innerText = "OFFLINE MODE (" + e.message + ")";
             }
 
-            // Setup Mobile Check
             if ('ontouchstart' in window || navigator.maxTouchPoints > 0) {
                 document.getElementById('mobile-controls').style.display = 'block';
                 setupTouchControls();
@@ -404,7 +430,7 @@
 
             renderer = new THREE.WebGLRenderer({ antialias: true, powerPreference: "high-performance" });
             renderer.setSize(window.innerWidth, window.innerHeight);
-            renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+            renderer.setPixelRatio(Math.min(window.devicePixelRatio, 1.5)); // Safe for retina
             renderer.toneMapping = THREE.ReinhardToneMapping;
             document.body.appendChild(renderer.domElement);
 
@@ -414,7 +440,11 @@
             scene.add(hemiLight);
 
             const renderScene = new RenderPass(scene, camera);
-            const bloomPass = new UnrealBloomPass(new THREE.Vector2(window.innerWidth, window.innerHeight), 1.5, 0.4, 0.85);
+            
+            const bloomResolution = new THREE.Vector2(window.innerWidth, window.innerHeight);
+            if (bloomResolution.x > 2000) bloomResolution.multiplyScalar(0.5);
+            
+            const bloomPass = new UnrealBloomPass(bloomResolution, 1.5, 0.4, 0.85);
             bloomPass.threshold = 0;
             bloomPass.strength = 1.2;
             bloomPass.radius = 0.5;
@@ -481,7 +511,6 @@
         function createPlayerCar() {
             playerCar = createCarMesh(gameState.carColor, gameState.neonColor);
             
-            // Add headlights only for player
             const spotLeft = new THREE.SpotLight(0xffffff, 50);
             spotLeft.position.set(-0.5, 0.6, -1.0);
             spotLeft.target.position.set(-0.5, 0, -10);
@@ -565,19 +594,33 @@
             trafficCars.push(group);
         }
 
-        // --- FIREBASE LOGIC ---
-        function initMultiplayerListener() {
-            if (!db || !raceCollectionRef) return;
+        // --- FIREBASE LOGIC (SESSION BASED) ---
+        function initMultiplayerListener(sessionCode) {
+            if (!db) return;
             
-            // Слушаем обновления всех игроков, используя динамическую ссылку
-            onSnapshot(raceCollectionRef, (snapshot) => {
+            // Санитизация кода (только буквы и цифры)
+            const safeCode = sessionCode.replace(/[^a-zA-Z0-9]/g, "").toLowerCase() || 'global';
+            gameState.sessionCode = safeCode;
+            document.getElementById('session-id-display').innerText = "ROOM: " + safeCode;
+
+            // Формирование имени коллекции на основе кода
+            const collectionName = 'nfs_race_' + safeCode;
+
+            if (window.isCanvasEnv) {
+                raceCollectionRef = collection(db, 'artifacts', window.canvasAppId, 'public', 'data', collectionName);
+            } else {
+                raceCollectionRef = collection(db, collectionName);
+            }
+            
+            // Слушаем
+            unsubscribeRace = onSnapshot(raceCollectionRef, (snapshot) => {
                 const count = snapshot.size;
                 document.getElementById('players-count').innerText = "ONLINE: " + count;
 
                 snapshot.docChanges().forEach((change) => {
                     const data = change.doc.data();
                     const uid = change.doc.id;
-                    if (uid === currentUserId) return; // ignore self
+                    if (uid === currentUserId) return; 
 
                     if (change.type === "added" || change.type === "modified") {
                         rivalsData[uid] = data;
@@ -589,12 +632,12 @@
                     }
                 });
             }, (error) => {
-                console.warn("Firestore listener error (possibly permissions or offline):", error);
+                console.warn("Firestore listener error:", error);
             });
 
-            // Очистка при выходе
+            // Очистка
             window.addEventListener('beforeunload', () => {
-                if(currentUserId) deleteDoc(doc(raceCollectionRef, currentUserId));
+                if(currentUserId && raceCollectionRef) deleteDoc(doc(raceCollectionRef, currentUserId));
             });
         }
 
@@ -602,10 +645,10 @@
             if (!db || !currentUserId || !gameState.active || !raceCollectionRef) return;
             
             const now = Date.now();
-            if (now - lastSyncTime > 100) { // Sync every 100ms
+            if (now - lastSyncTime > 100) { 
                 setDoc(doc(raceCollectionRef, currentUserId), {
-                    x: gameState.lane, // Lane index
-                    z: gameState.distance, // Absolute distance
+                    x: gameState.lane,
+                    z: gameState.distance,
                     color: gameState.carColor,
                     neon: gameState.neonColor,
                     lastSeen: serverTimestamp()
@@ -616,10 +659,8 @@
 
         function updateRivalMesh(uid, data) {
             let mesh = rivalMeshes[uid];
-            // Создаем, если нет
             if (!mesh) {
                 mesh = createCarMesh(data.color, data.neon);
-                // Делаем полупрозрачным "призраком"
                 mesh.traverse(c => {
                     if(c.isMesh) {
                         c.material.transparent = true;
@@ -629,7 +670,6 @@
                 scene.add(mesh);
                 rivalMeshes[uid] = mesh;
             }
-            // Позиция будет обновлена в animate() на основе gameState.distance
         }
 
         function removeRivalMesh(uid) {
@@ -645,15 +685,12 @@
                 const mesh = rivalMeshes[uid];
                 if (!mesh) continue;
 
-                // X position (lane) interpolation
                 const targetX = data.x * WORLD_CONFIG.laneWidth;
                 mesh.position.x = THREE.MathUtils.lerp(mesh.position.x, targetX, delta * 5);
 
-                // Z position (Relative to player)
                 const relativeZ = -(data.z - gameState.distance);
                 mesh.position.z = THREE.MathUtils.lerp(mesh.position.z, relativeZ, delta * 10);
                 
-                // Tilt logic
                 const tilt = (mesh.position.x - targetX) * 0.05;
                 mesh.rotation.z = -tilt;
                 mesh.rotation.y = (tilt * 0.5);
@@ -668,7 +705,6 @@
 
             const handleTouch = (key, state) => (e) => {
                 e.preventDefault();
-                // Логика переключения полос для кнопок (tap behaviour)
                 if (state && (key === 'left' || key === 'right')) {
                    if (key === 'left') changeLane(-1);
                    if (key === 'right') changeLane(1);
@@ -678,10 +714,8 @@
 
             btnLeft.addEventListener('touchstart', handleTouch('left', true));
             btnLeft.addEventListener('touchend', handleTouch('left', false));
-            
             btnRight.addEventListener('touchstart', handleTouch('right', true));
             btnRight.addEventListener('touchend', handleTouch('right', false));
-
             btnNitro.addEventListener('touchstart', handleTouch('nitro', true));
             btnNitro.addEventListener('touchend', handleTouch('nitro', false));
         }
@@ -720,7 +754,14 @@
             gameState.neonColor = hex;
             if (playerCar && playerCar.userData.neon) playerCar.userData.neon.color.setHex(hex);
         };
+        
         window.startGame = () => {
+            // Чтение кода сессии
+            const codeInput = document.getElementById('session-input').value;
+            const sessionCode = codeInput.trim() || 'global';
+            
+            initMultiplayerListener(sessionCode);
+
             document.getElementById('main-menu').style.display = 'none';
             document.getElementById('hud').style.display = 'block';
             document.getElementById('nitro-bar-container').style.display = 'block';
@@ -732,12 +773,23 @@
             trafficCars.forEach(c => scene.remove(c));
             trafficCars = [];
         };
+
         window.resetGame = () => {
             document.getElementById('game-over').style.display = 'none';
             gameState.lane = 0; playerCar.position.x = 0; gameState.targetX = 0;
             window.startGame();
         };
+
         window.quitToMenu = () => {
+            // Очистка сессии
+            if(unsubscribeRace) unsubscribeRace();
+            if(currentUserId && raceCollectionRef) deleteDoc(doc(raceCollectionRef, currentUserId));
+            
+            // Удаление соперников
+            for (const uid in rivalMeshes) scene.remove(rivalMeshes[uid]);
+            rivalMeshes = {};
+            rivalsData = {};
+
             gameState.active = false;
             document.getElementById('hud').style.display = 'none';
             document.getElementById('nitro-bar-container').style.display = 'none';
@@ -765,11 +817,7 @@
 
         function updatePhysics(delta) {
             let targetSpeed = 0;
-            // Управление с клавиатуры или тачскрина
-            if (CONTROLS.up || (('ontouchstart' in window) && !CONTROLS.down)) targetSpeed = gameState.maxSpeed; // Автогаз на мобилках?
-            // Сделаем автогаз по умолчанию для всех, кроме тормоза
-            targetSpeed = gameState.maxSpeed; 
-            
+            if (CONTROLS.up || (('ontouchstart' in window) && !CONTROLS.down)) targetSpeed = gameState.maxSpeed; 
             if (CONTROLS.down) targetSpeed = -20;
 
             if (CONTROLS.nitro && gameState.nitro > 0) {
@@ -791,7 +839,6 @@
             playerCar.rotation.z = -tilt;
             playerCar.rotation.y = (tilt * 0.5);
 
-            // Calc distance
             const moveDist = (gameState.speed * 0.3) * delta;
             gameState.distance += moveDist;
             gameState.score += moveDist * 0.1;
@@ -837,11 +884,10 @@
             gameState.active = false;
             document.getElementById('hud').style.display = 'none';
             document.getElementById('nitro-bar-container').style.display = 'none';
-            document.getElementById('mobile-controls').style.display = 'none'; // Hide touch controls
+            document.getElementById('mobile-controls').style.display = 'none';
             document.getElementById('game-over').style.display = 'block';
             document.getElementById('final-score').innerText = 'SCORE: ' + Math.floor(gameState.score);
             
-            // Clean up multiplayer self from DB immediately?
             if(currentUserId && raceCollectionRef) deleteDoc(doc(raceCollectionRef, currentUserId));
         }
 
@@ -849,7 +895,10 @@
             camera.aspect = window.innerWidth / window.innerHeight;
             camera.updateProjectionMatrix();
             renderer.setSize(window.innerWidth, window.innerHeight);
+            const bloomResolution = new THREE.Vector2(window.innerWidth, window.innerHeight);
+            if (bloomResolution.x > 2000) bloomResolution.multiplyScalar(0.5);
             composer.setSize(window.innerWidth, window.innerHeight);
+            composer.passes[1].resolution = bloomResolution;
         }
 
         init();
