@@ -2,328 +2,126 @@
 <html lang="ru">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>NFS: Cyberpunk Drift Redux (Session Mode)</title>
-    
-    <!-- FIX 1: Полифил для Safari/Mac (поддержка import maps) -->
-    <script async src="https://unpkg.com/es-module-shims@1.8.0/dist/es-module-shims.js"></script>
-
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Крестики-Нолики Мультиплеер</title>
+    <script src="https://cdn.tailwindcss.com"></script>
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&display=swap');
-
-        :root {
-            --neon-blue: #00f3ff;
-            --neon-pink: #ff00ff;
-            --dark-bg: #050510;
-            --ui-bg: rgba(0, 0, 0, 0.85);
-        }
-
-        body {
-            margin: 0;
-            overflow: hidden;
-            background-color: var(--dark-bg);
-            font-family: 'Orbitron', sans-serif;
-            color: white;
-            user-select: none;
-            -webkit-touch-callout: none; /* iOS Safari */
-            touch-action: none; /* Disable native touch gestures */
-        }
-
-        /* Оверлей ошибок */
-        #error-overlay {
-            display: none;
-            position: fixed;
-            top: 0; left: 0; width: 100%; height: 100%;
-            background: rgba(10, 0, 0, 0.95);
-            color: #ff5555;
-            z-index: 9999;
-            padding: 40px;
-            box-sizing: border-box;
-            font-family: monospace;
-            white-space: pre-wrap;
-            overflow: auto;
-        }
-
-        #game-ui {
-            position: absolute;
-            top: 0; left: 0; width: 100%; height: 100%;
-            pointer-events: none;
-        }
-
-        /* HUD */
-        #hud {
-            display: none;
-            position: absolute;
-            top: 20px;
-            right: 20px;
-            text-align: right;
-            z-index: 10;
-        }
-        .hud-value { font-size: 2.5rem; font-weight: 900; color: var(--neon-blue); text-shadow: 0 0 10px var(--neon-blue); }
-        .hud-label { font-size: 0.8rem; color: #aaa; letter-spacing: 2px; }
-        
-        #players-count {
-            font-size: 0.9rem;
-            color: var(--neon-pink);
-            margin-top: 5px;
-        }
-        #session-id-display {
-            font-size: 0.7rem;
-            color: #666;
-            margin-top: 2px;
-            text-transform: uppercase;
-        }
-
-        #nitro-bar-container {
-            display: none;
-            position: absolute;
-            bottom: 30px;
-            left: 50%;
-            transform: translateX(-50%);
-            width: 300px;
-            height: 20px;
-            background: #333;
-            border: 2px solid #555;
-            transform: skewX(-20deg);
-            z-index: 10;
-        }
-        #nitro-bar {
-            width: 0%;
-            height: 100%;
-            background: var(--neon-pink);
-            box-shadow: 0 0 15px var(--neon-pink);
-            transition: width 0.1s;
-        }
-
-        /* Мобильное управление */
-        #mobile-controls {
-            display: none; /* Включается JS если тач */
-            position: absolute;
-            bottom: 0; left: 0; width: 100%; height: 100%;
-            pointer-events: none;
-            z-index: 20;
-        }
-
-        .touch-btn {
-            position: absolute;
-            bottom: 40px;
-            width: 80px; height: 80px;
-            background: rgba(255, 255, 255, 0.1);
-            border: 2px solid rgba(255, 255, 255, 0.3);
-            border-radius: 50%;
-            pointer-events: auto;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 24px;
-            color: rgba(255, 255, 255, 0.7);
-            backdrop-filter: blur(4px);
-            transition: background 0.1s;
-        }
-        .touch-btn:active { background: rgba(0, 243, 255, 0.3); border-color: var(--neon-blue); color: white; }
-
-        #btn-left { left: 30px; }
-        #btn-right { left: 130px; }
-        #btn-nitro { right: 30px; width: 90px; height: 90px; border-color: var(--neon-pink); color: var(--neon-pink); font-weight: bold; font-size: 16px; }
-        #btn-nitro:active { background: rgba(255, 0, 255, 0.3); }
-
-        /* Меню и Гараж */
-        #main-menu, #game-over {
-            position: absolute;
-            top: 50%; left: 50%;
-            transform: translate(-50%, -50%);
-            background: var(--ui-bg);
-            padding: 40px;
-            border: 2px solid var(--neon-blue);
-            box-shadow: 0 0 20px var(--neon-blue);
-            text-align: center;
-            pointer-events: auto;
-            max-width: 500px;
-            width: 90%;
-            z-index: 50;
-        }
-
-        h1 { margin: 0 0 20px; font-size: 3rem; color: var(--neon-blue); text-transform: uppercase; font-style: italic; }
-        h2 { color: var(--neon-pink); }
-        
-        button {
-            background: transparent;
-            border: 2px solid white;
-            color: white;
-            padding: 15px 40px;
-            font-size: 1.2rem;
-            font-family: 'Orbitron', sans-serif;
-            cursor: pointer;
-            margin-top: 20px;
-            transition: 0.3s;
-            text-transform: uppercase;
-        }
-        button:hover { background: white; color: black; box-shadow: 0 0 15px white; }
-
-        .garage-controls {
-            display: flex;
-            gap: 20px;
-            justify-content: center;
-            margin-bottom: 20px;
-            flex-wrap: wrap;
-        }
-        .color-btn {
-            width: 40px; height: 40px;
-            border-radius: 50%;
-            border: 2px solid white;
-            cursor: pointer;
-            transition: transform 0.2s;
-        }
-        .color-btn:hover { transform: scale(1.2); }
-
-        /* Поле ввода кода сессии */
-        .session-input-container {
-            margin: 20px 0;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-        }
-        #session-input {
-            background: rgba(0,0,0,0.5);
-            border: 1px solid var(--neon-blue);
-            color: white;
-            padding: 10px;
-            font-family: 'Orbitron', sans-serif;
-            font-size: 1.2rem;
-            text-align: center;
-            text-transform: uppercase;
-            width: 200px;
-            outline: none;
-            margin-top: 5px;
-        }
-        #session-input::placeholder { color: rgba(255,255,255,0.3); }
-
-        #controls-hint {
-            margin-top: 20px;
-            font-size: 0.8rem;
-            color: #888;
-        }
-        
-        #connection-status {
-            font-size: 0.7rem;
-            color: #666;
-            margin-top: 10px;
-        }
+        @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&family=Inter:wght@400;600;700&display=swap');
+        body { font-family: 'Inter', sans-serif; }
+        .font-mono { font-family: 'JetBrains Mono', monospace; }
+        .fade-in { animation: fadeIn 0.3s ease-in-out; }
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
     </style>
-
-    <!-- 1. АРХИТЕКТУРА: Import Map для Three.js и Firebase -->
-    <script type="importmap">
-        {
-            "imports": {
-                "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
-                "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"
-            }
-        }
-    </script>
-    
-    <!-- 1. АРХИТЕКТУРА: Ловушка ошибок -->
-    <script>
-        window.onerror = function(message, source, lineno, colno, error) {
-            const overlay = document.getElementById('error-overlay');
-            overlay.style.display = 'block';
-            overlay.innerHTML += `CRITICAL ERROR:\n${message}\nLine: ${lineno}\n\n`;
-            console.error(error);
-        };
-    </script>
 </head>
-<body>
+<body class="min-h-screen bg-slate-900 text-slate-100 flex flex-col items-center justify-center p-4">
 
-    <div id="error-overlay"></div>
+    <!-- LOADING VIEW -->
+    <div id="loading-view" class="fixed inset-0 bg-slate-900 flex flex-col items-center justify-center z-50">
+        <div class="animate-spin rounded-full h-10 w-10 border-t-2 border-b-2 border-indigo-500 mb-4"></div>
+        <p class="text-indigo-300 animate-pulse">Подключение к серверу...</p>
+    </div>
 
-    <div id="game-ui">
-        <div id="hud">
-            <div class="hud-value" id="speed-display">0</div>
-            <div class="hud-label">KM/H</div>
-            <div class="hud-value" id="score-display" style="font-size: 1.5rem; margin-top:10px; color:white;">0</div>
-            <div class="hud-label">SCORE</div>
-            <div id="players-count">ONLINE: 1</div>
-            <div id="session-id-display">ROOM: GLOBAL</div>
+    <!-- MAIN APP CONTAINER -->
+    <div id="app-container" class="w-full max-w-md hidden fade-in">
+        
+        <!-- MENU VIEW -->
+        <div id="menu-view" class="hidden">
+            <div class="bg-slate-800 rounded-2xl shadow-2xl overflow-hidden border border-slate-700 p-8 text-center">
+                <h1 class="text-4xl font-bold mb-2 bg-gradient-to-r from-indigo-400 to-cyan-400 bg-clip-text text-transparent">
+                    Крестики-Нолики
+                </h1>
+                <p class="text-slate-400 mb-8">Мультиплеер</p>
+
+                <div class="space-y-4">
+                    <button id="btn-create" class="w-full bg-indigo-600 hover:bg-indigo-500 text-white font-semibold py-3 px-6 rounded-lg transition-all flex items-center justify-center gap-2 group">
+                        <!-- Play Icon -->
+                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="5 3 19 12 5 21 5 3"></polygon></svg>
+                        Создать игру
+                    </button>
+
+                    <div class="relative my-4">
+                        <div class="absolute inset-0 flex items-center">
+                            <div class="w-full border-t border-slate-600"></div>
+                        </div>
+                        <div class="relative flex justify-center text-sm">
+                            <span class="px-2 bg-slate-800 text-slate-500">или войди</span>
+                        </div>
+                    </div>
+
+                    <div class="flex gap-2">
+                        <input id="input-code" type="text" placeholder="Код комнаты" maxlength="5"
+                            class="flex-1 bg-slate-900 border border-slate-600 text-white rounded-lg px-4 py-2 focus:outline-none focus:border-indigo-500 font-mono text-center tracking-widest uppercase placeholder:normal-case placeholder:tracking-normal">
+                        <button id="btn-join" disabled class="bg-slate-700 hover:bg-slate-600 disabled:opacity-50 disabled:cursor-not-allowed text-white font-semibold py-2 px-4 rounded-lg transition-all">
+                            Войти
+                        </button>
+                    </div>
+                    
+                    <div id="menu-error" class="hidden mt-4 p-3 bg-red-900/50 border border-red-700 rounded text-red-200 text-sm"></div>
+                </div>
+            </div>
         </div>
-        <div id="nitro-bar-container"><div id="nitro-bar"></div></div>
 
-        <!-- Мобильное управление -->
-        <div id="mobile-controls">
-            <div class="touch-btn" id="btn-left">◀</div>
-            <div class="touch-btn" id="btn-right">▶</div>
-            <div class="touch-btn" id="btn-nitro">NITRO</div>
-        </div>
-
-        <div id="main-menu">
-            <h1>NEON DRIFT</h1>
-            <p>ГАРАЖ / НАСТРОЙКИ</p>
+        <!-- GAME VIEW -->
+        <div id="game-view" class="hidden w-full">
             
-            <div class="garage-controls">
+            <!-- Header -->
+            <div class="flex justify-between items-center mb-6 bg-slate-800 p-4 rounded-xl border border-slate-700 shadow-sm">
                 <div>
-                    <p style="font-size:0.8rem">КУЗОВ</p>
-                    <div style="display:flex; gap:10px;">
-                        <div class="color-btn" style="background:#ff0000" onclick="updateCarColor(0xff0000)"></div>
-                        <div class="color-btn" style="background:#00f3ff" onclick="updateCarColor(0x00f3ff)"></div>
-                        <div class="color-btn" style="background:#ffffff" onclick="updateCarColor(0xffffff)"></div>
-                        <div class="color-btn" style="background:#111111" onclick="updateCarColor(0x111111)"></div>
+                    <span class="text-xs text-slate-400 uppercase tracking-wider block">Комната</span>
+                    <div class="flex items-center gap-2">
+                        <span id="display-room-code" class="text-2xl font-mono font-bold text-white tracking-widest"></span>
+                        <button id="btn-copy" class="p-1.5 hover:bg-slate-700 rounded-md transition-colors text-indigo-400" title="Скопировать">
+                            <!-- Copy Icon -->
+                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="14" height="14" x="8" y="8" rx="2" ry="2"/><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/></svg>
+                        </button>
                     </div>
                 </div>
-                <div>
-                    <p style="font-size:0.8rem">НЕОН</p>
-                    <div style="display:flex; gap:10px;">
-                        <div class="color-btn" style="background:#ff00ff" onclick="updateNeonColor(0xff00ff)"></div>
-                        <div class="color-btn" style="background:#00ff00" onclick="updateNeonColor(0x00ff00)"></div>
-                        <div class="color-btn" style="background:#ffff00" onclick="updateNeonColor(0xffff00)"></div>
-                    </div>
+                <button id="btn-leave" class="p-2 hover:bg-red-900/30 text-red-400 rounded-lg transition-colors" title="Выйти">
+                    <!-- LogOut Icon -->
+                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" x2="9" y1="12" y2="12"/></svg>
+                </button>
+            </div>
+
+            <!-- Status Area -->
+            <div class="text-center mb-6">
+                <div id="player-role-badge" class="inline-block px-4 py-1 bg-slate-800 rounded-full text-sm text-slate-400 mb-2 border border-slate-700">
+                    <!-- Populated by JS -->
                 </div>
+                <h2 id="game-status" class="text-2xl font-bold flex items-center justify-center gap-2 min-h-[2rem]">
+                    <!-- Status Text -->
+                </h2>
             </div>
 
-            <div class="session-input-container">
-                <label for="session-input" style="font-size:0.8rem; color:#aaa;">КОД СЕССИИ (ОПЦИОНАЛЬНО)</label>
-                <input type="text" id="session-input" placeholder="GLOBAL" maxlength="10">
+            <!-- Waiting for Opponent -->
+            <div id="waiting-screen" class="hidden bg-indigo-900/20 border border-indigo-500/30 rounded-xl p-6 text-center animate-pulse mb-6">
+                <!-- Users Icon -->
+                <svg class="mx-auto text-indigo-400 mb-2" xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+                <p class="text-indigo-200">Отправьте код комнаты другу</p>
+                <p id="waiting-code" class="text-3xl font-bold mt-2 text-white font-mono tracking-widest"></p>
             </div>
 
-            <button onclick="startGame()">ГОНКА</button>
-            <div id="controls-hint">WASD / Стрелки - Управление<br>ПРОБЕЛ - Нитро</div>
-            <div id="connection-status">Connecting to server...</div>
-        </div>
+            <!-- Game Board -->
+            <div id="game-board" class="aspect-square w-full bg-slate-800 rounded-2xl p-4 grid grid-cols-3 gap-3 shadow-2xl border border-slate-700 hidden">
+                <!-- Cells generated by JS -->
+            </div>
 
-        <div id="game-over" style="display: none;">
-            <h1 style="color:red">CRASHED</h1>
-            <h2 id="final-score">SCORE: 0</h2>
-            <button onclick="resetGame()">RETRY</button>
-            <button onclick="quitToMenu()" style="margin-left: 10px; font-size: 1rem; padding: 15px 20px;">MENU</button>
+            <!-- Restart Button -->
+            <button id="btn-restart" class="hidden w-full mt-6 bg-emerald-600 hover:bg-emerald-500 text-white font-bold py-3 px-6 rounded-xl shadow-lg transition-transform active:scale-95 flex items-center justify-center gap-2">
+                <!-- Refresh Icon -->
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"/><path d="M21 3v5h-5"/><path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16"/><path d="M3 21v-5h5"/></svg>
+                Играть снова
+            </button>
+
         </div>
     </div>
 
-    <!-- Основной скрипт модуля -->
     <script type="module">
-        import * as THREE from 'three';
-        import { EffectComposer } from 'three/addons/postprocessing/EffectComposer.js';
-        import { RenderPass } from 'three/addons/postprocessing/RenderPass.js';
-        import { UnrealBloomPass } from 'three/addons/postprocessing/UnrealBloomPass.js';
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getAuth, signInAnonymously, onAuthStateChanged, signInWithCustomToken } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getFirestore, doc, setDoc, getDoc, updateDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
-        // --- FIREBASE IMPORTS (CDN) ---
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-        import { getFirestore, collection, doc, setDoc, onSnapshot, deleteDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
-        import { getAuth, signInAnonymously, signInWithCustomToken } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
-
-        // --- GLOBALS ---
-        let scene, camera, renderer, composer;
-        let playerCar;
-        let roadSegments = [];
-        let trafficCars = [];
-        let rivalMeshes = {}; // Map of userId -> Mesh
-        let clock = new THREE.Clock();
-        
-        // Firebase Globals
-        let db, auth, currentUserId;
-        let lastSyncTime = 0;
-        let rivalsData = {}; 
-        let raceCollectionRef = null;
-        let unsubscribeRace = null;
-        
-        // --- HYBRID CONFIGURATION ---
-        const FALLBACK_CONFIG = {
+        // --- CONFIGURATION ---
+        const defaultFirebaseConfig = {
             apiKey: "AIzaSyAWV097BE56m2YVNi2D494dyXK41j9V5bE",
             authDomain: "messanger-b0b91.firebaseapp.com",
             projectId: "messanger-b0b91",
@@ -333,575 +131,330 @@
             measurementId: "G-RQ7GYZPT2G"
         };
 
-        const gameState = {
-            active: false,
-            speed: 0,
-            baseSpeed: 0,
-            maxSpeed: 180,
-            nitroMaxSpeed: 280,
-            nitro: 100,
-            score: 0,
-            distance: 0,
-            lane: 0,
-            targetX: 0,
-            carColor: 0x00f3ff,
-            neonColor: 0xff00ff,
-            sessionCode: 'global'
+        const firebaseConfig = typeof window !== 'undefined' && window.__firebase_config 
+            ? JSON.parse(window.__firebase_config) 
+            : defaultFirebaseConfig;
+
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        const db = getFirestore(app);
+
+        const APP_ID = typeof window !== 'undefined' && window.__app_id ? window.__app_id : 'tic-tac-toe-universal';
+
+        // --- STATE ---
+        let user = null;
+        let roomCode = null;
+        let gameData = null;
+        let unsubscribeGame = null;
+
+        // --- DOM ELEMENTS ---
+        const views = {
+            loading: document.getElementById('loading-view'),
+            menu: document.getElementById('menu-view'),
+            game: document.getElementById('game-view'),
+            container: document.getElementById('app-container')
         };
 
-        const WORLD_CONFIG = {
-            segmentLength: 20,
-            segmentCount: 20,
-            roadWidth: 14,
-            laneWidth: 4,
-            fogDist: 150
+        const els = {
+            createBtn: document.getElementById('btn-create'),
+            joinBtn: document.getElementById('btn-join'),
+            joinInput: document.getElementById('input-code'),
+            menuError: document.getElementById('menu-error'),
+            roomCodeDisplay: document.getElementById('display-room-code'),
+            copyBtn: document.getElementById('btn-copy'),
+            leaveBtn: document.getElementById('btn-leave'),
+            roleBadge: document.getElementById('player-role-badge'),
+            statusText: document.getElementById('game-status'),
+            waitingScreen: document.getElementById('waiting-screen'),
+            waitingCode: document.getElementById('waiting-code'),
+            board: document.getElementById('game-board'),
+            restartBtn: document.getElementById('btn-restart')
         };
 
-        const CONTROLS = {
-            left: false,
-            right: false,
-            nitro: false
-        };
-
-        // --- INIT ---
-        async function init() {
-            let isCanvasEnv = false;
-            let app;
-
-            try {
-                if (typeof __firebase_config !== 'undefined') {
-                    const envConfig = JSON.parse(__firebase_config);
-                    app = initializeApp(envConfig);
-                    isCanvasEnv = true;
-                    console.log("Environment: Canvas/Internal");
-                } else {
-                    throw new Error("Env config missing");
-                }
-            } catch (e) {
-                app = initializeApp(FALLBACK_CONFIG);
-                isCanvasEnv = false;
-                console.log("Environment: External/Public");
+        // --- HELPERS ---
+        const generateRoomCode = () => Math.floor(1000 + Math.random() * 9000).toString();
+        
+        const checkWinner = (board) => {
+            const lines = [
+                [0, 1, 2], [3, 4, 5], [6, 7, 8],
+                [0, 3, 6], [1, 4, 7], [2, 5, 8],
+                [0, 4, 8], [2, 4, 6]
+            ];
+            for (let line of lines) {
+                const [a, b, c] = line;
+                if (board[a] && board[a] === board[b] && board[a] === board[c]) return board[a];
             }
+            return null;
+        };
+        const checkDraw = (board) => board.every(cell => cell !== null);
 
+        // --- AUTH ---
+        const initAuth = async () => {
             try {
-                db = getFirestore(app);
-                auth = getAuth(app);
-                
-                if (isCanvasEnv) {
-                    if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
-                        await signInWithCustomToken(auth, __initial_auth_token);
-                    } else {
-                        await signInAnonymously(auth);
-                    }
-                    // Сохраняем флаг среды для формирования путей позже
-                    window.isCanvasEnv = true;
-                    window.canvasAppId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
-
+                if (typeof window !== 'undefined' && window.__initial_auth_token) {
+                    await signInWithCustomToken(auth, window.__initial_auth_token);
                 } else {
                     await signInAnonymously(auth);
-                    window.isCanvasEnv = false;
                 }
-
-                currentUserId = auth.currentUser.uid;
-                document.getElementById('connection-status').innerText = "CONNECTED: " + currentUserId.substring(0,6);
-                document.getElementById('connection-status').style.color = "#00ff00";
-                
-            } catch (e) {
-                console.error("Firebase Auth/Init Error:", e);
-                document.getElementById('connection-status').innerText = "OFFLINE MODE (" + e.message + ")";
+            } catch (err) {
+                console.error("Auth error:", err);
+                showError("Ошибка авторизации.");
             }
+        };
 
-            if ('ontouchstart' in window || navigator.maxTouchPoints > 0) {
-                document.getElementById('mobile-controls').style.display = 'block';
-                setupTouchControls();
+        onAuthStateChanged(auth, (u) => {
+            user = u;
+            if (user) {
+                views.loading.classList.add('hidden');
+                views.container.classList.remove('hidden');
+                showMenu();
             }
+        });
 
-            init3D();
-            animate();
-        }
+        initAuth();
 
-        function init3D() {
-            scene = new THREE.Scene();
-            scene.fog = new THREE.FogExp2(0x050510, 0.015);
+        // --- GAME LOGIC ---
 
-            camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 500);
-            camera.position.set(0, 3, 8);
-            camera.lookAt(0, 0, -20);
+        const subscribeToGame = (code) => {
+            if (unsubscribeGame) unsubscribeGame();
+            const gameRef = doc(db, 'artifacts', APP_ID, 'public', 'data', 'games', code);
 
-            renderer = new THREE.WebGLRenderer({ antialias: true, powerPreference: "high-performance" });
-            renderer.setSize(window.innerWidth, window.innerHeight);
-            renderer.setPixelRatio(Math.min(window.devicePixelRatio, 1.5)); // Safe for retina
-            renderer.toneMapping = THREE.ReinhardToneMapping;
-            document.body.appendChild(renderer.domElement);
-
-            const ambientLight = new THREE.AmbientLight(0x000044, 2.0);
-            scene.add(ambientLight);
-            const hemiLight = new THREE.HemisphereLight(0xffffff, 0x000000, 0.5);
-            scene.add(hemiLight);
-
-            const renderScene = new RenderPass(scene, camera);
-            
-            const bloomResolution = new THREE.Vector2(window.innerWidth, window.innerHeight);
-            if (bloomResolution.x > 2000) bloomResolution.multiplyScalar(0.5);
-            
-            const bloomPass = new UnrealBloomPass(bloomResolution, 1.5, 0.4, 0.85);
-            bloomPass.threshold = 0;
-            bloomPass.strength = 1.2;
-            bloomPass.radius = 0.5;
-
-            composer = new EffectComposer(renderer);
-            composer.addPass(renderScene);
-            composer.addPass(bloomPass);
-
-            createPlayerCar();
-            createRoad();
-            
-            window.addEventListener('resize', onWindowResize);
-            document.addEventListener('keydown', onKeyDown);
-            document.addEventListener('keyup', onKeyUp);
-        }
-
-        // --- CAR CREATION (REUSABLE) ---
-        function createCarMesh(color, neonColor) {
-            const carGroup = new THREE.Group();
-
-            const shape = new THREE.Shape();
-            shape.moveTo(-1.2, 0); shape.lineTo(1.2, 0); shape.lineTo(1.3, 0.3);
-            shape.lineTo(0.6, 0.75); shape.lineTo(-0.4, 0.75); shape.lineTo(-1.1, 0.4);
-            shape.lineTo(-1.25, 0.3); shape.lineTo(-1.2, 0);
-
-            const extrudeSettings = { steps: 1, depth: 1.6, bevelEnabled: true, bevelThickness: 0.05, bevelSize: 0.05, bevelSegments: 2 };
-            const geometry = new THREE.ExtrudeGeometry(shape, extrudeSettings);
-            geometry.center();
-
-            const material = new THREE.MeshStandardMaterial({ color: color, metalness: 0.8, roughness: 0.2 });
-            const chassis = new THREE.Mesh(geometry, material);
-            chassis.rotation.y = -Math.PI / 2;
-            chassis.position.y = 0.5;
-            carGroup.add(chassis);
-            carGroup.userData.chassisMat = material;
-
-            // Wheels
-            const wheelGeo = new THREE.CylinderGeometry(0.35, 0.35, 0.4, 24);
-            wheelGeo.rotateZ(Math.PI / 2);
-            const wheelMat = new THREE.MeshStandardMaterial({ color: 0x111111, roughness: 0.8 });
-            const positions = [{x:-0.7, z:-0.8}, {x:0.7, z:-0.8}, {x:-0.7, z:0.8}, {x:0.7, z:0.8}];
-            positions.forEach(pos => {
-                const wheel = new THREE.Mesh(wheelGeo, wheelMat);
-                wheel.position.set(pos.x, 0.35, pos.z);
-                carGroup.add(wheel);
-            });
-
-            // Neon
-            const neonLight = new THREE.PointLight(neonColor, 10, 5);
-            neonLight.position.set(0, 0.2, 0);
-            carGroup.add(neonLight);
-            carGroup.userData.neon = neonLight;
-
-            // Tail lights
-            const tailGeo = new THREE.BoxGeometry(0.8, 0.1, 0.1);
-            const tailMat = new THREE.MeshBasicMaterial({ color: 0xff0000 });
-            const tailLight = new THREE.Mesh(tailGeo, tailMat);
-            tailLight.position.set(0, 0.6, 1.1);
-            carGroup.add(tailLight);
-
-            return carGroup;
-        }
-
-        function createPlayerCar() {
-            playerCar = createCarMesh(gameState.carColor, gameState.neonColor);
-            
-            const spotLeft = new THREE.SpotLight(0xffffff, 50);
-            spotLeft.position.set(-0.5, 0.6, -1.0);
-            spotLeft.target.position.set(-0.5, 0, -10);
-            spotLeft.angle = 0.5; spotLeft.penumbra = 0.5;
-            playerCar.add(spotLeft); playerCar.add(spotLeft.target);
-
-            const spotRight = new THREE.SpotLight(0xffffff, 50);
-            spotRight.position.set(0.5, 0.6, -1.0);
-            spotRight.target.position.set(0.5, 0, -10);
-            spotRight.angle = 0.5; spotRight.penumbra = 0.5;
-            playerCar.add(spotRight); playerCar.add(spotRight.target);
-
-            scene.add(playerCar);
-        }
-
-        // --- WORLD GENERATION ---
-        function createRoad() {
-            for (let i = 0; i < WORLD_CONFIG.segmentCount; i++) {
-                const segment = new THREE.Group();
-                const zPos = -i * WORLD_CONFIG.segmentLength;
-
-                const roadGeo = new THREE.PlaneGeometry(WORLD_CONFIG.roadWidth, WORLD_CONFIG.segmentLength);
-                roadGeo.rotateX(-Math.PI / 2);
-                const roadMat = new THREE.MeshStandardMaterial({ color: 0x222222, roughness: 0.8 });
-                const road = new THREE.Mesh(roadGeo, roadMat);
-                
-                const lineGeo = new THREE.PlaneGeometry(0.2, WORLD_CONFIG.segmentLength / 2);
-                lineGeo.rotateX(-Math.PI / 2);
-                const lineMat = new THREE.MeshBasicMaterial({ color: 0xffffff });
-                const lineL = new THREE.Mesh(lineGeo, lineMat); lineL.position.set(-WORLD_CONFIG.laneWidth/2, 0.02, 0);
-                const lineR = new THREE.Mesh(lineGeo, lineMat); lineR.position.set(WORLD_CONFIG.laneWidth/2, 0.02, 0);
-
-                segment.add(road); segment.add(lineL); segment.add(lineR);
-                const gridHelper = new THREE.GridHelper(60, 10, 0x00f3ff, 0x110022);
-                gridHelper.position.y = -0.1;
-                segment.add(gridHelper);
-
-                if (Math.random() > 0.3) createBuilding(segment, -20);
-                if (Math.random() > 0.3) createBuilding(segment, 20);
-
-                segment.position.z = zPos;
-                scene.add(segment);
-                roadSegments.push(segment);
-            }
-        }
-
-        function createBuilding(parent, xOffset) {
-            const height = 10 + Math.random() * 40;
-            const width = 5 + Math.random() * 10;
-            const geo = new THREE.BoxGeometry(width, height, width);
-            const mat = new THREE.MeshBasicMaterial({ color: 0x000000 });
-            const edges = new THREE.EdgesGeometry(geo);
-            const line = new THREE.LineSegments(edges, new THREE.LineBasicMaterial({ color: 0x220033 }));
-            const mesh = new THREE.Mesh(geo, mat);
-            mesh.add(line);
-            mesh.position.set(xOffset, height/2, 0);
-            parent.add(mesh);
-        }
-
-        function spawnTraffic() {
-            if (trafficCars.length > 5) return;
-            const group = new THREE.Group();
-            
-            const bodyGeo = new THREE.BoxGeometry(2, 1.2, 4);
-            const bodyMat = new THREE.MeshStandardMaterial({ color: Math.random() * 0xffffff, roughness: 0.5 });
-            const body = new THREE.Mesh(bodyGeo, bodyMat);
-            body.position.y = 0.6;
-            group.add(body);
-
-            const tailGeo = new THREE.BoxGeometry(1.8, 0.2, 0.1);
-            const tailMat = new THREE.MeshBasicMaterial({ color: 0xff0000 });
-            const tail = new THREE.Mesh(tailGeo, tailMat);
-            tail.position.set(0, 0.8, 2.01);
-            group.add(tail);
-
-            const laneIndex = Math.floor(Math.random() * 3) - 1;
-            group.position.set(laneIndex * WORLD_CONFIG.laneWidth, 0, -100 - Math.random() * 50);
-            
-            group.userData = { lane: laneIndex, speed: 60 + Math.random() * 40 };
-            scene.add(group);
-            trafficCars.push(group);
-        }
-
-        // --- FIREBASE LOGIC (SESSION BASED) ---
-        function initMultiplayerListener(sessionCode) {
-            if (!db) return;
-            
-            // Санитизация кода (только буквы и цифры)
-            const safeCode = sessionCode.replace(/[^a-zA-Z0-9]/g, "").toLowerCase() || 'global';
-            gameState.sessionCode = safeCode;
-            document.getElementById('session-id-display').innerText = "ROOM: " + safeCode;
-
-            // Формирование имени коллекции на основе кода
-            const collectionName = 'nfs_race_' + safeCode;
-
-            if (window.isCanvasEnv) {
-                raceCollectionRef = collection(db, 'artifacts', window.canvasAppId, 'public', 'data', collectionName);
-            } else {
-                raceCollectionRef = collection(db, collectionName);
-            }
-            
-            // Слушаем
-            unsubscribeRace = onSnapshot(raceCollectionRef, (snapshot) => {
-                const count = snapshot.size;
-                document.getElementById('players-count').innerText = "ONLINE: " + count;
-
-                snapshot.docChanges().forEach((change) => {
-                    const data = change.doc.data();
-                    const uid = change.doc.id;
-                    if (uid === currentUserId) return; 
-
-                    if (change.type === "added" || change.type === "modified") {
-                        rivalsData[uid] = data;
-                        updateRivalMesh(uid, data);
-                    }
-                    if (change.type === "removed") {
-                        delete rivalsData[uid];
-                        removeRivalMesh(uid);
-                    }
-                });
-            }, (error) => {
-                console.warn("Firestore listener error:", error);
-            });
-
-            // Очистка
-            window.addEventListener('beforeunload', () => {
-                if(currentUserId && raceCollectionRef) deleteDoc(doc(raceCollectionRef, currentUserId));
-            });
-        }
-
-        function syncPlayerState() {
-            if (!db || !currentUserId || !gameState.active || !raceCollectionRef) return;
-            
-            const now = Date.now();
-            if (now - lastSyncTime > 100) { 
-                setDoc(doc(raceCollectionRef, currentUserId), {
-                    x: gameState.lane,
-                    z: gameState.distance,
-                    color: gameState.carColor,
-                    neon: gameState.neonColor,
-                    lastSeen: serverTimestamp()
-                }).catch(e => console.warn("Sync fail", e));
-                lastSyncTime = now;
-            }
-        }
-
-        function updateRivalMesh(uid, data) {
-            let mesh = rivalMeshes[uid];
-            if (!mesh) {
-                mesh = createCarMesh(data.color, data.neon);
-                mesh.traverse(c => {
-                    if(c.isMesh) {
-                        c.material.transparent = true;
-                        c.material.opacity = 0.6;
-                    }
-                });
-                scene.add(mesh);
-                rivalMeshes[uid] = mesh;
-            }
-        }
-
-        function removeRivalMesh(uid) {
-            if (rivalMeshes[uid]) {
-                scene.remove(rivalMeshes[uid]);
-                delete rivalMeshes[uid];
-            }
-        }
-
-        function updateRivals(delta) {
-            for (const uid in rivalsData) {
-                const data = rivalsData[uid];
-                const mesh = rivalMeshes[uid];
-                if (!mesh) continue;
-
-                const targetX = data.x * WORLD_CONFIG.laneWidth;
-                mesh.position.x = THREE.MathUtils.lerp(mesh.position.x, targetX, delta * 5);
-
-                const relativeZ = -(data.z - gameState.distance);
-                mesh.position.z = THREE.MathUtils.lerp(mesh.position.z, relativeZ, delta * 10);
-                
-                const tilt = (mesh.position.x - targetX) * 0.05;
-                mesh.rotation.z = -tilt;
-                mesh.rotation.y = (tilt * 0.5);
-            }
-        }
-
-        // --- CONTROLS ---
-        function setupTouchControls() {
-            const btnLeft = document.getElementById('btn-left');
-            const btnRight = document.getElementById('btn-right');
-            const btnNitro = document.getElementById('btn-nitro');
-
-            const handleTouch = (key, state) => (e) => {
-                e.preventDefault();
-                if (state && (key === 'left' || key === 'right')) {
-                   if (key === 'left') changeLane(-1);
-                   if (key === 'right') changeLane(1);
+            unsubscribeGame = onSnapshot(gameRef, (snap) => {
+                if (snap.exists()) {
+                    gameData = snap.data();
+                    renderGame();
+                } else {
+                    // Game deleted or doesn't exist
+                    gameData = null;
+                    if (roomCode) leaveGame(); // Force leave if in game
                 }
-                CONTROLS[key] = state;
+            }, (err) => {
+                console.error("Firestore error:", err);
+                showError("Ошибка соединения.");
+            });
+        };
+
+        const createGame = async () => {
+            if (!user) return;
+            setLoading(true);
+            const newCode = generateRoomCode();
+            const initialGame = {
+                board: Array(9).fill(null),
+                xPlayer: user.uid,
+                oPlayer: null,
+                turn: 'X',
+                winner: null,
+                createdAt: new Date().toISOString(),
+                status: 'waiting'
             };
 
-            btnLeft.addEventListener('touchstart', handleTouch('left', true));
-            btnLeft.addEventListener('touchend', handleTouch('left', false));
-            btnRight.addEventListener('touchstart', handleTouch('right', true));
-            btnRight.addEventListener('touchend', handleTouch('right', false));
-            btnNitro.addEventListener('touchstart', handleTouch('nitro', true));
-            btnNitro.addEventListener('touchend', handleTouch('nitro', false));
-        }
-
-        function onKeyDown(e) {
-            if (e.key === 'Escape') { window.quitToMenu(); return; }
-            if (!gameState.active) return;
-            switch(e.key.toLowerCase()) {
-                case 'w': case 'arrowup': CONTROLS.up = true; break;
-                case 's': case 'arrowdown': CONTROLS.down = true; break;
-                case 'a': case 'arrowleft': changeLane(-1); break;
-                case 'd': case 'arrowright': changeLane(1); break;
-                case ' ': CONTROLS.nitro = true; break;
+            try {
+                await setDoc(doc(db, 'artifacts', APP_ID, 'public', 'data', 'games', newCode), initialGame);
+                roomCode = newCode;
+                subscribeToGame(roomCode);
+                showGame();
+            } catch (err) {
+                console.error(err);
+                showError("Не удалось создать игру.");
+            } finally {
+                setLoading(false);
             }
-        }
-        function onKeyUp(e) {
-            switch(e.key.toLowerCase()) {
-                case 'w': case 'arrowup': CONTROLS.up = false; break;
-                case 's': case 'arrowdown': CONTROLS.down = false; break;
-                case ' ': CONTROLS.nitro = false; break;
+        };
+
+        const joinGame = async () => {
+            const code = els.joinInput.value.trim();
+            if (!user || !code) return;
+            setLoading(true);
+
+            try {
+                const gameRef = doc(db, 'artifacts', APP_ID, 'public', 'data', 'games', code);
+                const snap = await getDoc(gameRef);
+
+                if (snap.exists()) {
+                    const data = snap.data();
+                    
+                    if (data.xPlayer === user.uid || data.oPlayer === user.uid) {
+                        // Rejoin
+                        roomCode = code;
+                        subscribeToGame(roomCode);
+                        showGame();
+                    } else if (!data.oPlayer) {
+                        // Join new
+                        await updateDoc(gameRef, { oPlayer: user.uid, status: 'playing' });
+                        roomCode = code;
+                        subscribeToGame(roomCode);
+                        showGame();
+                    } else {
+                        showError("Комната заполнена.");
+                    }
+                } else {
+                    showError("Комната не найдена.");
+                }
+            } catch (err) {
+                console.error(err);
+                showError("Ошибка входа.");
+            } finally {
+                setLoading(false);
             }
-        }
-
-        function changeLane(dir) {
-            gameState.lane += dir;
-            gameState.lane = Math.max(-1, Math.min(1, gameState.lane));
-            gameState.targetX = gameState.lane * WORLD_CONFIG.laneWidth;
-        }
-
-        // --- EXPORTED UI FUNCTIONS ---
-        window.updateCarColor = (hex) => {
-            gameState.carColor = hex;
-            if (playerCar && playerCar.userData.chassisMat) playerCar.userData.chassisMat.color.setHex(hex);
         };
-        window.updateNeonColor = (hex) => {
-            gameState.neonColor = hex;
-            if (playerCar && playerCar.userData.neon) playerCar.userData.neon.color.setHex(hex);
-        };
-        
-        window.startGame = () => {
-            // Чтение кода сессии
-            const codeInput = document.getElementById('session-input').value;
-            const sessionCode = codeInput.trim() || 'global';
+
+        const makeMove = async (index) => {
+            if (!gameData || !user) return;
             
-            initMultiplayerListener(sessionCode);
-
-            document.getElementById('main-menu').style.display = 'none';
-            document.getElementById('hud').style.display = 'block';
-            document.getElementById('nitro-bar-container').style.display = 'block';
-            gameState.active = true;
-            gameState.speed = 0;
-            gameState.score = 0;
-            gameState.distance = 0;
-            gameState.nitro = 100;
-            trafficCars.forEach(c => scene.remove(c));
-            trafficCars = [];
-        };
-
-        window.resetGame = () => {
-            document.getElementById('game-over').style.display = 'none';
-            gameState.lane = 0; playerCar.position.x = 0; gameState.targetX = 0;
-            window.startGame();
-        };
-
-        window.quitToMenu = () => {
-            // Очистка сессии
-            if(unsubscribeRace) unsubscribeRace();
-            if(currentUserId && raceCollectionRef) deleteDoc(doc(raceCollectionRef, currentUserId));
+            const isX = gameData.xPlayer === user.uid;
+            const isO = gameData.oPlayer === user.uid;
             
-            // Удаление соперников
-            for (const uid in rivalMeshes) scene.remove(rivalMeshes[uid]);
-            rivalMeshes = {};
-            rivalsData = {};
+            if (!isX && !isO) return; 
+            if (gameData.winner) return;
+            if (gameData.board[index]) return;
+            if ((isX && gameData.turn !== 'X') || (isO && gameData.turn !== 'O')) return;
 
-            gameState.active = false;
-            document.getElementById('hud').style.display = 'none';
-            document.getElementById('nitro-bar-container').style.display = 'none';
-            document.getElementById('game-over').style.display = 'none';
-            document.getElementById('main-menu').style.display = 'block';
+            const newBoard = [...gameData.board];
+            newBoard[index] = isX ? 'X' : 'O';
+            const winner = checkWinner(newBoard);
+            const isDraw = !winner && checkDraw(newBoard);
+            const nextTurn = gameData.turn === 'X' ? 'O' : 'X';
+
+            try {
+                await updateDoc(doc(db, 'artifacts', APP_ID, 'public', 'data', 'games', roomCode), {
+                    board: newBoard,
+                    turn: nextTurn,
+                    winner: winner ? winner : (isDraw ? 'draw' : null),
+                    status: (winner || isDraw) ? 'finished' : 'playing'
+                });
+            } catch (err) {
+                console.error("Move error", err);
+            }
         };
 
-        // --- GAME LOOP ---
-        function animate() {
-            requestAnimationFrame(animate);
-            const rawDelta = clock.getDelta();
-            const delta = Math.min(rawDelta, 0.05);
+        const resetGame = async () => {
+            if (!gameData || !roomCode) return;
+            try {
+                await updateDoc(doc(db, 'artifacts', APP_ID, 'public', 'data', 'games', roomCode), {
+                    board: Array(9).fill(null),
+                    turn: 'X',
+                    winner: null,
+                    status: 'playing'
+                });
+            } catch(e) { console.error(e); }
+        };
 
-            if (gameState.active) {
-                updatePhysics(delta);
-                updateTraffic(delta);
-                updateEnvironment(delta);
-                updateRivals(delta); // Multiplayer Sync
-                syncPlayerState();
-                updateUI();
-            }
+        const leaveGame = () => {
+            if (unsubscribeGame) unsubscribeGame();
+            roomCode = null;
+            gameData = null;
+            unsubscribeGame = null;
+            els.joinInput.value = '';
+            showMenu();
+        };
 
-            composer.render();
-        }
+        // --- UI UPDATES ---
 
-        function updatePhysics(delta) {
-            let targetSpeed = 0;
-            if (CONTROLS.up || (('ontouchstart' in window) && !CONTROLS.down)) targetSpeed = gameState.maxSpeed; 
-            if (CONTROLS.down) targetSpeed = -20;
+        const showMenu = () => {
+            views.menu.classList.remove('hidden');
+            views.game.classList.add('hidden');
+            els.menuError.classList.add('hidden');
+        };
 
-            if (CONTROLS.nitro && gameState.nitro > 0) {
-                targetSpeed = gameState.nitroMaxSpeed;
-                gameState.nitro -= 30 * delta;
-                camera.fov = THREE.MathUtils.lerp(camera.fov, 75, delta * 2);
-                camera.position.x += (Math.random() - 0.5) * 0.1;
-                camera.position.y += (Math.random() - 0.5) * 0.1;
+        const showGame = () => {
+            views.menu.classList.add('hidden');
+            views.game.classList.remove('hidden');
+            els.roomCodeDisplay.innerText = roomCode;
+        };
+
+        const showError = (msg) => {
+            els.menuError.innerText = msg;
+            els.menuError.classList.remove('hidden');
+            setTimeout(() => els.menuError.classList.add('hidden'), 5000);
+        };
+
+        const setLoading = (isLoading) => {
+            els.createBtn.disabled = isLoading;
+            els.joinBtn.disabled = isLoading;
+            els.createBtn.innerHTML = isLoading ? 'Загрузка...' : `
+                 <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="5 3 19 12 5 21 5 3"></polygon></svg>
+                 Создать игру
+            `;
+        };
+
+        const renderGame = () => {
+            if (!gameData) return;
+
+            // 1. Role Badge
+            let role = 'Зритель';
+            let roleClass = 'text-gray-400';
+            if (gameData.xPlayer === user.uid) { role = 'X'; roleClass = 'text-cyan-400'; }
+            else if (gameData.oPlayer === user.uid) { role = 'O'; roleClass = 'text-purple-400'; }
+            
+            els.roleBadge.innerHTML = `Вы играете за <span class="font-bold ${roleClass}">${role}</span>`;
+
+            // 2. Status
+            let statusHTML = '';
+            if (gameData.status === 'waiting') {
+                statusHTML = 'Ожидание игрока...';
+                els.waitingScreen.classList.remove('hidden');
+                els.waitingCode.innerText = roomCode;
+                els.board.classList.add('hidden');
+                els.restartBtn.classList.add('hidden');
             } else {
-                gameState.nitro = Math.min(100, gameState.nitro + 5 * delta);
-                camera.fov = THREE.MathUtils.lerp(camera.fov, 60, delta * 2);
-            }
-            camera.updateProjectionMatrix();
-
-            gameState.speed = THREE.MathUtils.lerp(gameState.speed, targetSpeed, delta * (CONTROLS.nitro ? 2.0 : 0.8));
-            playerCar.position.x = THREE.MathUtils.lerp(playerCar.position.x, gameState.targetX, delta * 5);
-
-            const tilt = (playerCar.position.x - gameState.targetX) * 0.05;
-            playerCar.rotation.z = -tilt;
-            playerCar.rotation.y = (tilt * 0.5);
-
-            const moveDist = (gameState.speed * 0.3) * delta;
-            gameState.distance += moveDist;
-            gameState.score += moveDist * 0.1;
-        }
-
-        function updateEnvironment(delta) {
-            const moveDist = (gameState.speed * 0.3) * delta; 
-            roadSegments.forEach(segment => {
-                segment.position.z += moveDist;
-                if (segment.position.z > 20) {
-                    segment.position.z -= WORLD_CONFIG.segmentLength * WORLD_CONFIG.segmentCount;
+                els.waitingScreen.classList.add('hidden');
+                els.board.classList.remove('hidden');
+                
+                if (gameData.winner === 'draw') {
+                    statusHTML = '<span class="text-white">Ничья!</span>';
+                    els.restartBtn.classList.remove('hidden');
+                } else if (gameData.winner) {
+                    statusHTML = `<span class="text-yellow-400">Победил ${gameData.winner}!</span>`;
+                    els.restartBtn.classList.remove('hidden');
+                } else {
+                    statusHTML = `<span class="text-white">Ход игрока: ${gameData.turn}</span>`;
+                    els.restartBtn.classList.add('hidden');
                 }
+            }
+            els.statusText.innerHTML = statusHTML;
+
+            // 3. Board
+            els.board.innerHTML = '';
+            gameData.board.forEach((cell, idx) => {
+                const btn = document.createElement('button');
+                btn.className = `
+                    relative rounded-xl flex items-center justify-center transition-all duration-200
+                    ${cell ? 'bg-slate-700' : 'bg-slate-750 border-2 border-slate-700 border-dashed'}
+                    ${!cell && !gameData.winner && gameData.status === 'playing' ? 'hover:bg-slate-700 cursor-pointer' : ''}
+                `;
+                
+                if (cell === 'X') {
+                    btn.innerHTML = `<svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="text-cyan-400"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>`;
+                } else if (cell === 'O') {
+                    btn.innerHTML = `<svg width="44" height="44" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="text-purple-400"><circle cx="12" cy="12" r="10"/></svg>`;
+                }
+                
+                btn.disabled = !!cell || !!gameData.winner || gameData.status !== 'playing';
+                btn.onclick = () => makeMove(idx);
+                els.board.appendChild(btn);
             });
-        }
+        };
 
-        function updateTraffic(delta) {
-            if (Math.random() < 0.02) spawnTraffic();
-            const playerSpeed = gameState.speed;
-            
-            for (let i = trafficCars.length - 1; i >= 0; i--) {
-                const car = trafficCars[i];
-                const relativeSpeed = (playerSpeed - car.userData.speed) * 0.3;
-                car.position.z += relativeSpeed * delta;
+        // --- EVENT LISTENERS ---
+        els.createBtn.onclick = createGame;
+        els.joinBtn.onclick = joinGame;
+        els.leaveBtn.onclick = leaveGame;
+        els.restartBtn.onclick = resetGame;
+        
+        els.joinInput.oninput = (e) => {
+            els.joinBtn.disabled = e.target.value.trim().length === 0;
+        };
 
-                if (car.position.z > 30 || car.position.z < -250) {
-                    scene.remove(car);
-                    trafficCars.splice(i, 1);
-                    continue;
-                }
-                if (Math.abs(car.position.z) < 2.5 && Math.abs(car.position.x - playerCar.position.x) < 1.5) {
-                    gameOver();
-                }
-            }
-        }
+        els.copyBtn.onclick = () => {
+            const textArea = document.createElement("textarea");
+            textArea.value = roomCode;
+            document.body.appendChild(textArea);
+            textArea.select();
+            document.execCommand('copy');
+            document.body.removeChild(textArea);
+            alert("Код скопирован: " + roomCode);
+        };
 
-        function updateUI() {
-            document.getElementById('speed-display').innerText = Math.floor(gameState.speed);
-            document.getElementById('score-display').innerText = Math.floor(gameState.score);
-            document.getElementById('nitro-bar').style.width = gameState.nitro + '%';
-        }
-
-        function gameOver() {
-            gameState.active = false;
-            document.getElementById('hud').style.display = 'none';
-            document.getElementById('nitro-bar-container').style.display = 'none';
-            document.getElementById('mobile-controls').style.display = 'none';
-            document.getElementById('game-over').style.display = 'block';
-            document.getElementById('final-score').innerText = 'SCORE: ' + Math.floor(gameState.score);
-            
-            if(currentUserId && raceCollectionRef) deleteDoc(doc(raceCollectionRef, currentUserId));
-        }
-
-        function onWindowResize() {
-            camera.aspect = window.innerWidth / window.innerHeight;
-            camera.updateProjectionMatrix();
-            renderer.setSize(window.innerWidth, window.innerHeight);
-            const bloomResolution = new THREE.Vector2(window.innerWidth, window.innerHeight);
-            if (bloomResolution.x > 2000) bloomResolution.multiplyScalar(0.5);
-            composer.setSize(window.innerWidth, window.innerHeight);
-            composer.passes[1].resolution = bloomResolution;
-        }
-
-        init();
     </script>
 </body>
 </html>
