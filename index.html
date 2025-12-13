@@ -1,499 +1,405 @@
-<!DOCTYPE html>
-<html lang="ru">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Крестики-Нолики Мультиплеер</title>
+import React, { useState, useEffect, useMemo, useRef } from 'react';
+import { initializeApp } from "firebase/app";
+import { 
+  getAuth, 
+  signInAnonymously, 
+  onAuthStateChanged, 
+  User 
+} from "firebase/auth";
+import { 
+  getFirestore, 
+  doc, 
+  setDoc, 
+  updateDoc,
+  onSnapshot, 
+  getDoc
+} from "firebase/firestore";
+import { 
+  Palette, 
+  Crown, 
+  Shield, 
+  Activity, 
+  User as UserIcon, 
+  Loader2 
+} from 'lucide-react';
+
+// --- КОНФИГУРАЦИЯ FIREBASE ---
+const firebaseConfig = {
+  apiKey: "AIzaSyAWV097BE56m2YVNi2D494dyXK41j9V5bE",
+  authDomain: "messanger-b0b91.firebaseapp.com",
+  projectId: "messanger-b0b91",
+  storageBucket: "messanger-b0b91.firebasestorage.app",
+  messagingSenderId: "895029700922",
+  appId: "1:895029700922:web:35b5f3999f2b3641aa4803",
+  measurementId: "G-RQ7GYZPT2G"
+};
+
+// --- ИНИЦИАЛИЗАЦИЯ ---
+const app = initializeApp(firebaseConfig);
+const auth = getAuth(app);
+const db = getFirestore(app);
+
+// ID приложения для изоляции данных в базе
+const APP_ID = 'pixel-wars-v1';
+const GRID_SIZE = 12; // 12x12 = 144 клетки
+const COOLDOWN_MS = 800; // Задержка между ходами
+
+// Доступные цвета для игроков
+const PLAYER_COLORS = [
+  '#ef4444', // Red
+  '#f97316', // Orange
+  '#eab308', // Yellow
+  '#22c55e', // Green
+  '#06b6d4', // Cyan
+  '#3b82f6', // Blue
+  '#a855f7', // Purple
+  '#ec4899', // Pink
+];
+
+// --- ТИПЫ ---
+interface PixelData {
+  c: string; // color (hex)
+  u: string; // userId
+  n: string; // userName
+  t: number; // timestamp
+}
+
+interface GameState {
+  cells: Record<string, PixelData>; // "0_0": { ... }
+}
+
+interface LeaderboardEntry {
+  uid: string;
+  name: string;
+  count: number;
+  color: string;
+}
+
+// --- КОМПОНЕНТ ---
+export default function PixelWars() {
+  const [user, setUser] = useState<User | null>(null);
+  const [loading, setLoading] = useState(true);
+  
+  // Состояние игры
+  const [grid, setGrid] = useState<Record<string, PixelData>>({});
+  const [selectedColor, setSelectedColor] = useState(PLAYER_COLORS[5]);
+  const [playerName, setPlayerName] = useState("");
+  const [lastMoveTime, setLastMoveTime] = useState(0);
+  const [cooldownProgress, setCooldownProgress] = useState(0);
+
+  // Ссылки для анимации и логики
+  const audioRef = useRef<HTMLAudioElement | null>(null);
+  const requestRef = useRef<number>();
+
+  // --- 1. АВТОРИЗАЦИЯ ---
+  useEffect(() => {
+    const init = async () => {
+      try {
+        await signInAnonymously(auth);
+      } catch (e) {
+        console.error("Auth failed:", e);
+      }
+    };
+    init();
+
+    return onAuthStateChanged(auth, (u) => {
+      setUser(u);
+      if (u) {
+        // Генерируем случайное имя для новичка
+        const randomName = `PixelWarriro-${u.uid.slice(0,3)}`;
+        setPlayerName(localStorage.getItem('pixel_name') || randomName);
+        setLoading(false);
+      }
+    });
+  }, []);
+
+  // --- 2. СИНХРОНИЗАЦИЯ ПОЛЯ (REAL-TIME) ---
+  useEffect(() => {
+    if (!user) return;
+
+    // Ссылка на единый документ с состоянием поля
+    const boardRef = doc(db, 'artifacts', APP_ID, 'public', 'gamestate');
+
+    const unsubscribe = onSnapshot(boardRef, (docSnap) => {
+      if (docSnap.exists()) {
+        const data = docSnap.data() as GameState;
+        setGrid(data.cells || {});
+      } else {
+        // Если документа нет, создаем пустой
+        setDoc(boardRef, { cells: {} });
+      }
+    }, (error) => {
+      console.error("Sync error:", error);
+    });
+
+    return () => unsubscribe();
+  }, [user]);
+
+  // --- 3. ЛОГИКА ИГРЫ ---
+
+  // Обработка клика по клетке
+  const handleCellClick = async (index: number) => {
+    if (!user) return;
+
+    const now = Date.now();
+    if (now - lastMoveTime < COOLDOWN_MS) return; // Проверка кулдауна
+
+    // Визуальный эффект кулдауна
+    setLastMoveTime(now);
+    animateCooldown();
+
+    const cellId = `c${index}`;
+    const boardRef = doc(db, 'artifacts', APP_ID, 'public', 'gamestate');
+
+    // Оптимистичное обновление UI (чтобы не ждать сеть)
+    const newPixel: PixelData = {
+      c: selectedColor,
+      u: user.uid,
+      n: playerName,
+      t: now
+    };
     
-    <!-- PERFORMANCE OPTIMIZATIONS -->
-    <!-- Ускоряем соединение с серверами Google и Firebase -->
-    <link rel="preconnect" href="https://www.gstatic.com" crossorigin>
-    <link rel="preconnect" href="https://firestore.googleapis.com" crossorigin>
-    <link rel="preconnect" href="https://identitytoolkit.googleapis.com" crossorigin>
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    setGrid(prev => ({
+      ...prev,
+      [cellId]: newPixel
+    }));
+
+    try {
+      // Атомарное обновление конкретного поля в Firestore (Dot notation)
+      // "cells.c5": { ... } обновляет только клетку 5, не перезаписывая всё поле
+      await updateDoc(boardRef, {
+        [`cells.${cellId}`]: newPixel
+      });
+      
+      // Сохраняем имя локально
+      localStorage.setItem('pixel_name', playerName);
+    } catch (e) {
+      console.error("Move failed:", e);
+      // Если ошибка (например, документа нет), пробуем создать
+      // В реальном проеке лучше обрабатывать это иначе
+    }
+  };
+
+  // Анимация полоски кулдауна
+  const animateCooldown = () => {
+    const startTime = Date.now();
     
-    <!-- Загружаем модули Firebase заранее, параллельно, а не последовательно -->
-    <link rel="modulepreload" href="https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js">
-    <link rel="modulepreload" href="https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js">
-    <link rel="modulepreload" href="https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js">
+    const animate = () => {
+      const elapsed = Date.now() - startTime;
+      const progress = Math.min(elapsed / COOLDOWN_MS, 1) * 100;
+      setCooldownProgress(progress);
 
-    <!-- Tailwind CSS (CDN) -->
-    <script src="https://cdn.tailwindcss.com"></script>
+      if (progress < 100) {
+        requestRef.current = requestAnimationFrame(animate);
+      }
+    };
     
-    <style>
-        @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&family=Inter:wght@400;600;700&display=swap');
-        body { font-family: 'Inter', sans-serif; }
-        .font-mono { font-family: 'JetBrains Mono', monospace; }
-        .fade-in { animation: fadeIn 0.3s ease-in-out; }
-        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
-        
-        /* Критические стили для лоадера, чтобы он появился мгновенно до загрузки Tailwind */
-        #loading-view {
-            position: fixed;
-            top: 0; left: 0; right: 0; bottom: 0;
-            background-color: #0f172a; /* slate-900 */
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            z-index: 50;
-            color: #e2e8f0;
-        }
-        .spinner {
-            width: 40px;
-            height: 40px;
-            border: 4px solid rgba(99, 102, 241, 0.3);
-            border-top-color: #6366f1;
-            border-radius: 50%;
-            animation: spin 1s linear infinite;
-            margin-bottom: 1rem;
-        }
-        @keyframes spin { to { transform: rotate(360deg); } }
-    </style>
-</head>
-<body class="min-h-screen bg-slate-900 text-slate-100 flex flex-col items-center justify-center p-4">
+    requestRef.current = requestAnimationFrame(animate);
+  };
 
-    <!-- LOADING VIEW -->
-    <div id="loading-view">
-        <div class="spinner"></div>
-        <p class="text-indigo-300 animate-pulse font-sans">Подключение к серверу...</p>
-    </div>
+  // --- 4. ВЫЧИСЛЕНИЕ ЛИДЕРБОРДА ---
+  const leaderboard = useMemo(() => {
+    const stats: Record<string, LeaderboardEntry> = {};
+    
+    // Проходим по всем клеткам и считаем владельцев
+    Object.values(grid).forEach(pixel => {
+      if (!stats[pixel.u]) {
+        stats[pixel.u] = {
+          uid: pixel.u,
+          name: pixel.n,
+          count: 0,
+          color: pixel.c
+        };
+      }
+      stats[pixel.u].count += 1;
+      // Обновляем имя и цвет, если они изменились у игрока
+      stats[pixel.u].name = pixel.n; 
+      stats[pixel.u].color = pixel.c;
+    });
 
-    <!-- MAIN APP CONTAINER -->
-    <div id="app-container" class="w-full max-w-md hidden fade-in">
-        
-        <!-- MENU VIEW -->
-        <div id="menu-view" class="hidden">
-            <div class="bg-slate-800 rounded-2xl shadow-2xl overflow-hidden border border-slate-700 p-8 text-center">
-                <h1 class="text-4xl font-bold mb-2 bg-gradient-to-r from-indigo-400 to-cyan-400 bg-clip-text text-transparent">
-                    Крестики-Нолики
-                </h1>
-                <p class="text-slate-400 mb-8">Мультиплеер</p>
+    return Object.values(stats).sort((a, b) => b.count - a.count);
+  }, [grid]);
 
-                <div class="space-y-4">
-                    <button id="btn-create" class="w-full bg-indigo-600 hover:bg-indigo-500 text-white font-semibold py-3 px-6 rounded-lg transition-all flex items-center justify-center gap-2 group">
-                        <!-- Play Icon -->
-                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="5 3 19 12 5 21 5 3"></polygon></svg>
-                        Создать игру
-                    </button>
+  // Вычисляем процент владения для текущего игрока
+  const myStats = leaderboard.find(l => l.uid === user?.uid);
+  const totalCells = GRID_SIZE * GRID_SIZE;
+  const myPercent = myStats ? Math.round((myStats.count / totalCells) * 100) : 0;
 
-                    <div class="relative my-4">
-                        <div class="absolute inset-0 flex items-center">
-                            <div class="w-full border-t border-slate-600"></div>
-                        </div>
-                        <div class="relative flex justify-center text-sm">
-                            <span class="px-2 bg-slate-800 text-slate-500">или войди</span>
-                        </div>
-                    </div>
+  // --- RENDER ---
+  if (loading) {
+    return (
+      <div className="flex h-screen w-full items-center justify-center bg-gray-900 text-white">
+        <Loader2 className="h-10 w-10 animate-spin text-cyan-500" />
+      </div>
+    );
+  }
 
-                    <div class="flex gap-2">
-                        <input id="input-code" type="text" placeholder="Код комнаты" maxlength="5"
-                            class="flex-1 bg-slate-900 border border-slate-600 text-white rounded-lg px-4 py-2 focus:outline-none focus:border-indigo-500 font-mono text-center tracking-widest uppercase placeholder:normal-case placeholder:tracking-normal">
-                        <button id="btn-join" disabled class="bg-slate-700 hover:bg-slate-600 disabled:opacity-50 disabled:cursor-not-allowed text-white font-semibold py-2 px-4 rounded-lg transition-all">
-                            Войти
-                        </button>
-                    </div>
-                    
-                    <div id="menu-error" class="hidden mt-4 p-3 bg-red-900/50 border border-red-700 rounded text-red-200 text-sm"></div>
-                </div>
-            </div>
+  return (
+    <div className="min-h-screen bg-gray-950 text-gray-100 font-sans p-4 md:p-8 flex flex-col items-center">
+      
+      {/* HEADER */}
+      <div className="w-full max-w-4xl mb-6 flex flex-col md:flex-row items-center justify-between gap-4 bg-gray-900/50 p-6 rounded-2xl border border-gray-800 shadow-xl backdrop-blur-sm">
+        <div className="flex items-center gap-4">
+          <div className="h-12 w-12 bg-gradient-to-br from-cyan-500 to-blue-600 rounded-lg flex items-center justify-center shadow-lg shadow-cyan-900/50">
+            <Activity className="text-white h-7 w-7" />
+          </div>
+          <div>
+            <h1 className="text-2xl font-black tracking-tight text-white">
+              PIXEL <span className="text-cyan-400">WARS</span>
+            </h1>
+            <p className="text-xs text-gray-400 font-mono">Real-time Territory Control</p>
+          </div>
         </div>
 
-        <!-- GAME VIEW -->
-        <div id="game-view" class="hidden w-full">
-            
-            <!-- Header -->
-            <div class="flex justify-between items-center mb-6 bg-slate-800 p-4 rounded-xl border border-slate-700 shadow-sm">
-                <div>
-                    <span class="text-xs text-slate-400 uppercase tracking-wider block">Комната</span>
-                    <div class="flex items-center gap-2">
-                        <span id="display-room-code" class="text-2xl font-mono font-bold text-white tracking-widest"></span>
-                        <button id="btn-copy" class="p-1.5 hover:bg-slate-700 rounded-md transition-colors text-indigo-400" title="Скопировать">
-                            <!-- Copy Icon -->
-                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="14" height="14" x="8" y="8" rx="2" ry="2"/><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/></svg>
-                        </button>
-                    </div>
-                </div>
-                <button id="btn-leave" class="p-2 hover:bg-red-900/30 text-red-400 rounded-lg transition-colors" title="Выйти">
-                    <!-- LogOut Icon -->
-                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" x2="9" y1="12" y2="12"/></svg>
+        <div className="flex items-center gap-4 bg-gray-950/50 p-2 rounded-xl border border-gray-800">
+          <UserIcon className="h-5 w-5 text-gray-500 ml-2" />
+          <input
+            type="text"
+            value={playerName}
+            onChange={(e) => setPlayerName(e.target.value)}
+            className="bg-transparent border-none outline-none text-gray-200 font-medium w-32 placeholder-gray-600"
+            placeholder="Your Name"
+            maxLength={10}
+          />
+          <div className="h-8 px-3 rounded-lg flex items-center justify-center bg-gray-800 text-sm font-bold border border-gray-700">
+            {myPercent}% Owned
+          </div>
+        </div>
+      </div>
+
+      <div className="w-full max-w-5xl flex flex-col lg:flex-row gap-8 items-start justify-center">
+        
+        {/* GAME BOARD SECTION */}
+        <div className="flex flex-col gap-4 items-center">
+          
+          {/* Main Grid */}
+          <div 
+            className="grid gap-[1px] bg-gray-800 p-2 rounded-xl shadow-2xl shadow-black/50 border border-gray-800 relative overflow-hidden"
+            style={{ 
+              gridTemplateColumns: `repeat(${GRID_SIZE}, 1fr)`,
+              width: 'min(90vw, 500px)',
+              height: 'min(90vw, 500px)'
+            }}
+          >
+            {Array.from({ length: GRID_SIZE * GRID_SIZE }).map((_, i) => {
+              const cellId = `c${i}`;
+              const cellData = grid[cellId];
+              const isOwned = cellData?.u === user?.uid;
+
+              return (
+                <button
+                  key={i}
+                  onClick={() => handleCellClick(i)}
+                  className="w-full h-full relative group transition-all duration-300 hover:brightness-110 focus:outline-none"
+                  style={{
+                    backgroundColor: cellData ? cellData.c : '#1f2937', // Gray-800 default
+                  }}
+                >
+                  {/* Hover Effect */}
+                  <div className="absolute inset-0 bg-white opacity-0 group-hover:opacity-10 transition-opacity" />
+                  
+                  {/* Owner Indicator (Little dot if needed, or subtle border) */}
+                  {isOwned && (
+                    <div className="absolute inset-0 border-2 border-white/20" />
+                  )}
                 </button>
+              );
+            })}
+          </div>
+
+          {/* Controls */}
+          <div className="w-full max-w-[500px] bg-gray-900 p-4 rounded-xl border border-gray-800 flex flex-col gap-4">
+            
+            {/* Color Picker */}
+            <div className="flex flex-col gap-2">
+              <div className="flex items-center gap-2 text-sm text-gray-400 mb-1">
+                <Palette className="w-4 h-4" />
+                <span>Select Color</span>
+              </div>
+              <div className="flex justify-between gap-2">
+                {PLAYER_COLORS.map(color => (
+                  <button
+                    key={color}
+                    onClick={() => setSelectedColor(color)}
+                    className={`w-8 h-8 rounded-full transition-transform hover:scale-110 flex items-center justify-center ${
+                      selectedColor === color ? 'ring-2 ring-white scale-110' : 'opacity-70 hover:opacity-100'
+                    }`}
+                    style={{ backgroundColor: color }}
+                  >
+                    {selectedColor === color && <div className="w-2 h-2 bg-white rounded-full" />}
+                  </button>
+                ))}
+              </div>
             </div>
 
-            <!-- Status Area -->
-            <div class="text-center mb-6">
-                <div id="player-role-badge" class="inline-block px-4 py-1 bg-slate-800 rounded-full text-sm text-slate-400 mb-2 border border-slate-700">
-                    <!-- Populated by JS -->
-                </div>
-                <h2 id="game-status" class="text-2xl font-bold flex items-center justify-center gap-2 min-h-[2rem]">
-                    <!-- Status Text -->
-                </h2>
+            {/* Cooldown Bar */}
+            <div className="h-2 bg-gray-800 rounded-full overflow-hidden w-full mt-2">
+              <div 
+                className={`h-full transition-all duration-100 ease-linear ${
+                  cooldownProgress >= 99 ? 'bg-green-500' : 'bg-cyan-500'
+                }`}
+                style={{ width: `${cooldownProgress}%` }}
+              />
             </div>
-
-            <!-- Waiting for Opponent -->
-            <div id="waiting-screen" class="hidden bg-indigo-900/20 border border-indigo-500/30 rounded-xl p-6 text-center animate-pulse mb-6">
-                <!-- Users Icon -->
-                <svg class="mx-auto text-indigo-400 mb-2" xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
-                <p class="text-indigo-200">Отправьте код комнаты другу</p>
-                <p id="waiting-code" class="text-3xl font-bold mt-2 text-white font-mono tracking-widest"></p>
+            <div className="text-center text-[10px] text-gray-500 uppercase tracking-widest">
+              {cooldownProgress >= 99 ? 'Ready to Capture' : 'Recharging...'}
             </div>
-
-            <!-- Game Board -->
-            <div id="game-board" class="aspect-square w-full bg-slate-800 rounded-2xl p-4 grid grid-cols-3 gap-3 shadow-2xl border border-slate-700 hidden">
-                <!-- Cells generated by JS -->
-            </div>
-
-            <!-- Restart Button -->
-            <button id="btn-restart" class="hidden w-full mt-6 bg-emerald-600 hover:bg-emerald-500 text-white font-bold py-3 px-6 rounded-xl shadow-lg transition-transform active:scale-95 flex items-center justify-center gap-2">
-                <!-- Refresh Icon -->
-                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"/><path d="M21 3v5h-5"/><path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16"/><path d="M3 21v-5h5"/></svg>
-                Играть снова
-            </button>
-
+          </div>
         </div>
+
+        {/* LEADERBOARD SECTION */}
+        <div className="w-full lg:w-72 bg-gray-900 rounded-xl border border-gray-800 overflow-hidden shadow-xl flex flex-col h-[500px]">
+          <div className="p-4 border-b border-gray-800 bg-gray-800/50 flex items-center gap-2">
+            <Crown className="w-5 h-5 text-yellow-500" />
+            <span className="font-bold text-gray-200">Dominators</span>
+          </div>
+          
+          <div className="flex-1 overflow-y-auto p-2 space-y-2">
+            {leaderboard.length === 0 ? (
+              <div className="text-center py-10 text-gray-600 text-sm">
+                Map is empty.<br/>Be the first!
+              </div>
+            ) : (
+              leaderboard.map((entry, idx) => (
+                <div 
+                  key={entry.uid}
+                  className={`p-3 rounded-lg flex items-center justify-between border transition-colors ${
+                    entry.uid === user?.uid 
+                      ? 'bg-white/5 border-gray-600' 
+                      : 'bg-gray-800/40 border-transparent hover:bg-gray-800'
+                  }`}
+                >
+                  <div className="flex items-center gap-3">
+                    <div className="font-mono text-gray-500 w-4 text-sm">#{idx + 1}</div>
+                    <div className="flex flex-col">
+                      <span className="font-bold text-sm text-gray-300 truncate w-24">
+                        {entry.name || 'Unknown'}
+                      </span>
+                      <div className="flex items-center gap-1">
+                        <div 
+                          className="w-2 h-2 rounded-full" 
+                          style={{ backgroundColor: entry.color }}
+                        />
+                        <span className="text-[10px] text-gray-500">Warrior</span>
+                      </div>
+                    </div>
+                  </div>
+                  
+                  <div className="flex items-center gap-1 bg-gray-950 px-2 py-1 rounded text-xs font-mono text-gray-400 border border-gray-800">
+                    <Shield className="w-3 h-3" />
+                    {entry.count}
+                  </div>
+                </div>
+              ))
+            )}
+          </div>
+
+          <div className="p-3 bg-gray-950 border-t border-gray-800 text-center text-xs text-gray-600">
+             Total Pixels: {GRID_SIZE * GRID_SIZE}
+          </div>
+        </div>
+
+      </div>
     </div>
-
-    <script type="module">
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
-        import { getAuth, signInAnonymously, onAuthStateChanged, signInWithCustomToken } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
-        import { getFirestore, doc, setDoc, getDoc, updateDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
-
-        // --- CONFIGURATION ---
-        const defaultFirebaseConfig = {
-            apiKey: "AIzaSyAWV097BE56m2YVNi2D494dyXK41j9V5bE",
-            authDomain: "messanger-b0b91.firebaseapp.com",
-            projectId: "messanger-b0b91",
-            storageBucket: "messanger-b0b91.firebasestorage.app",
-            messagingSenderId: "895029700922",
-            appId: "1:895029700922:web:35b5f3999f2b3641aa4803",
-            measurementId: "G-RQ7GYZPT2G"
-        };
-
-        const firebaseConfig = typeof window !== 'undefined' && window.__firebase_config 
-            ? JSON.parse(window.__firebase_config) 
-            : defaultFirebaseConfig;
-
-        const app = initializeApp(firebaseConfig);
-        const auth = getAuth(app);
-        const db = getFirestore(app);
-
-        const APP_ID = typeof window !== 'undefined' && window.__app_id ? window.__app_id : 'tic-tac-toe-universal';
-
-        // --- STATE ---
-        let user = null;
-        let roomCode = null;
-        let gameData = null;
-        let unsubscribeGame = null;
-
-        // --- DOM ELEMENTS ---
-        const views = {
-            loading: document.getElementById('loading-view'),
-            menu: document.getElementById('menu-view'),
-            game: document.getElementById('game-view'),
-            container: document.getElementById('app-container')
-        };
-
-        const els = {
-            createBtn: document.getElementById('btn-create'),
-            joinBtn: document.getElementById('btn-join'),
-            joinInput: document.getElementById('input-code'),
-            menuError: document.getElementById('menu-error'),
-            roomCodeDisplay: document.getElementById('display-room-code'),
-            copyBtn: document.getElementById('btn-copy'),
-            leaveBtn: document.getElementById('btn-leave'),
-            roleBadge: document.getElementById('player-role-badge'),
-            statusText: document.getElementById('game-status'),
-            waitingScreen: document.getElementById('waiting-screen'),
-            waitingCode: document.getElementById('waiting-code'),
-            board: document.getElementById('game-board'),
-            restartBtn: document.getElementById('btn-restart')
-        };
-
-        // --- HELPERS ---
-        const generateRoomCode = () => Math.floor(1000 + Math.random() * 9000).toString();
-        
-        const checkWinner = (board) => {
-            const lines = [
-                [0, 1, 2], [3, 4, 5], [6, 7, 8],
-                [0, 3, 6], [1, 4, 7], [2, 5, 8],
-                [0, 4, 8], [2, 4, 6]
-            ];
-            for (let line of lines) {
-                const [a, b, c] = line;
-                if (board[a] && board[a] === board[b] && board[a] === board[c]) return board[a];
-            }
-            return null;
-        };
-        const checkDraw = (board) => board.every(cell => cell !== null);
-
-        // --- AUTH ---
-        const initAuth = async () => {
-            try {
-                if (typeof window !== 'undefined' && window.__initial_auth_token) {
-                    await signInWithCustomToken(auth, window.__initial_auth_token);
-                } else {
-                    await signInAnonymously(auth);
-                }
-            } catch (err) {
-                console.error("Auth error:", err);
-                showError("Ошибка авторизации.");
-            }
-        };
-
-        onAuthStateChanged(auth, (u) => {
-            user = u;
-            if (user) {
-                views.loading.classList.add('hidden');
-                views.container.classList.remove('hidden');
-                showMenu();
-            }
-        });
-
-        initAuth();
-
-        // --- GAME LOGIC ---
-
-        const subscribeToGame = (code) => {
-            if (unsubscribeGame) unsubscribeGame();
-            const gameRef = doc(db, 'artifacts', APP_ID, 'public', 'data', 'games', code);
-
-            unsubscribeGame = onSnapshot(gameRef, (snap) => {
-                if (snap.exists()) {
-                    gameData = snap.data();
-                    renderGame();
-                } else {
-                    // Game deleted or doesn't exist
-                    gameData = null;
-                    if (roomCode) leaveGame(); // Force leave if in game
-                }
-            }, (err) => {
-                console.error("Firestore error:", err);
-                showError("Ошибка соединения.");
-            });
-        };
-
-        const createGame = async () => {
-            if (!user) return;
-            setLoading(true);
-            const newCode = generateRoomCode();
-            const initialGame = {
-                board: Array(9).fill(null),
-                xPlayer: user.uid,
-                oPlayer: null,
-                turn: 'X',
-                winner: null,
-                createdAt: new Date().toISOString(),
-                status: 'waiting'
-            };
-
-            try {
-                await setDoc(doc(db, 'artifacts', APP_ID, 'public', 'data', 'games', newCode), initialGame);
-                roomCode = newCode;
-                subscribeToGame(roomCode);
-                showGame();
-            } catch (err) {
-                console.error(err);
-                showError("Не удалось создать игру.");
-            } finally {
-                setLoading(false);
-            }
-        };
-
-        const joinGame = async () => {
-            const code = els.joinInput.value.trim();
-            if (!user || !code) return;
-            setLoading(true);
-
-            try {
-                const gameRef = doc(db, 'artifacts', APP_ID, 'public', 'data', 'games', code);
-                const snap = await getDoc(gameRef);
-
-                if (snap.exists()) {
-                    const data = snap.data();
-                    
-                    if (data.xPlayer === user.uid || data.oPlayer === user.uid) {
-                        // Rejoin
-                        roomCode = code;
-                        subscribeToGame(roomCode);
-                        showGame();
-                    } else if (!data.oPlayer) {
-                        // Join new
-                        await updateDoc(gameRef, { oPlayer: user.uid, status: 'playing' });
-                        roomCode = code;
-                        subscribeToGame(roomCode);
-                        showGame();
-                    } else {
-                        showError("Комната заполнена.");
-                    }
-                } else {
-                    showError("Комната не найдена.");
-                }
-            } catch (err) {
-                console.error(err);
-                showError("Ошибка входа.");
-            } finally {
-                setLoading(false);
-            }
-        };
-
-        const makeMove = async (index) => {
-            if (!gameData || !user) return;
-            
-            const isX = gameData.xPlayer === user.uid;
-            const isO = gameData.oPlayer === user.uid;
-            
-            if (!isX && !isO) return; 
-            if (gameData.winner) return;
-            if (gameData.board[index]) return;
-            if ((isX && gameData.turn !== 'X') || (isO && gameData.turn !== 'O')) return;
-
-            const newBoard = [...gameData.board];
-            newBoard[index] = isX ? 'X' : 'O';
-            const winner = checkWinner(newBoard);
-            const isDraw = !winner && checkDraw(newBoard);
-            const nextTurn = gameData.turn === 'X' ? 'O' : 'X';
-
-            try {
-                await updateDoc(doc(db, 'artifacts', APP_ID, 'public', 'data', 'games', roomCode), {
-                    board: newBoard,
-                    turn: nextTurn,
-                    winner: winner ? winner : (isDraw ? 'draw' : null),
-                    status: (winner || isDraw) ? 'finished' : 'playing'
-                });
-            } catch (err) {
-                console.error("Move error", err);
-            }
-        };
-
-        const resetGame = async () => {
-            if (!gameData || !roomCode) return;
-            try {
-                await updateDoc(doc(db, 'artifacts', APP_ID, 'public', 'data', 'games', roomCode), {
-                    board: Array(9).fill(null),
-                    turn: 'X',
-                    winner: null,
-                    status: 'playing'
-                });
-            } catch(e) { console.error(e); }
-        };
-
-        const leaveGame = () => {
-            if (unsubscribeGame) unsubscribeGame();
-            roomCode = null;
-            gameData = null;
-            unsubscribeGame = null;
-            els.joinInput.value = '';
-            showMenu();
-        };
-
-        // --- UI UPDATES ---
-
-        const showMenu = () => {
-            views.menu.classList.remove('hidden');
-            views.game.classList.add('hidden');
-            els.menuError.classList.add('hidden');
-        };
-
-        const showGame = () => {
-            views.menu.classList.add('hidden');
-            views.game.classList.remove('hidden');
-            els.roomCodeDisplay.innerText = roomCode;
-        };
-
-        const showError = (msg) => {
-            els.menuError.innerText = msg;
-            els.menuError.classList.remove('hidden');
-            setTimeout(() => els.menuError.classList.add('hidden'), 5000);
-        };
-
-        const setLoading = (isLoading) => {
-            els.createBtn.disabled = isLoading;
-            els.joinBtn.disabled = isLoading;
-            els.createBtn.innerHTML = isLoading ? 'Загрузка...' : `
-                 <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="5 3 19 12 5 21 5 3"></polygon></svg>
-                 Создать игру
-            `;
-        };
-
-        const renderGame = () => {
-            if (!gameData) return;
-
-            // 1. Role Badge
-            let role = 'Зритель';
-            let roleClass = 'text-gray-400';
-            if (gameData.xPlayer === user.uid) { role = 'X'; roleClass = 'text-cyan-400'; }
-            else if (gameData.oPlayer === user.uid) { role = 'O'; roleClass = 'text-purple-400'; }
-            
-            els.roleBadge.innerHTML = `Вы играете за <span class="font-bold ${roleClass}">${role}</span>`;
-
-            // 2. Status
-            let statusHTML = '';
-            if (gameData.status === 'waiting') {
-                statusHTML = 'Ожидание игрока...';
-                els.waitingScreen.classList.remove('hidden');
-                els.waitingCode.innerText = roomCode;
-                els.board.classList.add('hidden');
-                els.restartBtn.classList.add('hidden');
-            } else {
-                els.waitingScreen.classList.add('hidden');
-                els.board.classList.remove('hidden');
-                
-                if (gameData.winner === 'draw') {
-                    statusHTML = '<span class="text-white">Ничья!</span>';
-                    els.restartBtn.classList.remove('hidden');
-                } else if (gameData.winner) {
-                    statusHTML = `<span class="text-yellow-400">Победил ${gameData.winner}!</span>`;
-                    els.restartBtn.classList.remove('hidden');
-                } else {
-                    statusHTML = `<span class="text-white">Ход игрока: ${gameData.turn}</span>`;
-                    els.restartBtn.classList.add('hidden');
-                }
-            }
-            els.statusText.innerHTML = statusHTML;
-
-            // 3. Board
-            els.board.innerHTML = '';
-            gameData.board.forEach((cell, idx) => {
-                const btn = document.createElement('button');
-                btn.className = `
-                    relative rounded-xl flex items-center justify-center transition-all duration-200
-                    ${cell ? 'bg-slate-700' : 'bg-slate-750 border-2 border-slate-700 border-dashed'}
-                    ${!cell && !gameData.winner && gameData.status === 'playing' ? 'hover:bg-slate-700 cursor-pointer' : ''}
-                `;
-                
-                if (cell === 'X') {
-                    btn.innerHTML = `<svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="text-cyan-400"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>`;
-                } else if (cell === 'O') {
-                    btn.innerHTML = `<svg width="44" height="44" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="text-purple-400"><circle cx="12" cy="12" r="10"/></svg>`;
-                }
-                
-                btn.disabled = !!cell || !!gameData.winner || gameData.status !== 'playing';
-                btn.onclick = () => makeMove(idx);
-                els.board.appendChild(btn);
-            });
-        };
-
-        // --- EVENT LISTENERS ---
-        els.createBtn.onclick = createGame;
-        els.joinBtn.onclick = joinGame;
-        els.leaveBtn.onclick = leaveGame;
-        els.restartBtn.onclick = resetGame;
-        
-        els.joinInput.oninput = (e) => {
-            els.joinBtn.disabled = e.target.value.trim().length === 0;
-        };
-
-        els.copyBtn.onclick = () => {
-            const textArea = document.createElement("textarea");
-            textArea.value = roomCode;
-            document.body.appendChild(textArea);
-            textArea.select();
-            document.execCommand('copy');
-            document.body.removeChild(textArea);
-            alert("Код скопирован: " + roomCode);
-        };
-
-    </script>
-</body>
-</html>
+  );
+}
