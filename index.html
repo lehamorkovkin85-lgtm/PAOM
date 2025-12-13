@@ -281,7 +281,18 @@
         let db, auth, currentUserId;
         let lastSyncTime = 0;
         let rivalsData = {}; // Map of userId -> data
-        let appId;
+        let raceCollectionRef; // Dynamic reference based on env
+        
+        // --- HYBRID CONFIGURATION ---
+        const FALLBACK_CONFIG = {
+            apiKey: "AIzaSyAWV097BE56m2YVNi2D494dyXK41j9V5bE",
+            authDomain: "messanger-b0b91.firebaseapp.com",
+            projectId: "messanger-b0b91",
+            storageBucket: "messanger-b0b91.firebasestorage.app",
+            messagingSenderId: "895029700922",
+            appId: "1:895029700922:web:35b5f3999f2b3641aa4803",
+            measurementId: "G-RQ7GYZPT2G"
+        };
 
         // Состояние игры
         const gameState = {
@@ -315,22 +326,52 @@
 
         // --- INIT ---
         async function init() {
-            // Setup Firebase
-            try {
-                // ИСПОЛЬЗУЕМ КОНФИГУРАЦИЮ СРЕДЫ
-                const firebaseConfig = JSON.parse(__firebase_config);
-                appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
+            // Setup Firebase (Hybrid Mode)
+            let isCanvasEnv = false;
+            let app;
 
-                const app = initializeApp(firebaseConfig);
-                const analytics = getAnalytics(app);
+            try {
+                // 1. Попытка загрузить конфигурацию среды (для Canvas)
+                if (typeof __firebase_config !== 'undefined') {
+                    const envConfig = JSON.parse(__firebase_config);
+                    app = initializeApp(envConfig);
+                    isCanvasEnv = true;
+                    console.log("Environment: Canvas/Internal");
+                } else {
+                    // Если __firebase_config нет, вызываем ошибку, чтобы перейти в catch
+                    throw new Error("Env config missing");
+                }
+            } catch (e) {
+                // 2. Фолбэк: Использование вашей жестко заданной конфигурации (для внешнего мира)
+                app = initializeApp(FALLBACK_CONFIG);
+                isCanvasEnv = false;
+                console.log("Environment: External/Public");
+            }
+
+            try {
+                // const analytics = getAnalytics(app); // Analytics optional
                 db = getFirestore(app);
                 auth = getAuth(app);
                 
-                // AUTH BEFORE QUERIES
-                if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
-                    await signInWithCustomToken(auth, __initial_auth_token);
+                // AUTH LOGIC
+                if (isCanvasEnv) {
+                    // Внутри среды: Используем токены если есть, и специфический путь
+                    if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
+                        await signInWithCustomToken(auth, __initial_auth_token);
+                    } else {
+                        await signInAnonymously(auth);
+                    }
+                    
+                    // Установка пути к коллекции для Canvas (Strict Path)
+                    const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
+                    raceCollectionRef = collection(db, 'artifacts', appId, 'public', 'data', 'nfs_multiplayer_races');
+
                 } else {
+                    // Снаружи: Обычная анонимная авторизация и обычный путь
                     await signInAnonymously(auth);
+                    
+                    // Установка пути к коллекции для External (Simple Path)
+                    raceCollectionRef = collection(db, 'nfs_multiplayer_races');
                 }
 
                 currentUserId = auth.currentUser.uid;
@@ -339,8 +380,8 @@
                 
                 initMultiplayerListener();
             } catch (e) {
-                console.error("Firebase Error:", e);
-                document.getElementById('connection-status').innerText = "OFFLINE MODE (Connection Failed)";
+                console.error("Firebase Auth/Init Error:", e);
+                document.getElementById('connection-status').innerText = "OFFLINE MODE (" + e.message + ")";
             }
 
             // Setup Mobile Check
@@ -526,12 +567,10 @@
 
         // --- FIREBASE LOGIC ---
         function initMultiplayerListener() {
-            if (!db) return;
-            // RULE 1: Use specific path structure
-            const q = collection(db, 'artifacts', appId, 'public', 'data', 'nfs_multiplayer_races');
+            if (!db || !raceCollectionRef) return;
             
-            // Слушаем обновления всех игроков
-            onSnapshot(q, (snapshot) => {
+            // Слушаем обновления всех игроков, используя динамическую ссылку
+            onSnapshot(raceCollectionRef, (snapshot) => {
                 const count = snapshot.size;
                 document.getElementById('players-count').innerText = "ONLINE: " + count;
 
@@ -555,16 +594,16 @@
 
             // Очистка при выходе
             window.addEventListener('beforeunload', () => {
-                if(currentUserId) deleteDoc(doc(db, 'artifacts', appId, 'public', 'data', 'nfs_multiplayer_races', currentUserId));
+                if(currentUserId) deleteDoc(doc(raceCollectionRef, currentUserId));
             });
         }
 
         function syncPlayerState() {
-            if (!db || !currentUserId || !gameState.active) return;
+            if (!db || !currentUserId || !gameState.active || !raceCollectionRef) return;
             
             const now = Date.now();
             if (now - lastSyncTime > 100) { // Sync every 100ms
-                setDoc(doc(db, 'artifacts', appId, 'public', 'data', 'nfs_multiplayer_races', currentUserId), {
+                setDoc(doc(raceCollectionRef, currentUserId), {
                     x: gameState.lane, // Lane index
                     z: gameState.distance, // Absolute distance
                     color: gameState.carColor,
@@ -611,14 +650,7 @@
                 mesh.position.x = THREE.MathUtils.lerp(mesh.position.x, targetX, delta * 5);
 
                 // Z position (Relative to player)
-                // Если data.z > gameState.distance, игрок впереди (negative Z visual)
-                // Визуальная координата Z = -(RivalDistance - MyDistance)
-                // Road moves +Z relative to player. 
-                // Игрок всегда в Z=0.
-                // Если Rival проехал 1000m, а я 900m. Он впереди на 100м.
-                // В ThreeJS "впереди" это -Z. Значит Z = -100.
                 const relativeZ = -(data.z - gameState.distance);
-                
                 mesh.position.z = THREE.MathUtils.lerp(mesh.position.z, relativeZ, delta * 10);
                 
                 // Tilt logic
@@ -810,8 +842,7 @@
             document.getElementById('final-score').innerText = 'SCORE: ' + Math.floor(gameState.score);
             
             // Clean up multiplayer self from DB immediately?
-            // Optional, but good practice.
-            if(currentUserId && db) deleteDoc(doc(db, 'artifacts', appId, 'public', 'data', 'nfs_multiplayer_races', currentUserId));
+            if(currentUserId && raceCollectionRef) deleteDoc(doc(raceCollectionRef, currentUserId));
         }
 
         function onWindowResize() {
