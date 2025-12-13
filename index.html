@@ -2,691 +2,826 @@
 <html lang="ru">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Paom Tic Tac Toe</title>
-    
-    <!-- Tailwind CSS -->
-    <script src="https://cdn.tailwindcss.com"></script>
-    
-    <!-- React & ReactDOM -->
-    <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
-    <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
-    
-    <!-- Babel (для компиляции JSX в браузере) -->
-    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
-
-    <!-- Стили для анимаций -->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>NFS: Cyberpunk Drift Redux (Multiplayer)</title>
     <style>
-        .drop-shadow-glow { filter: drop-shadow(0 0 10px rgba(currentColor, 0.5)); }
-        @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
-        .animate-spin { animation: spin 1s linear infinite; }
-        .animate-pulse { animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite; }
-        @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: .5; } }
-    </style>
-</head>
-<body class="bg-slate-950 text-white overflow-hidden">
-    <div id="root"></div>
+        @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&display=swap');
 
-    <script type="text/babel" data-type="module">
-        // Импорты Firebase
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-app.js";
-        import { 
-            getAuth, 
-            signInWithEmailAndPassword, 
-            createUserWithEmailAndPassword, 
-            signOut, 
-            onAuthStateChanged,
-            signInWithCustomToken
-        } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-auth.js";
-        import { 
-            getFirestore, 
-            doc, 
-            setDoc, 
-            getDoc, 
-            updateDoc, 
-            collection, 
-            onSnapshot, 
-            addDoc, 
-            query, 
-            where, 
-            getDocs
-        } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-firestore.js";
-
-        // --- ИКОНКИ ---
-        const Icon = ({ path, className, size = 24, color = "currentColor" }) => (
-            <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>
-                {path}
-            </svg>
-        );
-
-        const Icons = {
-            Trophy: (p) => <Icon {...p} path={<><path d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6"/><path d="M18 9h1.5a2.5 2.5 0 0 0 0-5H18"/><path d="M4 22h16"/><path d="M10 14.66V17c0 .55-.47.98-.97 1.21C7.85 18.75 7 20.24 7 22"/><path d="M14 14.66V17c0 .55.47.98.97 1.21C16.15 18.75 17 20.24 17 22"/><path d="M18 2H6v7a6 6 0 0 0 12 0V2Z"/></>} />,
-            User: (p) => <Icon {...p} path={<><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></>} />,
-            Settings: (p) => <Icon {...p} path={<><path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.09a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/><circle cx="12" cy="12" r="3"/></>} />,
-            ShoppingBag: (p) => <Icon {...p} path={<><path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4Z"/><path d="M3 6h18"/><path d="M16 10a4 4 0 0 1-8 0"/></>} />,
-            Newspaper: (p) => <Icon {...p} path={<><path d="M4 22h16a2 2 0 0 0 2-2V4a2 2 0 0 0-2-2H8a2 2 0 0 0-2 2v16a2 2 0 0 1-2 2Zm0 0a2 2 0 0 1-2-2v-9c0-1.1.9-2 2-2h2"/><path d="M18 14h-8"/><path d="M15 18h-5"/><path d="M10 6h8v4h-8V6Z"/></>} />,
-            Cpu: (p) => <Icon {...p} path={<><rect x="4" y="4" width="16" height="16" rx="2"/><rect x="9" y="9" width="6" height="6"/><path d="M15 2v2"/><path d="M15 20v2"/><path d="M2 15h2"/><path d="M2 9h2"/><path d="M20 15h2"/><path d="M20 9h2"/><path d="M9 2v2"/><path d="M9 20v2"/></>} />,
-            Users: (p) => <Icon {...p} path={<><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></>} />,
-            LogOut: (p) => <Icon {...p} path={<><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" x2="9" y1="12" y2="12"/></>} />,
-            X: (p) => <Icon {...p} path={<><path d="M18 6 6 18"/><path d="m6 6 12 12"/></>} />,
-            Check: (p) => <Icon {...p} path={<polyline points="20 6 9 17 4 12"/>} />,
-            Loader2: (p) => <Icon {...p} path={<path d="M21 12a9 9 0 1 1-6.219-8.56"/>} />,
-            Diamond: (p) => <Icon {...p} path={<path d="M6 3h12l4 6-10 13L2 9Z"/>} />,
-            Swords: (p) => <Icon {...p} path={<><polyline points="14.5 17.5 3 6 3 3 6 3 17.5 14.5"/><line x1="13" x2="19" y1="19" y2="13"/><line x1="16" x2="20" y1="16" y2="20"/><line x1="19" x2="21" y1="21" y2="19"/><polyline points="14.5 6.5 18 3 21 3 21 6 17.5 9.5"/><line x1="5" x2="9" y1="14" y2="18"/><line x1="7" x2="4" y1="17" y2="20"/><line x1="3" x2="5" y1="19" y2="21"/></>} />
-        };
-
-        // --- КОНФИГУРАЦИЯ ---
-        let firebaseConfig = {
-          apiKey: "AIzaSyAWV097BE56m2YVNi2D494dyXK41j9V5bE",
-          authDomain: "messanger-b0b91.firebaseapp.com",
-          projectId: "messanger-b0b91",
-          storageBucket: "messanger-b0b91.firebasestorage.app",
-          messagingSenderId: "895029700922",
-          appId: "1:895029700922:web:35b5f3999f2b3641aa4803",
-          measurementId: "G-RQ7GYZPT2G"
-        };
-
-        if (typeof window.__firebase_config !== 'undefined') {
-             try {
-                const envConfig = JSON.parse(window.__firebase_config);
-                if (envConfig && envConfig.apiKey) {
-                    firebaseConfig = envConfig;
-                }
-             } catch(e) { console.warn("Env config parse error", e); }
+        :root {
+            --neon-blue: #00f3ff;
+            --neon-pink: #ff00ff;
+            --dark-bg: #050510;
+            --ui-bg: rgba(0, 0, 0, 0.85);
         }
 
-        const app = initializeApp(firebaseConfig);
-        const auth = getAuth(app);
-        const db = getFirestore(app);
+        body {
+            margin: 0;
+            overflow: hidden;
+            background-color: var(--dark-bg);
+            font-family: 'Orbitron', sans-serif;
+            color: white;
+            user-select: none;
+            -webkit-touch-callout: none; /* iOS Safari */
+            touch-action: none; /* Disable native touch gestures */
+        }
 
-        const getAppId = () => {
-            return typeof window.__app_id !== 'undefined' ? window.__app_id : 'paom-tic-tac-toe-public';
+        /* Оверлей ошибок */
+        #error-overlay {
+            display: none;
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(50, 0, 0, 0.95);
+            color: #ff5555;
+            z-index: 9999;
+            padding: 40px;
+            box-sizing: border-box;
+            font-family: monospace;
+            white-space: pre-wrap;
+        }
+
+        #game-ui {
+            position: absolute;
+            top: 0; left: 0; width: 100%; height: 100%;
+            pointer-events: none;
+        }
+
+        /* HUD */
+        #hud {
+            display: none;
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            text-align: right;
+            z-index: 10;
+        }
+        .hud-value { font-size: 2.5rem; font-weight: 900; color: var(--neon-blue); text-shadow: 0 0 10px var(--neon-blue); }
+        .hud-label { font-size: 0.8rem; color: #aaa; letter-spacing: 2px; }
+        
+        #players-count {
+            font-size: 0.9rem;
+            color: var(--neon-pink);
+            margin-top: 5px;
+        }
+
+        #nitro-bar-container {
+            display: none;
+            position: absolute;
+            bottom: 30px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 300px;
+            height: 20px;
+            background: #333;
+            border: 2px solid #555;
+            transform: skewX(-20deg);
+            z-index: 10;
+        }
+        #nitro-bar {
+            width: 0%;
+            height: 100%;
+            background: var(--neon-pink);
+            box-shadow: 0 0 15px var(--neon-pink);
+            transition: width 0.1s;
+        }
+
+        /* Мобильное управление */
+        #mobile-controls {
+            display: none; /* Включается JS если тач */
+            position: absolute;
+            bottom: 0; left: 0; width: 100%; height: 100%;
+            pointer-events: none;
+            z-index: 20;
+        }
+
+        .touch-btn {
+            position: absolute;
+            bottom: 40px;
+            width: 80px; height: 80px;
+            background: rgba(255, 255, 255, 0.1);
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            border-radius: 50%;
+            pointer-events: auto;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+            color: rgba(255, 255, 255, 0.7);
+            backdrop-filter: blur(4px);
+            transition: background 0.1s;
+        }
+        .touch-btn:active { background: rgba(0, 243, 255, 0.3); border-color: var(--neon-blue); color: white; }
+
+        #btn-left { left: 30px; }
+        #btn-right { left: 130px; }
+        #btn-nitro { right: 30px; width: 90px; height: 90px; border-color: var(--neon-pink); color: var(--neon-pink); font-weight: bold; font-size: 16px; }
+        #btn-nitro:active { background: rgba(255, 0, 255, 0.3); }
+
+        /* Меню и Гараж */
+        #main-menu, #game-over {
+            position: absolute;
+            top: 50%; left: 50%;
+            transform: translate(-50%, -50%);
+            background: var(--ui-bg);
+            padding: 40px;
+            border: 2px solid var(--neon-blue);
+            box-shadow: 0 0 20px var(--neon-blue);
+            text-align: center;
+            pointer-events: auto;
+            max-width: 500px;
+            width: 90%;
+            z-index: 50;
+        }
+
+        h1 { margin: 0 0 20px; font-size: 3rem; color: var(--neon-blue); text-transform: uppercase; font-style: italic; }
+        h2 { color: var(--neon-pink); }
+        
+        button {
+            background: transparent;
+            border: 2px solid white;
+            color: white;
+            padding: 15px 40px;
+            font-size: 1.2rem;
+            font-family: 'Orbitron', sans-serif;
+            cursor: pointer;
+            margin-top: 20px;
+            transition: 0.3s;
+            text-transform: uppercase;
+        }
+        button:hover { background: white; color: black; box-shadow: 0 0 15px white; }
+
+        .garage-controls {
+            display: flex;
+            gap: 20px;
+            justify-content: center;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+        }
+        .color-btn {
+            width: 40px; height: 40px;
+            border-radius: 50%;
+            border: 2px solid white;
+            cursor: pointer;
+            transition: transform 0.2s;
+        }
+        .color-btn:hover { transform: scale(1.2); }
+
+        #controls-hint {
+            margin-top: 20px;
+            font-size: 0.8rem;
+            color: #888;
+        }
+        
+        #connection-status {
+            font-size: 0.7rem;
+            color: #666;
+            margin-top: 10px;
+        }
+    </style>
+
+    <!-- 1. АРХИТЕКТУРА: Import Map для Three.js и Firebase -->
+    <script type="importmap">
+        {
+            "imports": {
+                "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
+                "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"
+            }
+        }
+    </script>
+    
+    <!-- 1. АРХИТЕКТУРА: Ловушка ошибок -->
+    <script>
+        window.onerror = function(message, source, lineno, colno, error) {
+            const overlay = document.getElementById('error-overlay');
+            overlay.style.display = 'block';
+            overlay.innerHTML = `CRITICAL SYSTEM FAILURE:\n\n${message}\nLine: ${lineno}\nSource: ${source}`;
+            console.error(error);
+        };
+    </script>
+</head>
+<body>
+
+    <div id="error-overlay"></div>
+
+    <div id="game-ui">
+        <div id="hud">
+            <div class="hud-value" id="speed-display">0</div>
+            <div class="hud-label">KM/H</div>
+            <div class="hud-value" id="score-display" style="font-size: 1.5rem; margin-top:10px; color:white;">0</div>
+            <div class="hud-label">SCORE</div>
+            <div id="players-count">ONLINE: 1</div>
+        </div>
+        <div id="nitro-bar-container"><div id="nitro-bar"></div></div>
+
+        <!-- Мобильное управление -->
+        <div id="mobile-controls">
+            <div class="touch-btn" id="btn-left">◀</div>
+            <div class="touch-btn" id="btn-right">▶</div>
+            <div class="touch-btn" id="btn-nitro">NITRO</div>
+        </div>
+
+        <div id="main-menu">
+            <h1>NEON DRIFT</h1>
+            <p>ГАРАЖ / НАСТРОЙКИ</p>
+            
+            <div class="garage-controls">
+                <div>
+                    <p style="font-size:0.8rem">КУЗОВ</p>
+                    <div style="display:flex; gap:10px;">
+                        <div class="color-btn" style="background:#ff0000" onclick="updateCarColor(0xff0000)"></div>
+                        <div class="color-btn" style="background:#00f3ff" onclick="updateCarColor(0x00f3ff)"></div>
+                        <div class="color-btn" style="background:#ffffff" onclick="updateCarColor(0xffffff)"></div>
+                        <div class="color-btn" style="background:#111111" onclick="updateCarColor(0x111111)"></div>
+                    </div>
+                </div>
+                <div>
+                    <p style="font-size:0.8rem">НЕОН</p>
+                    <div style="display:flex; gap:10px;">
+                        <div class="color-btn" style="background:#ff00ff" onclick="updateNeonColor(0xff00ff)"></div>
+                        <div class="color-btn" style="background:#00ff00" onclick="updateNeonColor(0x00ff00)"></div>
+                        <div class="color-btn" style="background:#ffff00" onclick="updateNeonColor(0xffff00)"></div>
+                    </div>
+                </div>
+            </div>
+
+            <button onclick="startGame()">ГОНКА</button>
+            <div id="controls-hint">WASD / Стрелки - Управление<br>ПРОБЕЛ - Нитро</div>
+            <div id="connection-status">Connecting to server...</div>
+        </div>
+
+        <div id="game-over" style="display: none;">
+            <h1 style="color:red">CRASHED</h1>
+            <h2 id="final-score">SCORE: 0</h2>
+            <button onclick="resetGame()">RETRY</button>
+            <button onclick="quitToMenu()" style="margin-left: 10px; font-size: 1rem; padding: 15px 20px;">MENU</button>
+        </div>
+    </div>
+
+    <!-- Основной скрипт модуля -->
+    <script type="module">
+        import * as THREE from 'three';
+        import { EffectComposer } from 'three/addons/postprocessing/EffectComposer.js';
+        import { RenderPass } from 'three/addons/postprocessing/RenderPass.js';
+        import { UnrealBloomPass } from 'three/addons/postprocessing/UnrealBloomPass.js';
+
+        // --- FIREBASE IMPORTS (CDN) ---
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+        import { getAnalytics } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-analytics.js";
+        import { getFirestore, collection, doc, setDoc, onSnapshot, deleteDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+        import { getAuth, signInAnonymously, signInWithCustomToken } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+
+        // --- GLOBALS ---
+        let scene, camera, renderer, composer;
+        let playerCar;
+        let roadSegments = [];
+        let trafficCars = [];
+        let rivalMeshes = {}; // Map of userId -> Mesh
+        let clock = new THREE.Clock();
+        
+        // Firebase Globals
+        let db, auth, currentUserId;
+        let lastSyncTime = 0;
+        let rivalsData = {}; // Map of userId -> data
+        let appId;
+
+        // Состояние игры
+        const gameState = {
+            active: false,
+            speed: 0,
+            baseSpeed: 0,
+            maxSpeed: 180,
+            nitroMaxSpeed: 280,
+            nitro: 100,
+            score: 0,
+            distance: 0, // Абсолютная дистанция для мультиплеера
+            lane: 0,
+            targetX: 0,
+            carColor: 0x00f3ff,
+            neonColor: 0xff00ff
         };
 
-        const DEFAULT_QUESTS = [
-            { id: 'q1', desc: 'Выиграть 3 матча в ранговом', target: 3, current: 0, reward: 50, claimed: false },
-            { id: 'q2', desc: 'Сыграть 5 игр с ИИ', target: 5, current: 0, reward: 30, claimed: false },
-            { id: 'q3', desc: 'Купить 1 предмет', target: 1, current: 0, reward: 20, claimed: false }
-        ];
+        const WORLD_CONFIG = {
+            segmentLength: 20,
+            segmentCount: 20,
+            roadWidth: 14,
+            laneWidth: 4,
+            fogDist: 150
+        };
 
-        const SHOP_ITEMS = [
-            { id: 'default_av', name: 'Классика (Аватар)', type: 'avatar', price: 0, icon: '😊' },
-            { id: 'robot_av', name: 'Киборг (Аватар)', type: 'avatar', price: 100, icon: '🤖' },
-            { id: 'ninja_av', name: 'Ниндзя (Аватар)', type: 'avatar', price: 250, icon: '🥷' },
-            { id: 'default_bd', name: 'Серый (Доска)', type: 'board', price: 0, color: 'bg-gray-800' },
-            { id: 'blue_bd', name: 'Неон Синий (Доска)', type: 'board', price: 150, color: 'bg-blue-900' },
-            { id: 'red_bd', name: 'Лава (Доска)', type: 'board', price: 300, color: 'bg-red-900' },
-        ];
+        const CONTROLS = {
+            left: false,
+            right: false,
+            nitro: false
+        };
 
-        const NEWS_UPDATES = [
-            { ver: '1.2', title: 'Исправление матчмейкинга', content: 'Улучшена система поиска противников и отображение статуса ожидания.' },
-            { ver: '1.1', title: 'Обновление: Ранговый с ботами', content: 'Добавлена возможность играть на рейтинг против ИИ, если нет игроков. Исправлены баги магазина.' },
-            { ver: '1.0', title: 'Релиз Paom.Tic.Tac.Toe', content: 'Первый запуск игры! Доступны: Ранговые матчи, Игра с ИИ (Gemini), Магазин, Ежедневные задания.' }
-        ];
+        // --- INIT ---
+        async function init() {
+            // Setup Firebase
+            try {
+                // ИСПОЛЬЗУЕМ КОНФИГУРАЦИЮ СРЕДЫ
+                const firebaseConfig = JSON.parse(__firebase_config);
+                appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
 
-        // --- ПРИЛОЖЕНИЕ ---
-        function App() {
-            const [user, setUser] = React.useState(null);
-            const [profile, setProfile] = React.useState(null);
-            const [currentScreen, setCurrentScreen] = React.useState('auth');
-            const [loading, setLoading] = React.useState(false);
-            const [errorMsg, setErrorMsg] = React.useState('');
-            const [isAuthChecking, setIsAuthChecking] = React.useState(true);
-            
-            // Auth State
-            const [email, setEmail] = React.useState('');
-            const [password, setPassword] = React.useState('');
-            const [isRegistering, setIsRegistering] = React.useState(false);
-
-            // Game State
-            const [gameMode, setGameMode] = React.useState('ai');
-            const [board, setBoard] = React.useState(Array(9).fill(null));
-            const [winner, setWinner] = React.useState(null);
-            const [matchId, setMatchId] = React.useState(null);
-            const [opponentName, setOpponentName] = React.useState('Bot');
-            const [isMyTurn, setIsMyTurn] = React.useState(true);
-            const [mySymbol, setMySymbol] = React.useState('X');
-            const [aiThinking, setAiThinking] = React.useState(false);
-
-            React.useEffect(() => {
-                let unsubAuth;
-                const initAuth = async () => {
-                    const token = window.__initial_auth_token;
-                    if (token) {
-                        try { await signInWithCustomToken(auth, token); } catch(e) { console.error("Auth Token Failed:", e); }
-                    }
-                    unsubAuth = onAuthStateChanged(auth, (u) => {
-                        setUser(u);
-                        setIsAuthChecking(false);
-                        if (!u) setCurrentScreen('auth');
-                    });
-                };
-                initAuth();
-                return () => { if (unsubAuth) unsubAuth(); };
-            }, []);
-
-            React.useEffect(() => {
-                if (!user || isAuthChecking) {
-                    if (!user && !isAuthChecking) setProfile(null);
-                    return;
-                }
-                setCurrentScreen('menu');
-                const appId = getAppId();
-                const docRef = doc(db, 'artifacts', appId, 'users', user.uid, 'profile', 'data');
-                const unsubProfile = onSnapshot(docRef, async (snap) => {
-                    if (snap.exists()) {
-                        const data = snap.data();
-                        const today = new Date().toDateString();
-                        if (data.lastLogin !== today) {
-                            const newQuests = DEFAULT_QUESTS.map(q => ({...q}));
-                            await updateDoc(docRef, { quests: newQuests, lastLogin: today });
-                        }
-                        setProfile(data);
-                    } else {
-                        const newProfile = {
-                            nickname: `Player${Math.floor(Math.random()*1000)}`,
-                            elo: 1000,
-                            diamonds: 50,
-                            avatar: 'default_av',
-                            boardSkin: 'default_bd',
-                            inventory: ['default_av', 'default_bd'],
-                            settings: { geminiKey: '', rankedWithBots: false },
-                            quests: DEFAULT_QUESTS,
-                            lastLogin: new Date().toDateString()
-                        };
-                        try { await setDoc(docRef, newProfile); } catch (err) { console.error("Error creating profile:", err); }
-                    }
-                }, (err) => { console.error("Profile Load Error:", err); alert("Ошибка доступа к профилю."); });
-                return () => unsubProfile();
-            }, [user, isAuthChecking]);
-
-            const handleAuth = async (e) => {
-                e.preventDefault();
-                setLoading(true);
-                setErrorMsg('');
-                try {
-                    if (isRegistering) {
-                        await createUserWithEmailAndPassword(auth, email, password);
-                    } else {
-                        await signInWithEmailAndPassword(auth, email, password);
-                    }
-                } catch (err) { setErrorMsg(err.message); } finally { setLoading(false); }
-            };
-
-            const handleLogout = () => signOut(auth);
-
-            const updateQuestProgress = async (type, amount = 1) => {
-                if (!user || !profile) return;
-                const appId = getAppId();
-                const docRef = doc(db, 'artifacts', appId, 'users', user.uid, 'profile', 'data');
-                const updatedQuests = profile.quests.map(q => {
-                    if (q.claimed) return q;
-                    let match = false;
-                    if (type === 'win_ranked' && q.id === 'q1') match = true;
-                    if (type === 'play_ai' && q.id === 'q2') match = true;
-                    if (type === 'buy_item' && q.id === 'q3') match = true;
-                    if (match) return { ...q, current: Math.min(q.current + amount, q.target) };
-                    return q;
-                });
-                await updateDoc(docRef, { quests: updatedQuests });
-            };
-
-            const claimQuest = async (questId) => {
-                if (!user || !profile) return;
-                const quest = profile.quests.find(q => q.id === questId);
-                if (!quest || quest.claimed || quest.current < quest.target) return;
-                const appId = getAppId();
-                const docRef = doc(db, 'artifacts', appId, 'users', user.uid, 'profile', 'data');
-                const updatedQuests = profile.quests.map(q => q.id === questId ? { ...q, claimed: true } : q);
-                await updateDoc(docRef, { quests: updatedQuests, diamonds: profile.diamonds + quest.reward });
-            };
-
-            const calculateWinner = (squares) => {
-                const lines = [[0, 1, 2], [3, 4, 5], [6, 7, 8], [0, 3, 6], [1, 4, 7], [2, 5, 8], [0, 4, 8], [2, 4, 6]];
-                for (let i = 0; i < lines.length; i++) {
-                    const [a, b, c] = lines[i];
-                    if (squares[a] && squares[a] === squares[b] && squares[a] === squares[c]) return squares[a];
-                }
-                return squares.includes(null) ? null : 'Draw';
-            };
-
-            const startGame = async (mode, friendId) => {
-                setGameMode(mode);
-                setBoard(Array(9).fill(null));
-                setWinner(null);
-                setMatchId(null);
+                const app = initializeApp(firebaseConfig);
+                const analytics = getAnalytics(app);
+                db = getFirestore(app);
+                auth = getAuth(app);
                 
-                if (mode === 'ai') {
-                    setOpponentName("Gemini AI");
-                    setMySymbol('X');
-                    setIsMyTurn(true);
-                    setCurrentScreen('game');
-                } else if (mode === 'ranked') {
-                    setLoading(true);
-                    await findRankedMatch();
-                } else if (mode === 'friend') {
-                    alert("В демо режиме мультиплеер доступен через 'Ранговый матч' (создание публичной комнаты).");
-                }
-            };
-
-            const findRankedMatch = async () => {
-                if (profile?.settings.rankedWithBots) {
-                    setOpponentName("Bot (Ranked)");
-                    setMySymbol('X');
-                    setIsMyTurn(true);
-                    setCurrentScreen('game');
-                    setLoading(false);
-                    return;
+                // AUTH BEFORE QUERIES
+                if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
+                    await signInWithCustomToken(auth, __initial_auth_token);
+                } else {
+                    await signInAnonymously(auth);
                 }
 
-                const appId = getAppId();
-                const matchesRef = collection(db, 'artifacts', appId, 'public', 'data', 'matches');
+                currentUserId = auth.currentUser.uid;
+                document.getElementById('connection-status').innerText = "CONNECTED: " + currentUserId.substring(0,6);
+                document.getElementById('connection-status').style.color = "#00ff00";
                 
-                try {
-                    const q = query(matchesRef, where("status", "==", "waiting"));
-                    const querySnapshot = await getDocs(q);
-                    
-                    let foundMatch = null;
-                    querySnapshot.forEach((doc) => {
-                        if (doc.data().player1Id !== user.uid) foundMatch = doc;
-                    });
-
-                    if (foundMatch) {
-                        const matchDoc = foundMatch;
-                        await updateDoc(doc(matchesRef, matchDoc.id), {
-                            player2Id: user.uid,
-                            player2Name: profile?.nickname || 'Player 2',
-                            status: 'active',
-                            currentTurn: 'X'
-                        });
-                        setMatchId(matchDoc.id);
-                        setMySymbol('O');
-                        setOpponentName(matchDoc.data().player1Name);
-                        setIsMyTurn(false);
-                        subscribeToMatch(matchDoc.id);
-                    } else {
-                        const newMatch = {
-                            player1Id: user.uid,
-                            player1Name: profile?.nickname || 'Player 1',
-                            status: 'waiting',
-                            board: Array(9).fill(null),
-                            currentTurn: 'X',
-                            winner: null,
-                            createdAt: Date.now()
-                        };
-                        const docRef = await addDoc(matchesRef, newMatch);
-                        setMatchId(docRef.id);
-                        setMySymbol('X');
-                        setOpponentName("Поиск...");
-                        setIsMyTurn(true);
-                        subscribeToMatch(docRef.id);
-                    }
-                } catch (err) {
-                    console.error("Matchmaking error:", err);
-                    alert("Ошибка поиска матча: " + err.message + ". Проверьте соединение.");
-                    setLoading(false);
-                }
-            };
-
-            const subscribeToMatch = (id) => {
-                const appId = getAppId();
-                setLoading(false);
-                setCurrentScreen('game');
-
-                onSnapshot(doc(db, 'artifacts', appId, 'public', 'data', 'matches', id), async (docSnap) => {
-                    if (!docSnap.exists()) return;
-                    const data = docSnap.data();
-
-                    setBoard(data.board);
-                    
-                    if (mySymbol === 'X' && data.player2Name && (opponentName === "Поиск..." || opponentName === "Player 2")) {
-                        setOpponentName(data.player2Name);
-                    }
-                    setIsMyTurn(data.currentTurn === mySymbol);
-
-                    if (data.winner) {
-                        setWinner(data.winner);
-                        handleGameEnd(data.winner);
-                    } else {
-                        const w = calculateWinner(data.board);
-                        if (w && !data.winner && isMyTurn) {
-                            await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'matches', id), { winner: w });
-                        }
-                    }
-                });
-            };
-
-            const handleClick = async (i) => {
-                if (board[i] || winner || !isMyTurn) return;
-                // Блокируем ход, если соперник еще не найден
-                if (gameMode === 'ranked' && opponentName === "Поиск...") return;
-
-                const newBoard = [...board];
-                newBoard[i] = mySymbol;
-                setBoard(newBoard);
-                setIsMyTurn(false);
-
-                if (gameMode === 'ai' || (gameMode === 'ranked' && profile?.settings.rankedWithBots && opponentName.includes("Bot"))) {
-                    const w = calculateWinner(newBoard);
-                    if (w) {
-                        setWinner(w);
-                        handleGameEnd(w);
-                        return;
-                    }
-                    setAiThinking(true);
-                    makeAiMove(newBoard);
-                } else if (matchId) {
-                    const appId = getAppId();
-                    const nextTurn = mySymbol === 'X' ? 'O' : 'X';
-                    const w = calculateWinner(newBoard);
-                    await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'matches', matchId), {
-                        board: newBoard,
-                        currentTurn: nextTurn,
-                        winner: w || null
-                    });
-                }
-            };
-
-            const makeAiMove = async (currentBoard) => {
-                try {
-                    let moveIndex = -1;
-                    if (profile?.settings.geminiKey) {
-                        const prompt = `Play Tic Tac Toe. You are 'O'. The board is represented as an array of 9 elements (0-8), where null is empty, 'X' is opponent, 'O' is you. Current board: ${JSON.stringify(currentBoard)}. Return ONLY the index (0-8) of your next move. Valid moves are indices with null.`;
-                        const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent?key=${profile.settings.geminiKey}`, {
-                            method: 'POST',
-                            headers: { 'Content-Type': 'application/json' },
-                            body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] })
-                        });
-                        const data = await response.json();
-                        const text = data.candidates?.[0]?.content?.parts?.[0]?.text;
-                        const parsed = parseInt(text?.trim() || "-1");
-                        if (!isNaN(parsed) && currentBoard[parsed] === null) moveIndex = parsed;
-                    }
-
-                    if (moveIndex === -1) {
-                        const emptyIndices = currentBoard.map((v, k) => v === null ? k : null).filter(v => v !== null);
-                        if (emptyIndices.length > 0) moveIndex = emptyIndices[Math.floor(Math.random() * emptyIndices.length)];
-                    }
-
-                    if (moveIndex !== -1) {
-                        setTimeout(() => {
-                            const aiBoard = [...currentBoard];
-                            aiBoard[moveIndex] = 'O';
-                            setBoard(aiBoard);
-                            setAiThinking(false);
-                            setIsMyTurn(true);
-                            const w = calculateWinner(aiBoard);
-                            if (w) {
-                                setWinner(w);
-                                handleGameEnd(w);
-                            }
-                        }, 600);
-                    }
-                } catch (e) {
-                    console.error("AI Error", e);
-                    setAiThinking(false);
-                    setIsMyTurn(true);
-                }
-            };
-
-            const handleGameEnd = async (w) => {
-                if (!profile || !user) return;
-                const isWin = w === mySymbol;
-                const isDraw = w === 'Draw';
-                const isLoss = !isWin && !isDraw;
-
-                const appId = getAppId();
-                const docRef = doc(db, 'artifacts', appId, 'users', user.uid, 'profile', 'data');
-                
-                let eloChange = 0;
-                if (gameMode === 'ranked' || (gameMode === 'ranked' && profile.settings.rankedWithBots)) {
-                    if (isWin) eloChange = 25;
-                    if (isLoss) eloChange = -25;
-                }
-
-                if (isWin && gameMode === 'ranked') updateQuestProgress('win_ranked');
-                if (gameMode === 'ai') updateQuestProgress('play_ai');
-
-                const newElo = Math.max(0, profile.elo + eloChange);
-                await updateDoc(docRef, { elo: newElo });
-            };
-
-            // --- SCREENS ---
-            const AuthScreen = () => (
-                <div className="flex flex-col items-center justify-center min-h-screen bg-slate-900 text-white p-4">
-                    <div className="w-full max-w-md bg-slate-800 p-8 rounded-2xl shadow-2xl border border-slate-700">
-                        <h1 className="text-4xl font-bold text-center mb-2 bg-gradient-to-r from-blue-400 to-purple-500 bg-clip-text text-transparent">Paom ID</h1>
-                        <p className="text-center text-slate-400 mb-8">Вход в Paom.Tic.Tac.Toe</p>
-                        {errorMsg && <div className="bg-red-500/20 text-red-200 p-3 rounded mb-4 text-sm">{errorMsg}</div>}
-                        <form onSubmit={handleAuth} className="space-y-4">
-                            <div>
-                                <label className="block text-xs font-medium text-slate-400 mb-1">EMAIL</label>
-                                <input type="email" required className="w-full bg-slate-900 border border-slate-700 rounded p-3" placeholder="name@example.com" value={email} onChange={(e) => setEmail(e.target.value)} />
-                            </div>
-                            <div>
-                                <label className="block text-xs font-medium text-slate-400 mb-1">ПАРОЛЬ</label>
-                                <input type="password" required className="w-full bg-slate-900 border border-slate-700 rounded p-3" placeholder="••••••••" value={password} onChange={(e) => setPassword(e.target.value)} />
-                            </div>
-                            <button type="submit" disabled={loading} className="w-full bg-blue-600 hover:bg-blue-500 text-white font-bold py-3 rounded-xl flex justify-center items-center shadow-lg">
-                                {loading ? <Icons.Loader2 className="animate-spin" /> : (isRegistering ? 'Создать Paom ID' : 'Войти')}
-                            </button>
-                        </form>
-                        <div className="mt-6 text-center">
-                            <button onClick={() => setIsRegistering(!isRegistering)} className="text-sm text-slate-400 hover:text-white underline underline-offset-4">
-                                {isRegistering ? 'Уже есть аккаунт? Войти' : 'Нет аккаунта? Регистрация'}
-                            </button>
-                        </div>
-                    </div>
-                </div>
-            );
-
-            const MainMenu = () => (
-                <div className="flex flex-col h-screen bg-slate-900 text-white overflow-hidden">
-                    <div className="p-4 bg-slate-800/50 flex justify-between items-center backdrop-blur-sm border-b border-slate-700/50">
-                        <div className="flex items-center gap-3">
-                            <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center text-lg shadow-inner">
-                                {SHOP_ITEMS.find(i => i.id === profile?.avatar)?.icon || '👤'}
-                            </div>
-                            <div>
-                                <div className="font-bold">{profile?.nickname}</div>
-                                <div className="text-xs text-yellow-400 flex items-center gap-1"><Icons.Trophy size={12} /> {profile?.elo} ELO</div>
-                            </div>
-                        </div>
-                        <div className="flex items-center gap-2 bg-slate-900 px-3 py-1 rounded-full border border-slate-700">
-                            <Icons.Diamond size={14} className="text-cyan-400" /><span className="font-mono">{profile?.diamonds}</span>
-                        </div>
-                    </div>
-                    <div className="flex-1 p-6 flex flex-col items-center justify-center gap-4 relative">
-                        <div className="absolute top-0 left-0 w-full h-full opacity-10 pointer-events-none">
-                            <div className="absolute top-10 left-10 w-32 h-32 bg-blue-500 rounded-full blur-3xl"></div>
-                            <div className="absolute bottom-10 right-10 w-64 h-64 bg-purple-500 rounded-full blur-3xl"></div>
-                        </div>
-                        <button onClick={() => startGame('ranked')} className="w-full max-w-sm bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 text-white p-6 rounded-2xl shadow-lg flex items-center justify-between group transition-all transform hover:scale-105">
-                            <div className="text-left"><div className="text-2xl font-black italic">ИГРАТЬ</div><div className="text-blue-200 text-sm">Ранговый матч</div></div>
-                            <Icons.Swords size={32} className="group-hover:rotate-12 transition-transform" />
-                        </button>
-                        <div className="grid grid-cols-2 gap-4 w-full max-w-sm">
-                            <button onClick={() => startGame('ai')} className="bg-slate-800 p-4 rounded-xl border border-slate-700 hover:border-blue-500 flex flex-col items-center gap-2"><Icons.Cpu size={24} className="text-emerald-400" /><span className="font-bold text-sm">Против ИИ</span></button>
-                            <button onClick={() => startGame('friend')} className="bg-slate-800 p-4 rounded-xl border border-slate-700 hover:border-blue-500 flex flex-col items-center gap-2"><Icons.Users size={24} className="text-pink-400" /><span className="font-bold text-sm">С Другом</span></button>
-                            <button onClick={() => setCurrentScreen('shop')} className="bg-slate-800 p-4 rounded-xl border border-slate-700 hover:border-blue-500 flex flex-col items-center gap-2"><Icons.ShoppingBag size={24} className="text-yellow-400" /><span className="font-bold text-sm">Магазин</span></button>
-                            <button onClick={() => setCurrentScreen('news')} className="bg-slate-800 p-4 rounded-xl border border-slate-700 hover:border-blue-500 flex flex-col items-center gap-2"><Icons.Newspaper size={24} className="text-slate-400" /><span className="font-bold text-sm">Новости</span></button>
-                        </div>
-                        <div className="w-full max-w-sm mt-4 bg-slate-800/80 rounded-xl p-4 border border-slate-700">
-                            <h3 className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">Ежедневные задания</h3>
-                            <div className="space-y-2">
-                                {profile?.quests.slice(0, 2).map(q => (
-                                    <div key={q.id} className="flex justify-between items-center text-sm">
-                                        <span className="truncate flex-1 text-slate-300">{q.desc}</span>
-                                        <div className="flex items-center gap-2">
-                                            <span className="text-xs text-slate-500">{q.current}/{q.target}</span>
-                                            {q.current >= q.target && !q.claimed ? (
-                                                <button onClick={() => claimQuest(q.id)} className="text-xs bg-yellow-500 text-black px-2 py-1 rounded font-bold animate-pulse">Claim</button>
-                                            ) : q.claimed ? <Icons.Check size={14} className="text-green-500" /> : (
-                                                <div className="w-14 h-1 bg-slate-700 rounded-full overflow-hidden"><div className="h-full bg-blue-500" style={{width: `${(q.current/q.target)*100}%`}}></div></div>
-                                            )}
-                                        </div>
-                                    </div>
-                                ))}
-                            </div>
-                            <button onClick={() => setCurrentScreen('profile')} className="w-full mt-3 text-xs text-center text-slate-500 hover:text-white">Все задания & Настройки</button>
-                        </div>
-                    </div>
-                </div>
-            );
-
-            const GameScreen = () => {
-                const status = winner ? (winner === 'Draw' ? "Ничья!" : `Победитель: ${winner}`) : aiThinking ? "ИИ думает..." : (isMyTurn ? "Твой ход" : `Ход ${opponentName}`);
-                const boardStyle = SHOP_ITEMS.find(i => i.id === profile?.boardSkin)?.color || 'bg-gray-800';
-                
-                // Проверяем, идет ли поиск противника
-                const isSearching = gameMode === 'ranked' && opponentName === "Поиск...";
-                
-                return (
-                    <div className="flex flex-col items-center justify-center min-h-screen bg-slate-950 text-white p-4">
-                        <div className="w-full max-w-md mb-8 flex justify-between items-end">
-                            <div className="flex flex-col"><span className="text-xs text-slate-500">Вы играете за</span><span className="text-2xl font-black text-blue-400">{mySymbol}</span></div>
-                            <div className="text-center">
-                                <div className="text-3xl font-bold mb-1">{status}</div>
-                                {matchId && <div className="text-xs font-mono text-slate-600">ID: {matchId.slice(0,6)}...</div>}
-                            </div>
-                            <div className="flex flex-col items-end"><span className="text-xs text-slate-500">Противник</span><span className="text-lg font-bold text-red-400 max-w-[100px] truncate">{opponentName}</span></div>
-                        </div>
-
-                        {/* Индикатор поиска */}
-                        {isSearching && (
-                            <div className="absolute inset-0 z-50 flex flex-col items-center justify-center bg-slate-950/80 backdrop-blur-sm">
-                                <Icons.Loader2 size={64} className="animate-spin text-blue-500 mb-4" />
-                                <div className="text-2xl font-bold animate-pulse">ОЖИДАНИЕ ПРОТИВНИКА...</div>
-                                <div className="text-slate-400 mt-2">Не закрывайте вкладку</div>
-                            </div>
-                        )}
-
-                        <div className={`grid grid-cols-3 gap-3 p-3 rounded-2xl shadow-2xl ${boardStyle}`}>
-                            {board.map((sq, i) => (
-                                <button key={i} onClick={() => handleClick(i)} className={`w-24 h-24 rounded-xl bg-slate-900/50 backdrop-blur-sm flex items-center justify-center text-5xl font-black transition-all ${!sq && !winner && isMyTurn ? 'hover:bg-slate-800 cursor-pointer' : 'cursor-default'}`}>
-                                    {sq === 'X' && <span className="text-blue-400 drop-shadow-glow">X</span>}{sq === 'O' && <span className="text-red-400 drop-shadow-glow">O</span>}
-                                </button>
-                            ))}
-                        </div>
-                        {winner && (
-                            <div className="mt-8 flex gap-4 animate-in fade-in slide-in-from-bottom-4">
-                                <button onClick={() => setCurrentScreen('menu')} className="bg-slate-700 hover:bg-slate-600 text-white px-8 py-3 rounded-xl font-bold">В меню</button>
-                                <button onClick={() => startGame(gameMode)} className="bg-blue-600 hover:bg-blue-500 text-white px-8 py-3 rounded-xl font-bold shadow-lg">Играть снова</button>
-                            </div>
-                        )}
-                        {!winner && !isMyTurn && !aiThinking && gameMode === 'ranked' && !isSearching && <div className="mt-4 flex items-center gap-2 text-slate-500 text-sm animate-pulse"><Icons.Loader2 size={16} className="animate-spin" /> Ожидание хода противника...</div>}
-                    </div>
-                );
-            };
-
-            const ShopScreen = () => (
-                <div className="min-h-screen bg-slate-900 text-white p-4">
-                    <div className="flex items-center justify-between mb-6">
-                        <button onClick={() => setCurrentScreen('menu')} className="p-2 hover:bg-slate-800 rounded-full"><Icons.X /></button>
-                        <div className="flex items-center gap-2 bg-slate-800 px-4 py-2 rounded-full"><Icons.Diamond size={16} className="text-cyan-400" /><span className="font-bold">{profile?.diamonds}</span></div>
-                    </div>
-                    <h2 className="text-2xl font-bold mb-4 px-2">Магазин</h2>
-                    <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-                        {SHOP_ITEMS.map(item => {
-                            const isOwned = profile?.inventory.includes(item.id);
-                            const isEquipped = profile?.avatar === item.id || profile?.boardSkin === item.id;
-                            return (
-                                <div key={item.id} className="bg-slate-800 p-4 rounded-xl border border-slate-700 flex flex-col items-center gap-3">
-                                    <div className={`w-16 h-16 rounded-full flex items-center justify-center text-3xl ${item.color || 'bg-slate-700'}`}>{item.icon || (item.type === 'board' ? '🎨' : '?')}</div>
-                                    <div className="text-center"><div className="font-bold text-sm">{item.name}</div>{!isOwned && <div className="text-cyan-400 text-xs flex items-center justify-center gap-1 mt-1"><Icons.Diamond size={10} /> {item.price}</div>}</div>
-                                    {isOwned ? (
-                                        <button onClick={async () => {
-                                            const appId = getAppId();
-                                            const update = item.type === 'avatar' ? { avatar: item.id } : { boardSkin: item.id };
-                                            await updateDoc(doc(db, 'artifacts', appId, 'users', user.uid, 'profile', 'data'), update);
-                                        }} disabled={isEquipped} className={`w-full py-2 rounded-lg text-xs font-bold ${isEquipped ? 'bg-green-600/20 text-green-400' : 'bg-slate-700 hover:bg-slate-600'}`}>{isEquipped ? 'Выбрано' : 'Выбрать'}</button>
-                                    ) : (
-                                        <button onClick={async () => {
-                                            if ((profile?.diamonds || 0) >= item.price) {
-                                                const appId = getAppId();
-                                                await updateDoc(doc(db, 'artifacts', appId, 'users', user.uid, 'profile', 'data'), { inventory: [...(profile?.inventory || []), item.id], diamonds: (profile?.diamonds || 0) - item.price });
-                                                updateQuestProgress('buy_item');
-                                            } else { alert("Недостаточно алмазов!"); }
-                                        }} className="w-full bg-cyan-600 hover:bg-cyan-500 py-2 rounded-lg text-xs font-bold">Купить</button>
-                                    )}
-                                </div>
-                            );
-                        })}
-                    </div>
-                </div>
-            );
-
-            const ProfileSettingsScreen = () => {
-                const [localNick, setLocalNick] = React.useState(profile?.nickname || '');
-                const [localKey, setLocalKey] = React.useState(profile?.settings.geminiKey || '');
-
-                const saveSettings = async () => {
-                    if (!user) return;
-                    const appId = getAppId();
-                    await updateDoc(doc(db, 'artifacts', appId, 'users', user.uid, 'profile', 'data'), { nickname: localNick, 'settings.geminiKey': localKey, 'settings.rankedWithBots': profile?.settings.rankedWithBots });
-                    alert("Сохранено!");
-                };
-
-                const toggleBotRanked = async () => {
-                    if (!user) return;
-                    const appId = getAppId();
-                    await updateDoc(doc(db, 'artifacts', appId, 'users', user.uid, 'profile', 'data'), { 'settings.rankedWithBots': !profile?.settings.rankedWithBots });
-                }
-
-                return (
-                    <div className="min-h-screen bg-slate-900 text-white p-4">
-                        <div className="flex items-center gap-4 mb-6"><button onClick={() => setCurrentScreen('menu')} className="p-2 hover:bg-slate-800 rounded-full"><Icons.X /></button><h2 className="text-xl font-bold">Настройки</h2></div>
-                        <div className="space-y-6">
-                            <div className="bg-slate-800 p-4 rounded-xl">
-                                <h3 className="font-bold text-yellow-400 mb-4 flex items-center gap-2"><Icons.Trophy size={18} /> Задания</h3>
-                                <div className="space-y-3">
-                                    {profile?.quests.map(q => (
-                                        <div key={q.id} className="bg-slate-900/50 p-3 rounded-lg flex justify-between items-center">
-                                            <div><div className="text-sm font-medium">{q.desc}</div><div className="text-xs text-slate-500 mt-1">{q.current}/{q.target}</div></div>
-                                            {q.claimed ? <div className="text-green-500 text-xs font-bold">Получено</div> : q.current >= q.target ? <button onClick={() => claimQuest(q.id)} className="bg-yellow-500 text-black px-3 py-1 rounded text-xs font-bold">Забрать</button> : <div className="text-slate-600 text-xs">{q.reward} 💎</div>}
-                                        </div> 
-                                    ))}
-                                </div>
-                            </div>
-                            <div className="bg-slate-800 p-4 rounded-xl space-y-4">
-                                <h3 className="font-bold text-blue-400 flex items-center gap-2"><Icons.Settings size={18} /> Настройки</h3>
-                                <div><label className="block text-xs text-slate-400 mb-1">Никнейм</label><input value={localNick} onChange={e => setLocalNick(e.target.value)} className="w-full bg-slate-900 p-2 rounded border border-slate-700" /></div>
-                                <div><label className="block text-xs text-slate-400 mb-1">Gemini API Key</label><input value={localKey} type="password" onChange={e => setLocalKey(e.target.value)} className="w-full bg-slate-900 p-2 rounded border border-slate-700" /></div>
-                                <div className="flex items-center justify-between p-2 bg-slate-900 rounded border border-slate-700"><span className="text-sm">Ранговый с ботами</span><button onClick={toggleBotRanked} className={`w-12 h-6 rounded-full transition-colors relative ${profile?.settings.rankedWithBots ? 'bg-green-500' : 'bg-slate-600'}`}><div className={`absolute top-1 w-4 h-4 bg-white rounded-full transition-all ${profile?.settings.rankedWithBots ? 'left-7' : 'left-1'}`}></div></button></div>
-                                <button onClick={saveSettings} className="w-full bg-blue-600 py-2 rounded font-bold hover:bg-blue-500">Сохранить</button>
-                                <div className="pt-4 border-t border-slate-700"><button onClick={handleLogout} className="w-full text-red-400 text-sm flex items-center justify-center gap-2 hover:bg-slate-900 py-2 rounded"><Icons.LogOut size={16}/> Выйти</button></div>
-                            </div>
-                        </div>
-                    </div>
-                );
-            };
-
-            const NewsScreen = () => (
-                <div className="min-h-screen bg-slate-900 text-white p-4">
-                    <div className="flex items-center gap-4 mb-6"><button onClick={() => setCurrentScreen('menu')} className="p-2 hover:bg-slate-800 rounded-full"><Icons.X /></button><h2 className="text-xl font-bold">Обновления</h2></div>
-                    <div className="space-y-4">{NEWS_UPDATES.map((news, idx) => <div key={idx} className="bg-slate-800 p-5 rounded-xl border-l-4 border-blue-500 shadow-lg"><div className="flex justify-between items-start mb-2"><h3 className="font-bold text-lg">{news.title}</h3><span className="bg-slate-900 px-2 py-1 rounded text-xs font-mono text-blue-400">v{news.ver}</span></div><p className="text-slate-300 text-sm leading-relaxed">{news.content}</p></div>)}</div>
-                </div>
-            );
-
-            if (isAuthChecking || (loading && currentScreen === 'auth')) {
-                return <div className="min-h-screen bg-slate-950 flex items-center justify-center text-white"><Icons.Loader2 className="animate-spin" size={48} /></div>;
+                initMultiplayerListener();
+            } catch (e) {
+                console.error("Firebase Error:", e);
+                document.getElementById('connection-status').innerText = "OFFLINE MODE (Connection Failed)";
             }
 
-            return (
-                <div className="font-sans">
-                    {currentScreen === 'auth' && <AuthScreen />}
-                    {currentScreen === 'menu' && <MainMenu />}
-                    {currentScreen === 'game' && <GameScreen />}
-                    {currentScreen === 'shop' && <ShopScreen />}
-                    {currentScreen === 'profile' && <ProfileSettingsScreen />}
-                    {currentScreen === 'settings' && <ProfileSettingsScreen />}
-                    {currentScreen === 'news' && <NewsScreen />}
-                </div>
-            );
+            // Setup Mobile Check
+            if ('ontouchstart' in window || navigator.maxTouchPoints > 0) {
+                document.getElementById('mobile-controls').style.display = 'block';
+                setupTouchControls();
+            }
+
+            init3D();
+            animate();
         }
 
-        const root = ReactDOM.createRoot(document.getElementById('root'));
-        root.render(<App />);
+        function init3D() {
+            scene = new THREE.Scene();
+            scene.fog = new THREE.FogExp2(0x050510, 0.015);
+
+            camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 500);
+            camera.position.set(0, 3, 8);
+            camera.lookAt(0, 0, -20);
+
+            renderer = new THREE.WebGLRenderer({ antialias: true, powerPreference: "high-performance" });
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+            renderer.toneMapping = THREE.ReinhardToneMapping;
+            document.body.appendChild(renderer.domElement);
+
+            const ambientLight = new THREE.AmbientLight(0x000044, 2.0);
+            scene.add(ambientLight);
+            const hemiLight = new THREE.HemisphereLight(0xffffff, 0x000000, 0.5);
+            scene.add(hemiLight);
+
+            const renderScene = new RenderPass(scene, camera);
+            const bloomPass = new UnrealBloomPass(new THREE.Vector2(window.innerWidth, window.innerHeight), 1.5, 0.4, 0.85);
+            bloomPass.threshold = 0;
+            bloomPass.strength = 1.2;
+            bloomPass.radius = 0.5;
+
+            composer = new EffectComposer(renderer);
+            composer.addPass(renderScene);
+            composer.addPass(bloomPass);
+
+            createPlayerCar();
+            createRoad();
+            
+            window.addEventListener('resize', onWindowResize);
+            document.addEventListener('keydown', onKeyDown);
+            document.addEventListener('keyup', onKeyUp);
+        }
+
+        // --- CAR CREATION (REUSABLE) ---
+        function createCarMesh(color, neonColor) {
+            const carGroup = new THREE.Group();
+
+            const shape = new THREE.Shape();
+            shape.moveTo(-1.2, 0); shape.lineTo(1.2, 0); shape.lineTo(1.3, 0.3);
+            shape.lineTo(0.6, 0.75); shape.lineTo(-0.4, 0.75); shape.lineTo(-1.1, 0.4);
+            shape.lineTo(-1.25, 0.3); shape.lineTo(-1.2, 0);
+
+            const extrudeSettings = { steps: 1, depth: 1.6, bevelEnabled: true, bevelThickness: 0.05, bevelSize: 0.05, bevelSegments: 2 };
+            const geometry = new THREE.ExtrudeGeometry(shape, extrudeSettings);
+            geometry.center();
+
+            const material = new THREE.MeshStandardMaterial({ color: color, metalness: 0.8, roughness: 0.2 });
+            const chassis = new THREE.Mesh(geometry, material);
+            chassis.rotation.y = -Math.PI / 2;
+            chassis.position.y = 0.5;
+            carGroup.add(chassis);
+            carGroup.userData.chassisMat = material;
+
+            // Wheels
+            const wheelGeo = new THREE.CylinderGeometry(0.35, 0.35, 0.4, 24);
+            wheelGeo.rotateZ(Math.PI / 2);
+            const wheelMat = new THREE.MeshStandardMaterial({ color: 0x111111, roughness: 0.8 });
+            const positions = [{x:-0.7, z:-0.8}, {x:0.7, z:-0.8}, {x:-0.7, z:0.8}, {x:0.7, z:0.8}];
+            positions.forEach(pos => {
+                const wheel = new THREE.Mesh(wheelGeo, wheelMat);
+                wheel.position.set(pos.x, 0.35, pos.z);
+                carGroup.add(wheel);
+            });
+
+            // Neon
+            const neonLight = new THREE.PointLight(neonColor, 10, 5);
+            neonLight.position.set(0, 0.2, 0);
+            carGroup.add(neonLight);
+            carGroup.userData.neon = neonLight;
+
+            // Tail lights
+            const tailGeo = new THREE.BoxGeometry(0.8, 0.1, 0.1);
+            const tailMat = new THREE.MeshBasicMaterial({ color: 0xff0000 });
+            const tailLight = new THREE.Mesh(tailGeo, tailMat);
+            tailLight.position.set(0, 0.6, 1.1);
+            carGroup.add(tailLight);
+
+            return carGroup;
+        }
+
+        function createPlayerCar() {
+            playerCar = createCarMesh(gameState.carColor, gameState.neonColor);
+            
+            // Add headlights only for player
+            const spotLeft = new THREE.SpotLight(0xffffff, 50);
+            spotLeft.position.set(-0.5, 0.6, -1.0);
+            spotLeft.target.position.set(-0.5, 0, -10);
+            spotLeft.angle = 0.5; spotLeft.penumbra = 0.5;
+            playerCar.add(spotLeft); playerCar.add(spotLeft.target);
+
+            const spotRight = new THREE.SpotLight(0xffffff, 50);
+            spotRight.position.set(0.5, 0.6, -1.0);
+            spotRight.target.position.set(0.5, 0, -10);
+            spotRight.angle = 0.5; spotRight.penumbra = 0.5;
+            playerCar.add(spotRight); playerCar.add(spotRight.target);
+
+            scene.add(playerCar);
+        }
+
+        // --- WORLD GENERATION ---
+        function createRoad() {
+            for (let i = 0; i < WORLD_CONFIG.segmentCount; i++) {
+                const segment = new THREE.Group();
+                const zPos = -i * WORLD_CONFIG.segmentLength;
+
+                const roadGeo = new THREE.PlaneGeometry(WORLD_CONFIG.roadWidth, WORLD_CONFIG.segmentLength);
+                roadGeo.rotateX(-Math.PI / 2);
+                const roadMat = new THREE.MeshStandardMaterial({ color: 0x222222, roughness: 0.8 });
+                const road = new THREE.Mesh(roadGeo, roadMat);
+                
+                const lineGeo = new THREE.PlaneGeometry(0.2, WORLD_CONFIG.segmentLength / 2);
+                lineGeo.rotateX(-Math.PI / 2);
+                const lineMat = new THREE.MeshBasicMaterial({ color: 0xffffff });
+                const lineL = new THREE.Mesh(lineGeo, lineMat); lineL.position.set(-WORLD_CONFIG.laneWidth/2, 0.02, 0);
+                const lineR = new THREE.Mesh(lineGeo, lineMat); lineR.position.set(WORLD_CONFIG.laneWidth/2, 0.02, 0);
+
+                segment.add(road); segment.add(lineL); segment.add(lineR);
+                const gridHelper = new THREE.GridHelper(60, 10, 0x00f3ff, 0x110022);
+                gridHelper.position.y = -0.1;
+                segment.add(gridHelper);
+
+                if (Math.random() > 0.3) createBuilding(segment, -20);
+                if (Math.random() > 0.3) createBuilding(segment, 20);
+
+                segment.position.z = zPos;
+                scene.add(segment);
+                roadSegments.push(segment);
+            }
+        }
+
+        function createBuilding(parent, xOffset) {
+            const height = 10 + Math.random() * 40;
+            const width = 5 + Math.random() * 10;
+            const geo = new THREE.BoxGeometry(width, height, width);
+            const mat = new THREE.MeshBasicMaterial({ color: 0x000000 });
+            const edges = new THREE.EdgesGeometry(geo);
+            const line = new THREE.LineSegments(edges, new THREE.LineBasicMaterial({ color: 0x220033 }));
+            const mesh = new THREE.Mesh(geo, mat);
+            mesh.add(line);
+            mesh.position.set(xOffset, height/2, 0);
+            parent.add(mesh);
+        }
+
+        function spawnTraffic() {
+            if (trafficCars.length > 5) return;
+            const group = new THREE.Group();
+            
+            const bodyGeo = new THREE.BoxGeometry(2, 1.2, 4);
+            const bodyMat = new THREE.MeshStandardMaterial({ color: Math.random() * 0xffffff, roughness: 0.5 });
+            const body = new THREE.Mesh(bodyGeo, bodyMat);
+            body.position.y = 0.6;
+            group.add(body);
+
+            const tailGeo = new THREE.BoxGeometry(1.8, 0.2, 0.1);
+            const tailMat = new THREE.MeshBasicMaterial({ color: 0xff0000 });
+            const tail = new THREE.Mesh(tailGeo, tailMat);
+            tail.position.set(0, 0.8, 2.01);
+            group.add(tail);
+
+            const laneIndex = Math.floor(Math.random() * 3) - 1;
+            group.position.set(laneIndex * WORLD_CONFIG.laneWidth, 0, -100 - Math.random() * 50);
+            
+            group.userData = { lane: laneIndex, speed: 60 + Math.random() * 40 };
+            scene.add(group);
+            trafficCars.push(group);
+        }
+
+        // --- FIREBASE LOGIC ---
+        function initMultiplayerListener() {
+            if (!db) return;
+            // RULE 1: Use specific path structure
+            const q = collection(db, 'artifacts', appId, 'public', 'data', 'nfs_multiplayer_races');
+            
+            // Слушаем обновления всех игроков
+            onSnapshot(q, (snapshot) => {
+                const count = snapshot.size;
+                document.getElementById('players-count').innerText = "ONLINE: " + count;
+
+                snapshot.docChanges().forEach((change) => {
+                    const data = change.doc.data();
+                    const uid = change.doc.id;
+                    if (uid === currentUserId) return; // ignore self
+
+                    if (change.type === "added" || change.type === "modified") {
+                        rivalsData[uid] = data;
+                        updateRivalMesh(uid, data);
+                    }
+                    if (change.type === "removed") {
+                        delete rivalsData[uid];
+                        removeRivalMesh(uid);
+                    }
+                });
+            }, (error) => {
+                console.warn("Firestore listener error (possibly permissions or offline):", error);
+            });
+
+            // Очистка при выходе
+            window.addEventListener('beforeunload', () => {
+                if(currentUserId) deleteDoc(doc(db, 'artifacts', appId, 'public', 'data', 'nfs_multiplayer_races', currentUserId));
+            });
+        }
+
+        function syncPlayerState() {
+            if (!db || !currentUserId || !gameState.active) return;
+            
+            const now = Date.now();
+            if (now - lastSyncTime > 100) { // Sync every 100ms
+                setDoc(doc(db, 'artifacts', appId, 'public', 'data', 'nfs_multiplayer_races', currentUserId), {
+                    x: gameState.lane, // Lane index
+                    z: gameState.distance, // Absolute distance
+                    color: gameState.carColor,
+                    neon: gameState.neonColor,
+                    lastSeen: serverTimestamp()
+                }).catch(e => console.warn("Sync fail", e));
+                lastSyncTime = now;
+            }
+        }
+
+        function updateRivalMesh(uid, data) {
+            let mesh = rivalMeshes[uid];
+            // Создаем, если нет
+            if (!mesh) {
+                mesh = createCarMesh(data.color, data.neon);
+                // Делаем полупрозрачным "призраком"
+                mesh.traverse(c => {
+                    if(c.isMesh) {
+                        c.material.transparent = true;
+                        c.material.opacity = 0.6;
+                    }
+                });
+                scene.add(mesh);
+                rivalMeshes[uid] = mesh;
+            }
+            // Позиция будет обновлена в animate() на основе gameState.distance
+        }
+
+        function removeRivalMesh(uid) {
+            if (rivalMeshes[uid]) {
+                scene.remove(rivalMeshes[uid]);
+                delete rivalMeshes[uid];
+            }
+        }
+
+        function updateRivals(delta) {
+            for (const uid in rivalsData) {
+                const data = rivalsData[uid];
+                const mesh = rivalMeshes[uid];
+                if (!mesh) continue;
+
+                // X position (lane) interpolation
+                const targetX = data.x * WORLD_CONFIG.laneWidth;
+                mesh.position.x = THREE.MathUtils.lerp(mesh.position.x, targetX, delta * 5);
+
+                // Z position (Relative to player)
+                // Если data.z > gameState.distance, игрок впереди (negative Z visual)
+                // Визуальная координата Z = -(RivalDistance - MyDistance)
+                // Road moves +Z relative to player. 
+                // Игрок всегда в Z=0.
+                // Если Rival проехал 1000m, а я 900m. Он впереди на 100м.
+                // В ThreeJS "впереди" это -Z. Значит Z = -100.
+                const relativeZ = -(data.z - gameState.distance);
+                
+                mesh.position.z = THREE.MathUtils.lerp(mesh.position.z, relativeZ, delta * 10);
+                
+                // Tilt logic
+                const tilt = (mesh.position.x - targetX) * 0.05;
+                mesh.rotation.z = -tilt;
+                mesh.rotation.y = (tilt * 0.5);
+            }
+        }
+
+        // --- CONTROLS ---
+        function setupTouchControls() {
+            const btnLeft = document.getElementById('btn-left');
+            const btnRight = document.getElementById('btn-right');
+            const btnNitro = document.getElementById('btn-nitro');
+
+            const handleTouch = (key, state) => (e) => {
+                e.preventDefault();
+                // Логика переключения полос для кнопок (tap behaviour)
+                if (state && (key === 'left' || key === 'right')) {
+                   if (key === 'left') changeLane(-1);
+                   if (key === 'right') changeLane(1);
+                }
+                CONTROLS[key] = state;
+            };
+
+            btnLeft.addEventListener('touchstart', handleTouch('left', true));
+            btnLeft.addEventListener('touchend', handleTouch('left', false));
+            
+            btnRight.addEventListener('touchstart', handleTouch('right', true));
+            btnRight.addEventListener('touchend', handleTouch('right', false));
+
+            btnNitro.addEventListener('touchstart', handleTouch('nitro', true));
+            btnNitro.addEventListener('touchend', handleTouch('nitro', false));
+        }
+
+        function onKeyDown(e) {
+            if (e.key === 'Escape') { window.quitToMenu(); return; }
+            if (!gameState.active) return;
+            switch(e.key.toLowerCase()) {
+                case 'w': case 'arrowup': CONTROLS.up = true; break;
+                case 's': case 'arrowdown': CONTROLS.down = true; break;
+                case 'a': case 'arrowleft': changeLane(-1); break;
+                case 'd': case 'arrowright': changeLane(1); break;
+                case ' ': CONTROLS.nitro = true; break;
+            }
+        }
+        function onKeyUp(e) {
+            switch(e.key.toLowerCase()) {
+                case 'w': case 'arrowup': CONTROLS.up = false; break;
+                case 's': case 'arrowdown': CONTROLS.down = false; break;
+                case ' ': CONTROLS.nitro = false; break;
+            }
+        }
+
+        function changeLane(dir) {
+            gameState.lane += dir;
+            gameState.lane = Math.max(-1, Math.min(1, gameState.lane));
+            gameState.targetX = gameState.lane * WORLD_CONFIG.laneWidth;
+        }
+
+        // --- EXPORTED UI FUNCTIONS ---
+        window.updateCarColor = (hex) => {
+            gameState.carColor = hex;
+            if (playerCar && playerCar.userData.chassisMat) playerCar.userData.chassisMat.color.setHex(hex);
+        };
+        window.updateNeonColor = (hex) => {
+            gameState.neonColor = hex;
+            if (playerCar && playerCar.userData.neon) playerCar.userData.neon.color.setHex(hex);
+        };
+        window.startGame = () => {
+            document.getElementById('main-menu').style.display = 'none';
+            document.getElementById('hud').style.display = 'block';
+            document.getElementById('nitro-bar-container').style.display = 'block';
+            gameState.active = true;
+            gameState.speed = 0;
+            gameState.score = 0;
+            gameState.distance = 0;
+            gameState.nitro = 100;
+            trafficCars.forEach(c => scene.remove(c));
+            trafficCars = [];
+        };
+        window.resetGame = () => {
+            document.getElementById('game-over').style.display = 'none';
+            gameState.lane = 0; playerCar.position.x = 0; gameState.targetX = 0;
+            window.startGame();
+        };
+        window.quitToMenu = () => {
+            gameState.active = false;
+            document.getElementById('hud').style.display = 'none';
+            document.getElementById('nitro-bar-container').style.display = 'none';
+            document.getElementById('game-over').style.display = 'none';
+            document.getElementById('main-menu').style.display = 'block';
+        };
+
+        // --- GAME LOOP ---
+        function animate() {
+            requestAnimationFrame(animate);
+            const rawDelta = clock.getDelta();
+            const delta = Math.min(rawDelta, 0.05);
+
+            if (gameState.active) {
+                updatePhysics(delta);
+                updateTraffic(delta);
+                updateEnvironment(delta);
+                updateRivals(delta); // Multiplayer Sync
+                syncPlayerState();
+                updateUI();
+            }
+
+            composer.render();
+        }
+
+        function updatePhysics(delta) {
+            let targetSpeed = 0;
+            // Управление с клавиатуры или тачскрина
+            if (CONTROLS.up || (('ontouchstart' in window) && !CONTROLS.down)) targetSpeed = gameState.maxSpeed; // Автогаз на мобилках?
+            // Сделаем автогаз по умолчанию для всех, кроме тормоза
+            targetSpeed = gameState.maxSpeed; 
+            
+            if (CONTROLS.down) targetSpeed = -20;
+
+            if (CONTROLS.nitro && gameState.nitro > 0) {
+                targetSpeed = gameState.nitroMaxSpeed;
+                gameState.nitro -= 30 * delta;
+                camera.fov = THREE.MathUtils.lerp(camera.fov, 75, delta * 2);
+                camera.position.x += (Math.random() - 0.5) * 0.1;
+                camera.position.y += (Math.random() - 0.5) * 0.1;
+            } else {
+                gameState.nitro = Math.min(100, gameState.nitro + 5 * delta);
+                camera.fov = THREE.MathUtils.lerp(camera.fov, 60, delta * 2);
+            }
+            camera.updateProjectionMatrix();
+
+            gameState.speed = THREE.MathUtils.lerp(gameState.speed, targetSpeed, delta * (CONTROLS.nitro ? 2.0 : 0.8));
+            playerCar.position.x = THREE.MathUtils.lerp(playerCar.position.x, gameState.targetX, delta * 5);
+
+            const tilt = (playerCar.position.x - gameState.targetX) * 0.05;
+            playerCar.rotation.z = -tilt;
+            playerCar.rotation.y = (tilt * 0.5);
+
+            // Calc distance
+            const moveDist = (gameState.speed * 0.3) * delta;
+            gameState.distance += moveDist;
+            gameState.score += moveDist * 0.1;
+        }
+
+        function updateEnvironment(delta) {
+            const moveDist = (gameState.speed * 0.3) * delta; 
+            roadSegments.forEach(segment => {
+                segment.position.z += moveDist;
+                if (segment.position.z > 20) {
+                    segment.position.z -= WORLD_CONFIG.segmentLength * WORLD_CONFIG.segmentCount;
+                }
+            });
+        }
+
+        function updateTraffic(delta) {
+            if (Math.random() < 0.02) spawnTraffic();
+            const playerSpeed = gameState.speed;
+            
+            for (let i = trafficCars.length - 1; i >= 0; i--) {
+                const car = trafficCars[i];
+                const relativeSpeed = (playerSpeed - car.userData.speed) * 0.3;
+                car.position.z += relativeSpeed * delta;
+
+                if (car.position.z > 30 || car.position.z < -250) {
+                    scene.remove(car);
+                    trafficCars.splice(i, 1);
+                    continue;
+                }
+                if (Math.abs(car.position.z) < 2.5 && Math.abs(car.position.x - playerCar.position.x) < 1.5) {
+                    gameOver();
+                }
+            }
+        }
+
+        function updateUI() {
+            document.getElementById('speed-display').innerText = Math.floor(gameState.speed);
+            document.getElementById('score-display').innerText = Math.floor(gameState.score);
+            document.getElementById('nitro-bar').style.width = gameState.nitro + '%';
+        }
+
+        function gameOver() {
+            gameState.active = false;
+            document.getElementById('hud').style.display = 'none';
+            document.getElementById('nitro-bar-container').style.display = 'none';
+            document.getElementById('mobile-controls').style.display = 'none'; // Hide touch controls
+            document.getElementById('game-over').style.display = 'block';
+            document.getElementById('final-score').innerText = 'SCORE: ' + Math.floor(gameState.score);
+            
+            // Clean up multiplayer self from DB immediately?
+            // Optional, but good practice.
+            if(currentUserId && db) deleteDoc(doc(db, 'artifacts', appId, 'public', 'data', 'nfs_multiplayer_races', currentUserId));
+        }
+
+        function onWindowResize() {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            composer.setSize(window.innerWidth, window.innerHeight);
+        }
+
+        init();
     </script>
 </body>
-</html>-
+</html>
