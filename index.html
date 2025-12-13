@@ -4,21 +4,60 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Крестики-Нолики Мультиплеер</title>
+    
+    <!-- PERFORMANCE OPTIMIZATIONS -->
+    <!-- Ускоряем соединение с серверами Google и Firebase -->
+    <link rel="preconnect" href="https://www.gstatic.com" crossorigin>
+    <link rel="preconnect" href="https://firestore.googleapis.com" crossorigin>
+    <link rel="preconnect" href="https://identitytoolkit.googleapis.com" crossorigin>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    
+    <!-- Загружаем модули Firebase заранее, параллельно, а не последовательно -->
+    <link rel="modulepreload" href="https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js">
+    <link rel="modulepreload" href="https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js">
+    <link rel="modulepreload" href="https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js">
+
+    <!-- Tailwind CSS (CDN) -->
     <script src="https://cdn.tailwindcss.com"></script>
+    
     <style>
         @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&family=Inter:wght@400;600;700&display=swap');
         body { font-family: 'Inter', sans-serif; }
         .font-mono { font-family: 'JetBrains Mono', monospace; }
         .fade-in { animation: fadeIn 0.3s ease-in-out; }
         @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+        
+        /* Критические стили для лоадера, чтобы он появился мгновенно до загрузки Tailwind */
+        #loading-view {
+            position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background-color: #0f172a; /* slate-900 */
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            z-index: 50;
+            color: #e2e8f0;
+        }
+        .spinner {
+            width: 40px;
+            height: 40px;
+            border: 4px solid rgba(99, 102, 241, 0.3);
+            border-top-color: #6366f1;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin-bottom: 1rem;
+        }
+        @keyframes spin { to { transform: rotate(360deg); } }
     </style>
 </head>
 <body class="min-h-screen bg-slate-900 text-slate-100 flex flex-col items-center justify-center p-4">
 
     <!-- LOADING VIEW -->
-    <div id="loading-view" class="fixed inset-0 bg-slate-900 flex flex-col items-center justify-center z-50">
-        <div class="animate-spin rounded-full h-10 w-10 border-t-2 border-b-2 border-indigo-500 mb-4"></div>
-        <p class="text-indigo-300 animate-pulse">Подключение к серверу...</p>
+    <div id="loading-view">
+        <div class="spinner"></div>
+        <p class="text-indigo-300 animate-pulse font-sans">Подключение к серверу...</p>
     </div>
 
     <!-- MAIN APP CONTAINER -->
